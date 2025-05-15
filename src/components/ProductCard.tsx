@@ -1,14 +1,16 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface ProductCardProps {
   name: string;
+  artist?: string;
   image: string;
   price: string;
 }
 
-const ProductCard = ({ name, image, price }: ProductCardProps) => {
+const ProductCard = ({ name, artist, image, price }: ProductCardProps) => {
   return (
     <div className="bg-white rounded-lg overflow-hidden transition-all hover:shadow-lg">
       <div className="h-64 overflow-hidden">
@@ -20,10 +22,13 @@ const ProductCard = ({ name, image, price }: ProductCardProps) => {
       </div>
       <div className="p-4">
         <h3 className="text-lg font-medium text-gray-900 mb-1">{name}</h3>
-        <p className="text-gray-700 mb-4">{price}</p>
-        <Button className="w-full bg-artify-blue hover:bg-blue-700 text-white">
-          Voir le produit
-        </Button>
+        {artist && <p className="text-sm text-gray-600 mb-2">{artist}</p>}
+        <p className="text-gray-900 font-medium mb-4">{price}</p>
+        <Link to={`/product/${encodeURIComponent(name.toLowerCase().replace(/ /g, '-'))}`}>
+          <Button className="w-full bg-white hover:bg-gray-50 text-[#33C3F0] border border-[#33C3F0]">
+            Voir Produit
+          </Button>
+        </Link>
       </div>
     </div>
   );
