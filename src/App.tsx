@@ -11,6 +11,12 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Studio from "./pages/Studio";
 import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
+import Artists from "./pages/Artists"; 
+import Printers from "./pages/Printers";
+import Legal from "./pages/Legal";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -24,11 +30,15 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<Products />} />
-            <Route path="/artists" element={<Index />} />
-            <Route path="/printers" element={<Index />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/artists" element={<Artists />} />
+            <Route path="/printers" element={<Printers />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/studio" element={<Studio />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

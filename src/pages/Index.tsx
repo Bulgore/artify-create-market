@@ -3,6 +3,7 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import FeaturedProducts from "@/components/FeaturedProducts";
+import FeaturedArtists from "@/components/FeaturedArtists";
 import CallToAction from "@/components/CallToAction";
 import Footer from "@/components/Footer";
 
@@ -20,6 +21,7 @@ const Index = () => {
             <FeaturedProducts />
           </div>
         </div>
+        <FeaturedArtists />
         <CallToAction />
       </main>
       <Footer />

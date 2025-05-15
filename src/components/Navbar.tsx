@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -9,6 +9,7 @@ import { Search } from "lucide-react";
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
@@ -24,16 +25,28 @@ const Navbar = () => {
       </div>
       
       <div className="hidden md:flex space-x-6">
-        <Link to="/" className="text-gray-900 hover:text-artify-blue transition-colors">
+        <Link 
+          to="/" 
+          className={`${location.pathname === '/' ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
+        >
           Accueil
         </Link>
-        <Link to="/products" className="text-gray-900 font-medium hover:text-artify-blue transition-colors">
+        <Link 
+          to="/products" 
+          className={`${location.pathname === '/products' ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
+        >
           Produits
         </Link>
-        <Link to="/artists" className="text-gray-900 hover:text-artify-blue transition-colors">
+        <Link 
+          to="/artists" 
+          className={`${location.pathname === '/artists' ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
+        >
           Créateurs
         </Link>
-        <Link to="/printers" className="text-gray-900 hover:text-artify-blue transition-colors">
+        <Link 
+          to="/printers" 
+          className={`${location.pathname === '/printers' ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
+        >
           Imprimeurs
         </Link>
       </div>
@@ -49,8 +62,17 @@ const Navbar = () => {
               Mon Profil
             </Button>
             <Button 
+              onClick={() => navigate("/studio")}
+              className="hidden sm:inline-flex bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
+            >
+              Mon Studio
+            </Button>
+            <Button 
               className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
-              onClick={() => signOut()}
+              onClick={() => {
+                signOut();
+                navigate("/");
+              }}
             >
               Déconnexion
             </Button>

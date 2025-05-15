@@ -4,8 +4,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Instagram, Facebook, Twitter } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 const Footer = () => {
+  const { toast } = useToast();
+  const [email, setEmail] = React.useState("");
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      toast({
+        title: "Inscription réussie",
+        description: "Vous êtes maintenant inscrit à notre newsletter.",
+      });
+      setEmail("");
+    } else {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer une adresse email valide.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <footer className="bg-gray-50 py-12 border-t">
       <div className="container mx-auto px-6">
@@ -31,27 +52,29 @@ const Footer = () => {
           {/* Colonne droite */}
           <div>
             <div className="flex space-x-4 mb-6">
-              <a href="#" className="text-gray-600 hover:text-[#33C3F0]">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-[#33C3F0]">
                 <Instagram size={20} />
               </a>
-              <a href="#" className="text-gray-600 hover:text-[#33C3F0]">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-[#33C3F0]">
                 <Facebook size={20} />
               </a>
-              <a href="#" className="text-gray-600 hover:text-[#33C3F0]">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-[#33C3F0]">
                 <Twitter size={20} />
               </a>
             </div>
             
-            <div className="flex space-x-2">
+            <form onSubmit={handleSubscribe} className="flex space-x-2">
               <Input
                 type="email"
                 placeholder="Votre email"
                 className="max-w-xs"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
-              <Button className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white">
+              <Button type="submit" className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white">
                 Inscription
               </Button>
-            </div>
+            </form>
           </div>
         </div>
       </div>

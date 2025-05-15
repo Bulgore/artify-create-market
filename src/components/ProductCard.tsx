@@ -13,13 +13,15 @@ interface ProductCardProps {
 const ProductCard = ({ name, artist, image, price }: ProductCardProps) => {
   return (
     <div className="bg-white rounded-lg overflow-hidden transition-all hover:shadow-lg">
-      <div className="h-64 overflow-hidden">
-        <img 
-          src={image} 
-          alt={name} 
-          className="w-full h-full object-cover"
-        />
-      </div>
+      <Link to={`/product/${encodeURIComponent(name.toLowerCase().replace(/ /g, '-'))}`}>
+        <div className="h-64 overflow-hidden">
+          <img 
+            src={image} 
+            alt={name} 
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </Link>
       <div className="p-4">
         <h3 className="text-lg font-medium text-gray-900 mb-1">{name}</h3>
         {artist && <p className="text-sm text-gray-600 mb-2">{artist}</p>}
