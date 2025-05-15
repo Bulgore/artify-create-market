@@ -1,9 +1,13 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
       <div className="flex items-center space-x-10">
@@ -21,15 +25,47 @@ const Navbar = () => {
           <Link to="/products" className="text-gray-700 hover:text-artify-blue transition-colors">
             Produits
           </Link>
+          {user && (
+            <Link to="/studio" className="text-gray-700 hover:text-artify-blue transition-colors">
+              Mon Studio
+            </Link>
+          )}
         </div>
       </div>
       <div className="flex space-x-4">
-        <Button variant="outline" className="hidden sm:inline-flex">
-          Se connecter
-        </Button>
-        <Button className="bg-artify-blue hover:bg-blue-700 text-white">
-          S'inscrire
-        </Button>
+        {user ? (
+          <>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/profile")}
+              className="hidden sm:inline-flex"
+            >
+              Mon Profil
+            </Button>
+            <Button 
+              className="bg-artify-blue hover:bg-blue-700 text-white"
+              onClick={() => signOut()}
+            >
+              Déconnexion
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/auth")}
+              className="hidden sm:inline-flex"
+            >
+              Se connecter
+            </Button>
+            <Button 
+              className="bg-artify-blue hover:bg-blue-700 text-white"
+              onClick={() => navigate("/auth?tab=register")}
+            >
+              S'inscrire
+            </Button>
+          </>
+        )}
       </div>
     </nav>
   );
