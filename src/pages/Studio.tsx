@@ -6,6 +6,7 @@ import CreatorStudio from "@/components/CreatorStudio";
 import PrinterStudio from "@/components/PrinterStudio";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { motion } from "framer-motion";
 
 const Studio = () => {
   const { user } = useAuth();
@@ -25,13 +26,18 @@ const Studio = () => {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="container mx-auto px-6 py-12">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="container mx-auto px-6 py-12"
+      >
         {user.user_metadata.role === "printer" ? (
           <PrinterStudio />
         ) : (
           <CreatorStudio />
         )}
-      </div>
+      </motion.div>
       <Footer />
     </div>
   );

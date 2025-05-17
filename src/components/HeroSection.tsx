@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -9,7 +10,12 @@ const HeroSection = () => {
   return (
     <div className="bg-white relative overflow-hidden">
       <div className="container mx-auto px-6 py-16 flex flex-col md:flex-row items-center">
-        <div className="md:w-1/2 text-center md:text-left md:pr-16">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="md:w-1/2 text-center md:text-left md:pr-16"
+        >
           <h1 className="text-5xl font-bold text-gray-900 leading-tight">
             Créez, Imprimez, Partagez
           </h1>
@@ -22,14 +28,19 @@ const HeroSection = () => {
           >
             Explorer
           </Button>
-        </div>
-        <div className="md:w-1/2 mt-10 md:mt-0">
+        </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="md:w-1/2 mt-10 md:mt-0"
+        >
           <img 
             src="/placeholder.svg" 
             alt="T-shirt personnalisé" 
             className="mx-auto w-full max-w-md"
           />
-        </div>
+        </motion.div>
       </div>
     </div>
   );
