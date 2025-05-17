@@ -17,6 +17,7 @@ import Printers from "./pages/Printers";
 import Legal from "./pages/Legal";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/studio" element={<Studio />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />

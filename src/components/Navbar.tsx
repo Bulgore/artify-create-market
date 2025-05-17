@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 
 const Navbar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -63,12 +63,24 @@ const Navbar = () => {
             >
               Mon Profil
             </Button>
-            <Button 
-              onClick={() => navigate("/studio")}
-              className="hidden sm:inline-flex bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
-            >
-              {userRole === "printer" ? "Mon Dashboard" : "Mon Studio"}
-            </Button>
+            
+            {isAdmin() ? (
+              <Button
+                onClick={() => navigate("/admin")}
+                className="hidden sm:inline-flex bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Administration
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => navigate("/studio")}
+                className="hidden sm:inline-flex bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
+              >
+                {userRole === "printer" ? "Mon Dashboard" : "Mon Studio"}
+              </Button>
+            )}
+            
             <Button 
               className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
               onClick={() => {

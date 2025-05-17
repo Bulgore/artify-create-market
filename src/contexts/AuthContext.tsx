@@ -11,6 +11,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, role?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  isAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -114,13 +115,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper function to check if user is an admin
+  const isAdmin = () => {
+    return user?.user_metadata?.role === 'admin';
+  };
+
   const value = {
     user,
     session,
     loading,
     signUp,
     signIn,
-    signOut
+    signOut,
+    isAdmin
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

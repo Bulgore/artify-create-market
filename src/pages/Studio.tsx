@@ -9,17 +9,20 @@ import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 
 const Studio = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if not logged in
   React.useEffect(() => {
     if (!user) {
       navigate("/auth");
+    } else if (isAdmin()) {
+      // Redirect admin to admin page
+      navigate("/admin");
     }
-  }, [user, navigate]);
+  }, [user, navigate, isAdmin]);
   
-  if (!user) {
+  if (!user || isAdmin()) {
     return null; // Don't render anything while redirecting
   }
 
