@@ -10,6 +10,8 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const userRole = user?.user_metadata?.role || "creator";
 
   return (
     <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
@@ -65,7 +67,7 @@ const Navbar = () => {
               onClick={() => navigate("/studio")}
               className="hidden sm:inline-flex bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
             >
-              Mon Studio
+              {userRole === "printer" ? "Mon Dashboard" : "Mon Studio"}
             </Button>
             <Button 
               className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"

@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Adresse email invalide" }),
@@ -20,6 +22,9 @@ const loginSchema = z.object({
 const registerSchema = loginSchema.extend({
   fullName: z.string().min(2, { message: "Le nom doit contenir au moins 2 caractères" }),
   confirmPassword: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
+  role: z.enum(["creator", "printer"], {
+    required_error: "Veuillez sélectionner un rôle",
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
@@ -32,6 +37,8 @@ const Auth: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const defaultTab = new URLSearchParams(location.search).get("tab") || "login";
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -48,6 +55,7 @@ const Auth: React.FC = () => {
       fullName: "",
       password: "",
       confirmPassword: "",
+      role: "creator",
     },
   });
 
@@ -56,6 +64,10 @@ const Auth: React.FC = () => {
     try {
       await signIn(data.email, data.password);
       navigate("/");
+      toast({
+        title: "Connexion réussie",
+        description: "Bienvenue sur Podsleek!",
+      });
     } catch (error) {
       console.error(error);
     } finally {
@@ -66,7 +78,11 @@ const Auth: React.FC = () => {
   const onRegisterSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      await signUp(data.email, data.password, data.fullName);
+      await signUp(data.email, data.password, data.fullName, data.role);
+      toast({
+        title: "Inscription réussie",
+        description: "Veuillez vérifier votre email pour confirmer votre compte.",
+      });
       // Stay on auth page after signup, user needs to verify email
     } catch (error) {
       console.error(error);
@@ -80,13 +96,13 @@ const Auth: React.FC = () => {
       <div className="w-full max-w-md px-4">
         <Card className="w-full">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Bienvenue sur Artify</CardTitle>
+            <CardTitle className="text-2xl font-bold">Bienvenue sur Podsleek</CardTitle>
             <CardDescription>
               Connectez-vous à votre compte ou créez-en un nouveau
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs defaultValue={defaultTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Connexion</TabsTrigger>
                 <TabsTrigger value="register">Inscription</TabsTrigger>
@@ -152,6 +168,36 @@ const Auth: React.FC = () => {
                           <FormLabel>Email</FormLabel>
                           <FormControl>
                             <Input placeholder="exemple@email.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>Type de compte</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex gap-6"
+                            >
+                              <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="creator" />
+                                </FormControl>
+                                <FormLabel className="font-normal cursor-pointer">Créateur</FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="printer" />
+                                </FormControl>
+                                <FormLabel className="font-normal cursor-pointer">Imprimeur</FormLabel>
+                              </FormItem>
+                            </RadioGroup>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
