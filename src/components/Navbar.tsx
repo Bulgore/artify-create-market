@@ -12,6 +12,7 @@ const Navbar = () => {
   const location = useLocation();
   
   const userRole = user?.user_metadata?.role || "creator";
+  const isAdminUser = isAdmin();
 
   return (
     <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
@@ -64,15 +65,17 @@ const Navbar = () => {
               Mon Profil
             </Button>
             
-            {isAdmin() ? (
+            {isAdminUser && (
               <Button
                 onClick={() => navigate("/admin")}
-                className="hidden sm:inline-flex bg-red-600 hover:bg-red-700 text-white"
+                className="bg-red-600 hover:bg-red-700 text-white"
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Administration
               </Button>
-            ) : (
+            )}
+            
+            {!isAdminUser && (
               <Button 
                 onClick={() => navigate("/studio")}
                 className="hidden sm:inline-flex bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"

@@ -22,8 +22,13 @@ const Studio = () => {
     }
   }, [user, navigate, isAdmin]);
   
-  if (!user || isAdmin()) {
+  if (!user) {
     return null; // Don't render anything while redirecting
+  }
+
+  // If user is admin, we'll redirect in the useEffect
+  if (isAdmin()) {
+    return null;
   }
 
   return (
