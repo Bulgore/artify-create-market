@@ -1,10 +1,7 @@
+
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash, RefreshCw, Save } from "lucide-react";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { 
   Card, 
   CardContent,
@@ -12,8 +9,10 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import PageEditor from "@/components/PageEditor";
 import { PageData } from "@/types/pages";
+import PagesList from "./pages/PagesList";
+import PageEditorForm from "./pages/PageEditorForm";
+import { fetchAllPages, createPage, updatePage, deletePage } from "@/services/pagesService";
 
 const PagesManagement = () => {
   const { toast } = useToast();
@@ -31,9 +30,7 @@ const PagesManagement = () => {
   const fetchPages = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('pages')
-        .select('*') as { data: PageData[] | null; error: any };
+      const { data, error } = await fetchAllPages();
       
       if (error) {
         console.error("Error fetching pages:", error);
@@ -71,14 +68,7 @@ const PagesManagement = () => {
     try {
       if (selectedPage) {
         // Update existing page
-        const { error } = await supabase
-          .from('pages')
-          .update({ 
-            title: pageTitle,
-            content: pageContent,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', selectedPage.id);
+        const { error } = await updatePage(selectedPage.id, pageTitle, pageContent);
 
         if (error) throw error;
 
@@ -88,12 +78,7 @@ const PagesManagement = () => {
         });
       } else {
         // Create new page
-        const { error } = await supabase
-          .from('pages')
-          .insert({ 
-            title: pageTitle,
-            content: pageContent,
-          });
+        const { error } = await createPage(pageTitle, pageContent);
 
         if (error) throw error;
 
@@ -116,12 +101,9 @@ const PagesManagement = () => {
     }
   };
 
-  const deletePage = async (pageId: string) => {
+  const handleDeletePage = async (pageId: string) => {
     try {
-      const { error } = await supabase
-        .from('pages')
-        .delete()
-        .eq('id', pageId);
+      const { error } = await deletePage(pageId);
       
       if (error) throw error;
 
@@ -144,38 +126,15 @@ const PagesManagement = () => {
 
   if (editingPage) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>{selectedPage ? "Modifier la Page" : "Nouvelle Page"}</CardTitle>
-              <CardDescription>
-                {selectedPage ? "Modifier le contenu de cette page" : "Créer une nouvelle page"}
-              </CardDescription>
-            </div>
-            <div className="space-x-2">
-              <Button onClick={() => setEditingPage(false)} variant="outline">
-                Annuler
-              </Button>
-              <Button onClick={savePage} className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white">
-                <Save className="h-4 w-4 mr-2" />
-                Enregistrer
-              </Button>
-            </div>
-          </div>
-          <div className="mt-4">
-            <Input
-              placeholder="Titre de la page"
-              value={pageTitle}
-              onChange={(e) => setPageTitle(e.target.value)}
-              className="mb-4"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <PageEditor content={pageContent} setContent={setPageContent} />
-        </CardContent>
-      </Card>
+      <PageEditorForm
+        selectedPage={selectedPage}
+        pageTitle={pageTitle}
+        pageContent={pageContent}
+        setPageTitle={setPageTitle}
+        setPageContent={setPageContent}
+        onSave={savePage}
+        onCancel={() => setEditingPage(false)}
+      />
     );
   }
 
@@ -198,60 +157,12 @@ const PagesManagement = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Titre</TableHead>
-                <TableHead>Dernière mise à jour</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-10">
-                    <RefreshCw className="h-6 w-6 animate-spin mx-auto text-gray-400" />
-                  </TableCell>
-                </TableRow>
-              ) : pages.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-10 text-gray-500">
-                    Aucune page trouvée. Créez votre première page !
-                  </TableCell>
-                </TableRow>
-              ) : (
-                pages.map((page) => (
-                  <TableRow key={page.id}>
-                    <TableCell className="font-medium">{page.title}</TableCell>
-                    <TableCell>
-                      {new Date(page.updated_at).toLocaleDateString()} {new Date(page.updated_at).toLocaleTimeString()}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => selectPageForEditing(page)}
-                        title="Modifier"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => deletePage(page.id)}
-                        title="Supprimer"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <PagesList 
+          pages={pages} 
+          isLoading={isLoading}
+          onEdit={selectPageForEditing}
+          onDelete={handleDeletePage}
+        />
       </CardContent>
     </Card>
   );
