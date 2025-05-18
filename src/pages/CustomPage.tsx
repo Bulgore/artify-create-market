@@ -7,14 +7,7 @@ import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw } from "lucide-react";
-
-interface PageData {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
+import { PageData } from "@/types/pages";
 
 const CustomPage = () => {
   const { pageTitle } = useParams<{ pageTitle: string }>();
@@ -32,14 +25,14 @@ const CustomPage = () => {
           .from('pages')
           .select('*')
           .eq('title', pageTitle)
-          .single();
+          .single() as { data: PageData | null; error: any };
 
         if (error) {
           throw error;
         }
 
         if (data) {
-          setPageData(data as PageData);
+          setPageData(data);
           setPageContent(data.content);
         } else {
           // Page not found

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,12 +13,13 @@ import {
   CardDescription
 } from "@/components/ui/card";
 import PageEditor from "@/components/PageEditor";
+import { PageData } from "@/types/pages";
 
 const PagesManagement = () => {
   const { toast } = useToast();
-  const [pages, setPages] = useState<any[]>([]);
+  const [pages, setPages] = useState<PageData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedPage, setSelectedPage] = useState<any>(null);
+  const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
   const [pageContent, setPageContent] = useState<string>("");
   const [pageTitle, setPageTitle] = useState<string>("");
   const [editingPage, setEditingPage] = useState(false);
@@ -31,34 +31,17 @@ const PagesManagement = () => {
   const fetchPages = async () => {
     setIsLoading(true);
     try {
-      // Create SQL for pages table
-      /*
-      CREATE TABLE IF NOT EXISTS public.pages (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        title TEXT NOT NULL UNIQUE,
-        content TEXT NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-      );
-      */
-      
       const { data, error } = await supabase
         .from('pages')
-        .select('*')
-        .order('title', { ascending: true });
+        .select('*') as { data: PageData[] | null; error: any };
       
       if (error) {
         console.error("Error fetching pages:", error);
-        // If table doesn't exist yet, return empty array
-        if (error.code === "42P01") { // relation does not exist
-          setPages([]);
-          return;
-        }
         throw error;
       }
       
       setPages(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur lors de la récupération des pages:", error);
       toast({
         variant: "destructive",
@@ -70,7 +53,7 @@ const PagesManagement = () => {
     }
   };
 
-  const selectPageForEditing = (page: any) => {
+  const selectPageForEditing = (page: PageData) => {
     setSelectedPage(page);
     setPageTitle(page.title);
     setPageContent(page.content);
@@ -110,8 +93,6 @@ const PagesManagement = () => {
           .insert({ 
             title: pageTitle,
             content: pageContent,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
           });
 
         if (error) throw error;
