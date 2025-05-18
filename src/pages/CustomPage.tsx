@@ -8,10 +8,18 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw } from "lucide-react";
 
+interface PageData {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const CustomPage = () => {
   const { pageTitle } = useParams<{ pageTitle: string }>();
   const [pageContent, setPageContent] = useState<string>("");
-  const [pageData, setPageData] = useState<any>(null);
+  const [pageData, setPageData] = useState<PageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -31,7 +39,7 @@ const CustomPage = () => {
         }
 
         if (data) {
-          setPageData(data);
+          setPageData(data as PageData);
           setPageContent(data.content);
         } else {
           // Page not found
