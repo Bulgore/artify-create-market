@@ -89,6 +89,16 @@ export const fetchUserOrders = async (userId: string): Promise<any[]> => {
 
 // Récupération des commandes à traiter par un imprimeur
 export const fetchPrinterOrders = async (printerId: string): Promise<any[]> => {
+  // Fix: Don't use .in() with a query, use .in() with an array of values
+  const { data: templateIds, error: templateError } = await supabase
+    .from('tshirt_templates')
+    .select('id')
+    .eq('printer_id', printerId);
+    
+  if (templateError || !templateIds) return [];
+  
+  const templateIdArray = templateIds.map(t => t.id);
+  
   const { data, error } = await supabase
     .from('orders')
     .select(`
@@ -97,11 +107,7 @@ export const fetchPrinterOrders = async (printerId: string): Promise<any[]> => {
       tshirt_templates:template_id (name)
     `)
     .eq('status', 'paid')
-    .in('template_id', supabase
-      .from('tshirt_templates')
-      .select('id')
-      .eq('printer_id', printerId)
-    )
+    .in('template_id', templateIdArray)
     .order('created_at', { ascending: false });
   
   if (error || !data) return [];
