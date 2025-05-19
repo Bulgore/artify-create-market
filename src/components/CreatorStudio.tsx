@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import PriceCalculator from "./PriceCalculator";
 
 interface TemplateType {
   id: string;
@@ -23,12 +24,20 @@ const CreatorStudio: React.FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [templates, setTemplates] = useState<TemplateType[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [designName, setDesignName] = useState<string>("");
+  const [designDescription, setDesignDescription] = useState<string>("");
+  const [designPrice, setDesignPrice] = useState<number>(10);
+  const [designMargin, setDesignMargin] = useState<number>(5);
   const [isLoading, setIsLoading] = useState(false);
+  const [userDesigns, setUserDesigns] = useState<any[]>([]);
   
   // Fetch available templates on component mount
   useEffect(() => {
     fetchTemplates();
-  }, []);
+    if (user) {
+      fetchUserDesigns();
+    }
+  }, [user]);
 
   const fetchTemplates = async () => {
     try {
@@ -55,6 +64,20 @@ const CreatorStudio: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const fetchUserDesigns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('designs')
+        .select('*')
+        .eq('creator_id', user?.id);
+      
+      if (error) throw error;
+      setUserDesigns(data || []);
+    } catch (error) {
+      console.error("Error fetching user designs:", error);
+    }
+  };
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -71,13 +94,79 @@ const CreatorStudio: React.FC = () => {
     }
   };
   
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Here we would implement the logic to upload the design to Supabase
-    toast({
-      title: "Design sauvegardé",
-      description: "Votre design a été sauvegardé avec succès."
-    });
+    
+    if (!selectedTemplate || !selectedFile || !user) {
+      toast({
+        variant: "destructive",
+        title: "Formulaire incomplet",
+        description: "Veuillez remplir tous les champs obligatoires."
+      });
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // Upload image to storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `designs/${user.id}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('designs')
+        .upload(filePath, selectedFile);
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('designs')
+        .getPublicUrl(filePath);
+      
+      // Create design
+      const { error: designError } = await supabase
+        .from('designs')
+        .insert({
+          name: designName,
+          description: designDescription,
+          creator_id: user.id,
+          price: designPrice,
+          creator_margin: designMargin,
+          preview_url: publicUrlData.publicUrl,
+          canvas_data: JSON.stringify({ type: 'basic', image: publicUrlData.publicUrl }),
+          is_published: false
+        });
+      
+      if (designError) throw designError;
+      
+      toast({
+        title: "Design sauvegardé",
+        description: "Votre design a été sauvegardé avec succès."
+      });
+      
+      // Reset form
+      setDesignName("");
+      setDesignDescription("");
+      setDesignPrice(10);
+      setDesignMargin(5);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      
+      // Refresh designs
+      fetchUserDesigns();
+      
+    } catch (error: any) {
+      console.error("Error saving design:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'enregistrement du design."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const selectedTemplateData = selectedTemplate ? 
@@ -107,7 +196,13 @@ const CreatorStudio: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="designName">Nom du design</Label>
-                    <Input id="designName" placeholder="Mon super design" />
+                    <Input 
+                      id="designName" 
+                      placeholder="Mon super design" 
+                      value={designName}
+                      onChange={(e) => setDesignName(e.target.value)}
+                      required
+                    />
                   </div>
                   
                   <div className="space-y-2">
@@ -116,6 +211,8 @@ const CreatorStudio: React.FC = () => {
                       id="designDescription" 
                       placeholder="Décrivez votre design et son inspiration" 
                       className="min-h-[100px]"
+                      value={designDescription}
+                      onChange={(e) => setDesignDescription(e.target.value)}
                     />
                   </div>
                   
@@ -161,6 +258,7 @@ const CreatorStudio: React.FC = () => {
                         accept="image/*" 
                         className="hidden" 
                         onChange={handleFileChange}
+                        required
                       />
                       {previewUrl ? (
                         <div className="space-y-4 w-full">
@@ -206,17 +304,20 @@ const CreatorStudio: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="designPrice">Prix du design (€)</Label>
-                    <Input id="designPrice" type="number" min="0" step="0.01" placeholder="9.99" />
-                  </div>
+                  {selectedTemplateData && (
+                    <PriceCalculator 
+                      basePrice={selectedTemplateData.base_price}
+                      margin={designMargin}
+                      onMarginChange={setDesignMargin}
+                    />
+                  )}
                   
                   <Button 
                     type="submit" 
                     className="bg-[#33C3F0] hover:bg-[#0FA0CE] w-full"
-                    disabled={!selectedFile || !selectedTemplate}
+                    disabled={!selectedFile || !selectedTemplate || isLoading}
                   >
-                    Télécharger et créer
+                    {isLoading ? "Envoi en cours..." : "Télécharger et créer"}
                   </Button>
                 </form>
               </CardContent>
@@ -273,15 +374,94 @@ const CreatorStudio: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-500">
-                <p>Vous n'avez pas encore téléchargé de designs.</p>
-                <Button 
-                  className="mt-4 bg-[#33C3F0] hover:bg-[#0FA0CE]"
-                  onClick={() => document.querySelector('[data-value="newDesign"]')?.dispatchEvent(new MouseEvent('click'))}
-                >
-                  Créer mon premier design
-                </Button>
-              </div>
+              {userDesigns.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userDesigns.map(design => (
+                    <Card key={design.id} className="overflow-hidden">
+                      <div className="h-48 overflow-hidden">
+                        <img 
+                          src={design.preview_url || "/placeholder.svg"} 
+                          alt={design.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="text-lg font-medium mb-1">{design.name}</h3>
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">{design.description}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-[#33C3F0]">
+                            Marge: {design.creator_margin}€
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            design.is_published 
+                              ? "bg-green-100 text-green-700" 
+                              : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {design.is_published ? "Publié" : "Brouillon"}
+                          </span>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="p-4 pt-0 flex justify-between gap-2">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => {
+                            // Edit functionality would go here
+                            toast({
+                              title: "Fonction à venir",
+                              description: "L'édition de designs sera bientôt disponible."
+                            });
+                          }}
+                        >
+                          Modifier
+                        </Button>
+                        <Button 
+                          variant={design.is_published ? "outline" : "default"}
+                          className={design.is_published ? "flex-1" : "flex-1 bg-[#33C3F0] hover:bg-[#0FA0CE]"}
+                          onClick={async () => {
+                            try {
+                              const { error } = await supabase
+                                .from('designs')
+                                .update({ is_published: !design.is_published })
+                                .eq('id', design.id);
+                              
+                              if (error) throw error;
+                              
+                              toast({
+                                title: design.is_published ? "Design retiré" : "Design publié",
+                                description: design.is_published 
+                                  ? "Votre design a été retiré de la boutique" 
+                                  : "Votre design est maintenant disponible dans la boutique"
+                              });
+                              
+                              fetchUserDesigns();
+                            } catch (error) {
+                              console.error("Error updating design status:", error);
+                              toast({
+                                variant: "destructive",
+                                title: "Erreur",
+                                description: "Une erreur est survenue lors de la mise à jour du design."
+                              });
+                            }
+                          }}
+                        >
+                          {design.is_published ? "Retirer" : "Publier"}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <p>Vous n'avez pas encore téléchargé de designs.</p>
+                  <Button 
+                    className="mt-4 bg-[#33C3F0] hover:bg-[#0FA0CE]"
+                    onClick={() => document.querySelector('[data-value="newDesign"]')?.dispatchEvent(new MouseEvent('click'))}
+                  >
+                    Créer mon premier design
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

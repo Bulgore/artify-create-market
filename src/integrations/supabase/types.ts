@@ -14,6 +14,7 @@ export type Database = {
           canvas_data: string
           created_at: string | null
           creator_id: string | null
+          creator_margin: number | null
           description: string | null
           id: string
           is_published: boolean | null
@@ -26,6 +27,7 @@ export type Database = {
           canvas_data: string
           created_at?: string | null
           creator_id?: string | null
+          creator_margin?: number | null
           description?: string | null
           id?: string
           is_published?: boolean | null
@@ -38,6 +40,7 @@ export type Database = {
           canvas_data?: string
           created_at?: string | null
           creator_id?: string | null
+          creator_margin?: number | null
           description?: string | null
           id?: string
           is_published?: boolean | null
@@ -103,6 +106,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "designs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "product_pricing"
+            referencedColumns: ["design_id"]
+          },
+          {
+            foreignKeyName: "orders_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_pricing"
+            referencedColumns: ["template_id"]
           },
           {
             foreignKeyName: "orders_template_id_fkey"
@@ -178,6 +195,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reviews_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "product_pricing"
+            referencedColumns: ["design_id"]
+          },
+          {
             foreignKeyName: "reviews_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -185,6 +209,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscriptions: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          start_date: string
+          stripe_subscription_id: string | null
+          subscription_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          commission_rate: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          start_date?: string
+          stripe_subscription_id?: string | null
+          subscription_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          start_date?: string
+          stripe_subscription_id?: string | null
+          subscription_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       tshirt_templates: {
         Row: {
@@ -243,6 +306,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          default_commission: number | null
           full_name: string | null
           id: string
           role: string
@@ -251,6 +315,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          default_commission?: number | null
           full_name?: string | null
           id: string
           role: string
@@ -259,6 +324,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          default_commission?: number | null
           full_name?: string | null
           id?: string
           role?: string
@@ -268,10 +334,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      product_pricing: {
+        Row: {
+          base_price: number | null
+          commission_rate: number | null
+          creator_id: string | null
+          creator_margin: number | null
+          design_id: string | null
+          design_name: string | null
+          design_price: number | null
+          final_price: number | null
+          subtotal: number | null
+          template_id: string | null
+          template_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "designs_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      calculate_earnings: {
+        Args: { order_id: string }
+        Returns: {
+          creator_id: string
+          printer_id: string
+          creator_earnings: number
+          printer_earnings: number
+          platform_earnings: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
