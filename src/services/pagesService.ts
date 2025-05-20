@@ -15,15 +15,17 @@ export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error:
 };
 
 export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | null; error: any }> => {
-  // Use explicit typing to avoid deep instantiation issues
+  // Avoid deep instantiation by not using destructuring and type casting properly
   const response = await supabase
     .from('pages')
     .select('*')
     .eq('slug', slug)
     .single();
   
+  const typedData = response.data as PageData | null;
+  
   return {
-    data: response.data as PageData | null,
+    data: typedData,
     error: response.error
   };
 };
