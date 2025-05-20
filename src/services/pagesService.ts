@@ -15,15 +15,16 @@ export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error:
 };
 
 export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | null; error: any }> => {
-  const { data, error } = await supabase
+  // Use explicit typing to avoid deep instantiation issues
+  const response = await supabase
     .from('pages')
     .select('*')
     .eq('slug', slug)
     .single();
   
   return {
-    data: data as PageData | null,
-    error: error
+    data: response.data as PageData | null,
+    error: response.error
   };
 };
 
