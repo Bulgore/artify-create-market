@@ -15,18 +15,24 @@ export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error:
 };
 
 export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | null; error: any }> => {
-  // Explicitly define the response type without destructuring to avoid deep instantiation
+  // Utilisons une approche différente pour éviter l'erreur d'instanciation profonde
   const response = await supabase
     .from('pages')
     .select('*')
     .eq('slug', slug)
     .single();
   
-  // Manually construct the return object with explicit casting
-  return {
-    data: response.data as PageData | null,
+  // Construire manuellement l'objet de retour avec un typage explicite
+  const result: { data: PageData | null; error: any } = {
+    data: null,
     error: response.error
   };
+  
+  if (response.data) {
+    result.data = response.data as PageData;
+  }
+  
+  return result;
 };
 
 export const createPage = async (title: string, content: string, slug: string): Promise<{ error: any }> => {

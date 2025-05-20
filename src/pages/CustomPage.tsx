@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw } from "lucide-react";
 import { PageData } from "@/types/pages";
+import { fetchPageBySlug } from "@/services/pagesService";
 
 const CustomPage = () => {
   const { pageTitle } = useParams<{ pageTitle: string }>();
@@ -21,11 +21,12 @@ const CustomPage = () => {
     const fetchPage = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('pages')
-          .select('*')
-          .eq('title', pageTitle)
-          .single() as { data: PageData | null; error: any };
+        if (!pageTitle) {
+          throw new Error("Titre de page non défini");
+        }
+        
+        const slug = pageTitle.toLowerCase().replace(/\s+/g, '-');
+        const { data, error } = await fetchPageBySlug(slug);
 
         if (error) {
           throw error;
