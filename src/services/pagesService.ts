@@ -15,24 +15,18 @@ export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error:
 };
 
 export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | null; error: any }> => {
-  // Utilisons une approche différente pour éviter l'erreur d'instanciation profonde
-  const response = await supabase
+  // Approche simplifiée pour éviter l'erreur d'instanciation profonde
+  const { data, error } = await supabase
     .from('pages')
     .select('*')
     .eq('slug', slug)
     .single();
   
-  // Construire manuellement l'objet de retour avec un typage explicite
-  const result: { data: PageData | null; error: any } = {
-    data: null,
-    error: response.error
+  // Retour typé explicitement sans structure intermédiaire
+  return {
+    data: (data as PageData) || null,
+    error
   };
-  
-  if (response.data) {
-    result.data = response.data as PageData;
-  }
-  
-  return result;
 };
 
 export const createPage = async (title: string, content: string, slug: string): Promise<{ error: any }> => {
