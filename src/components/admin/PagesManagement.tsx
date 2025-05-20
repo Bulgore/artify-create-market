@@ -13,6 +13,8 @@ import { PageData } from "@/types/pages";
 import PagesList from "./pages/PagesList";
 import PageEditorForm from "./pages/PageEditorForm";
 import { fetchAllPages, createPage, updatePage, deletePage } from "@/services/pagesService";
+import NavigationEditor from "./pages/NavigationEditor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const PagesManagement = () => {
   const { toast } = useToast();
@@ -22,6 +24,7 @@ const PagesManagement = () => {
   const [pageContent, setPageContent] = useState<string>("");
   const [pageTitle, setPageTitle] = useState<string>("");
   const [editingPage, setEditingPage] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("pages");
 
   useEffect(() => {
     fetchPages();
@@ -67,8 +70,13 @@ const PagesManagement = () => {
   const savePage = async () => {
     try {
       if (selectedPage) {
-        // Update existing page
-        const { error } = await updatePage(selectedPage.id, pageTitle, pageContent);
+        // Mise à jour d'une page existante
+        const { error } = await updatePage(
+          selectedPage.id, 
+          pageTitle, 
+          pageContent, 
+          selectedPage.slug || pageTitle.toLowerCase().replace(/\s+/g, '-')
+        );
 
         if (error) throw error;
 
@@ -77,8 +85,9 @@ const PagesManagement = () => {
           description: "La page a été mise à jour avec succès.",
         });
       } else {
-        // Create new page
-        const { error } = await createPage(pageTitle, pageContent);
+        // Création d'une nouvelle page
+        const slug = pageTitle.toLowerCase().replace(/\s+/g, '-');
+        const { error } = await createPage(pageTitle, pageContent, slug);
 
         if (error) throw error;
 
@@ -88,7 +97,7 @@ const PagesManagement = () => {
         });
       }
 
-      // Refresh pages list and exit editing mode
+      // Rafraîchir la liste des pages et quitter le mode d'édition
       fetchPages();
       setEditingPage(false);
     } catch (error: any) {
@@ -112,7 +121,7 @@ const PagesManagement = () => {
         description: "La page a été supprimée avec succès.",
       });
 
-      // Refresh pages list
+      // Rafraîchir la liste des pages
       fetchPages();
     } catch (error: any) {
       console.error("Erreur lors de la suppression de la page:", error);
@@ -143,26 +152,40 @@ const PagesManagement = () => {
       <CardHeader>
         <div className="flex flex-col md:flex-row justify-between md:items-center">
           <div>
-            <CardTitle>Gestion des Pages</CardTitle>
-            <CardDescription>Modifiez ou créez des pages pour votre site</CardDescription>
-          </div>
-          <div className="mt-4 md:mt-0">
-            <Button 
-              onClick={createNewPage}
-              className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
-            >
-              Nouvelle Page
-            </Button>
+            <CardTitle>Gestion des Pages et Navigation</CardTitle>
+            <CardDescription>Modifiez ou créez des pages pour votre site et configurez la navigation</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <PagesList 
-          pages={pages} 
-          isLoading={isLoading}
-          onEdit={selectPageForEditing}
-          onDelete={handleDeletePage}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="pages">Pages</TabsTrigger>
+            <TabsTrigger value="navigation">Navigation</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="pages" className="space-y-4">
+            <div className="flex justify-end mb-4">
+              <Button 
+                onClick={createNewPage}
+                className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
+              >
+                Nouvelle Page
+              </Button>
+            </div>
+            
+            <PagesList 
+              pages={pages} 
+              isLoading={isLoading}
+              onEdit={selectPageForEditing}
+              onDelete={handleDeletePage}
+            />
+          </TabsContent>
+          
+          <TabsContent value="navigation">
+            <NavigationEditor pages={pages} />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

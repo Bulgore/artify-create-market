@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Save } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,16 @@ const PageEditorForm: React.FC<PageEditorFormProps> = ({
   onSave,
   onCancel,
 }) => {
+  const [pageSlug, setPageSlug] = useState<string>(selectedPage?.slug || '');
+  
+  // Générer un slug automatique basé sur le titre
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPageTitle(e.target.value);
+    if (!selectedPage || !pageSlug) {
+      setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'));
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -52,13 +62,36 @@ const PageEditorForm: React.FC<PageEditorFormProps> = ({
             </Button>
           </div>
         </div>
-        <div className="mt-4">
-          <Input
-            placeholder="Titre de la page"
-            value={pageTitle}
-            onChange={(e) => setPageTitle(e.target.value)}
-            className="mb-4"
-          />
+        <div className="mt-4 space-y-4">
+          <div>
+            <label htmlFor="page-title" className="text-sm font-medium">
+              Titre de la page
+            </label>
+            <Input
+              id="page-title"
+              placeholder="Titre de la page"
+              value={pageTitle}
+              onChange={handleTitleChange}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label htmlFor="page-slug" className="text-sm font-medium">
+              URL de la page
+            </label>
+            <div className="flex items-center mt-1">
+              <span className="text-sm text-gray-500 mr-1">/page/</span>
+              <Input
+                id="page-slug"
+                placeholder="url-de-la-page"
+                value={pageSlug}
+                onChange={(e) => setPageSlug(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Cette URL sera utilisée pour accéder à la page: /page/{pageSlug || 'nom-de-la-page'}
+            </p>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

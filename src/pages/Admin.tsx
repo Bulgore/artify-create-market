@@ -5,15 +5,8 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-
-// Import admin panel components
-import UsersManagement from "@/components/admin/UsersManagement";
-import ProductsManagement from "@/components/admin/ProductsManagement";
-import DesignsManagement from "@/components/admin/DesignsManagement";
-import PagesManagement from "@/components/admin/PagesManagement";
-import SiteSettings from "@/components/admin/SiteSettings";
+import AdminTabs from "@/components/admin/AdminTabs";
 
 const Admin = () => {
   const { user, isAdmin } = useAuth();
@@ -52,35 +45,7 @@ const Admin = () => {
           <p className="text-gray-600 mt-2">Gérez tous les aspects de la plateforme Podsleek</p>
         </header>
         
-        <Tabs defaultValue="users" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="users">Utilisateurs</TabsTrigger>
-            <TabsTrigger value="products">Produits</TabsTrigger>
-            <TabsTrigger value="designs">Designs</TabsTrigger>
-            <TabsTrigger value="pages">Pages du Site</TabsTrigger>
-            <TabsTrigger value="settings">Paramètres</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="users">
-            <UsersManagement />
-          </TabsContent>
-          
-          <TabsContent value="products">
-            <ProductsManagement />
-          </TabsContent>
-          
-          <TabsContent value="designs">
-            <DesignsManagement />
-          </TabsContent>
-          
-          <TabsContent value="pages">
-            <PagesManagement />
-          </TabsContent>
-          
-          <TabsContent value="settings">
-            <SiteSettings />
-          </TabsContent>
-        </Tabs>
+        <AdminTabs />
       </motion.div>
       <Footer />
     </div>

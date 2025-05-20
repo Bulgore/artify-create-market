@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Edit, Trash, RefreshCw } from "lucide-react";
+import { Edit, Trash, RefreshCw, Link } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PageData } from "@/types/pages";
@@ -24,6 +24,7 @@ const PagesList: React.FC<PagesListProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead>Titre</TableHead>
+            <TableHead>URL</TableHead>
             <TableHead>Dernière mise à jour</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -31,13 +32,13 @@ const PagesList: React.FC<PagesListProps> = ({
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={3} className="text-center py-10">
+              <TableCell colSpan={4} className="text-center py-10">
                 <RefreshCw className="h-6 w-6 animate-spin mx-auto text-gray-400" />
               </TableCell>
             </TableRow>
           ) : pages.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={3} className="text-center py-10 text-gray-500">
+              <TableCell colSpan={4} className="text-center py-10 text-gray-500">
                 Aucune page trouvée. Créez votre première page !
               </TableCell>
             </TableRow>
@@ -45,6 +46,17 @@ const PagesList: React.FC<PagesListProps> = ({
             pages.map((page) => (
               <TableRow key={page.id}>
                 <TableCell className="font-medium">{page.title}</TableCell>
+                <TableCell>
+                  <a 
+                    href={`/page/${page.slug || page.id}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center text-blue-600 hover:text-blue-800"
+                  >
+                    /page/{page.slug || page.id}
+                    <Link className="ml-1 h-3 w-3" />
+                  </a>
+                </TableCell>
                 <TableCell>
                   {new Date(page.updated_at).toLocaleDateString()} {new Date(page.updated_at).toLocaleTimeString()}
                 </TableCell>
