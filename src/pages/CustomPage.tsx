@@ -6,8 +6,8 @@ import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw } from "lucide-react";
-import { PageData } from "@/types/pages";
 import { fetchPageBySlug } from "@/services/pagesService";
+import { PageData } from "@/types/pages";
 
 const CustomPage = () => {
   const { pageTitle } = useParams<{ pageTitle: string }>();
@@ -26,17 +26,21 @@ const CustomPage = () => {
         }
         
         const slug = pageTitle.toLowerCase().replace(/\s+/g, '-');
+        console.log(`Chargement de la page avec le slug: ${slug}`);
+        
         const { data, error } = await fetchPageBySlug(slug);
 
         if (error) {
+          console.error("Erreur Supabase:", error);
           throw error;
         }
 
         if (data) {
+          console.log("Données de page reçues:", data);
           setPageData(data);
           setPageContent(data.content);
         } else {
-          // Page not found
+          console.log("Page non trouvée avec le slug:", slug);
           navigate('/404');
         }
       } catch (error) {
@@ -79,6 +83,7 @@ const CustomPage = () => {
         className="container mx-auto px-6 py-12"
       >
         <article className="prose mx-auto">
+          {pageData && <h1 className="text-3xl font-bold mb-6">{pageData.title}</h1>}
           <div dangerouslySetInnerHTML={{ __html: pageContent }} />
         </article>
       </motion.div>

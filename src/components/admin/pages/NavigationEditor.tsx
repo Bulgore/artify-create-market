@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,10 @@ const NavigationEditor: React.FC<NavigationEditorProps> = ({ pages }) => {
     if (savedFooter.length > 0) {
       setFooterNav(savedFooter);
     }
-  }, []);
+    
+    // Log pour debug
+    console.log("Pages disponibles:", pages);
+  }, [pages]);
 
   const handleSaveNavigation = async () => {
     try {

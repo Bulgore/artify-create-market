@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Save } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,12 @@ const PageEditorForm: React.FC<PageEditorFormProps> = ({
   onCancel,
 }) => {
   const [pageSlug, setPageSlug] = useState<string>(selectedPage?.slug || '');
+  
+  useEffect(() => {
+    if (selectedPage?.slug) {
+      setPageSlug(selectedPage.slug);
+    }
+  }, [selectedPage]);
   
   // Générer un slug automatique basé sur le titre
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

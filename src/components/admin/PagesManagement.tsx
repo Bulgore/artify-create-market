@@ -23,23 +23,26 @@ const PagesManagement = () => {
   const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
   const [pageContent, setPageContent] = useState<string>("");
   const [pageTitle, setPageTitle] = useState<string>("");
+  const [pageSlug, setPageSlug] = useState<string>("");
   const [editingPage, setEditingPage] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("pages");
-
+  
   useEffect(() => {
     fetchPages();
   }, []);
-
+  
   const fetchPages = async () => {
     setIsLoading(true);
     try {
+      console.log("Récupération des pages...");
       const { data, error } = await fetchAllPages();
       
       if (error) {
-        console.error("Error fetching pages:", error);
+        console.error("Erreur lors de la récupération des pages:", error);
         throw error;
       }
       
+      console.log("Pages récupérées:", data);
       setPages(data || []);
     } catch (error: any) {
       console.error("Erreur lors de la récupération des pages:", error);
@@ -57,6 +60,7 @@ const PagesManagement = () => {
     setSelectedPage(page);
     setPageTitle(page.title);
     setPageContent(page.content);
+    setPageSlug(page.slug || '');
     setEditingPage(true);
   };
 
@@ -64,18 +68,30 @@ const PagesManagement = () => {
     setSelectedPage(null);
     setPageTitle("");
     setPageContent("");
+    setPageSlug("");
     setEditingPage(true);
   };
 
   const savePage = async () => {
     try {
+      if (!pageTitle) {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Le titre de la page est obligatoire.",
+        });
+        return;
+      }
+      
+      const slug = pageSlug || pageTitle.toLowerCase().replace(/\s+/g, '-');
+      
       if (selectedPage) {
         // Mise à jour d'une page existante
         const { error } = await updatePage(
           selectedPage.id, 
           pageTitle, 
-          pageContent, 
-          selectedPage.slug || pageTitle.toLowerCase().replace(/\s+/g, '-')
+          pageContent,
+          slug
         );
 
         if (error) throw error;
@@ -86,7 +102,6 @@ const PagesManagement = () => {
         });
       } else {
         // Création d'une nouvelle page
-        const slug = pageTitle.toLowerCase().replace(/\s+/g, '-');
         const { error } = await createPage(pageTitle, pageContent, slug);
 
         if (error) throw error;
@@ -98,7 +113,7 @@ const PagesManagement = () => {
       }
 
       // Rafraîchir la liste des pages et quitter le mode d'édition
-      fetchPages();
+      await fetchPages();
       setEditingPage(false);
     } catch (error: any) {
       console.error("Erreur lors de l'enregistrement de la page:", error);
