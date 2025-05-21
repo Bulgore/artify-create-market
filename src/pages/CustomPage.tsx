@@ -25,7 +25,8 @@ const CustomPage = () => {
           throw new Error("Titre de page non défini");
         }
         
-        const slug = pageTitle.toLowerCase().replace(/\s+/g, '-');
+        // Utiliser directement pageTitle qui est déjà le slug
+        const slug = pageTitle;
         console.log(`Chargement de la page avec le slug: ${slug}`);
         
         const { data, error } = await fetchPageBySlug(slug);
@@ -82,7 +83,7 @@ const CustomPage = () => {
         transition={{ duration: 0.5 }}
         className="container mx-auto px-6 py-12"
       >
-        <article className="prose mx-auto">
+        <article className="prose lg:prose-xl mx-auto">
           {pageData && <h1 className="text-3xl font-bold mb-6">{pageData.title}</h1>}
           <div dangerouslySetInnerHTML={{ __html: pageContent }} />
         </article>

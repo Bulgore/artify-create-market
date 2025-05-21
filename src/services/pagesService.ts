@@ -2,35 +2,59 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/pages";
 
+// Définir clairement l'interface pour le résultat de Supabase
+interface SupabasePage {
+  id: string;
+  title: string;
+  content: string;
+  slug: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error: any }> => {
   const { data, error } = await supabase
     .from('pages')
     .select('*')
     .order('title', { ascending: true });
     
+  // Transformation explicite pour éviter des problèmes de typage
+  const pagesData: PageData[] | null = data ? data.map((page: SupabasePage) => ({
+    id: page.id,
+    title: page.title,
+    content: page.content,
+    slug: page.slug || page.id.toLowerCase(), // Utiliser l'ID si le slug est vide
+    created_at: page.created_at,
+    updated_at: page.updated_at
+  })) : null;
+    
   return {
-    data: data as PageData[] | null,
+    data: pagesData,
     error
   };
 };
 
 export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | null; error: any }> => {
-  // Utilisation d'une approche directe pour éviter l'erreur d'instanciation profonde
+  // Requête simple à Supabase
   const { data, error } = await supabase
     .from('pages')
     .select('*')
     .eq('slug', slug)
     .single();
   
-  // Application d'un cast explicite pour éviter l'erreur de typage
-  const pageData: PageData | null = data ? {
-    id: data.id,
-    title: data.title,
-    content: data.content,
-    slug: data.slug || '',
-    created_at: data.created_at,
-    updated_at: data.updated_at
-  } : null;
+  // Transformation explicite du résultat avec gestion des valeurs nulles
+  let pageData: PageData | null = null;
+  
+  if (data) {
+    pageData = {
+      id: data.id,
+      title: data.title,
+      content: data.content,
+      slug: data.slug || data.id.toLowerCase(), // Utiliser l'ID comme slug par défaut
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  }
   
   return { data: pageData, error };
 };
