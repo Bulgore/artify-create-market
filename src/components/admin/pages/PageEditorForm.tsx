@@ -95,8 +95,8 @@ const PageEditorForm: React.FC<PageEditorFormProps> = ({
           <Label>Contenu de la page</Label>
           <div className="min-h-[400px] border rounded-md">
             <PageEditor 
-              initialContent={pageContent}
-              onChange={setPageContent}
+              content={pageContent}
+              setContent={setPageContent}
             />
           </div>
         </div>
