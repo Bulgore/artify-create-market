@@ -1,19 +1,19 @@
 
 import React from "react";
 import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
+import Footer from "@/components/Footer";
+import { motion } from "framer-motion";
+import BuilderComponent from "@/components/builder/BuilderComponent";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import FeaturedArtists from "@/components/FeaturedArtists";
 import CallToAction from "@/components/CallToAction";
-import Footer from "@/components/Footer";
-import { motion } from "framer-motion";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
-        <HeroSection />
+        <BuilderComponent model="homepage" />
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

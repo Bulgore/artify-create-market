@@ -19,6 +19,11 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Admin from "./pages/Admin";
 import CustomPage from "./pages/CustomPage";
+import BuilderPage from "./pages/BuilderPage";
+import { initBuilder } from "./integrations/builder-io/config";
+
+// Initialiser Builder.io
+initBuilder();
 
 const queryClient = new QueryClient();
 
@@ -43,6 +48,7 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/page/:pageTitle" element={<CustomPage />} />
+            <Route path="/builder-page/:contentPath?" element={<BuilderPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
