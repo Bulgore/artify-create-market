@@ -2,14 +2,26 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/pages";
 
-// Définir clairement l'interface pour le résultat de Supabase
-interface SupabasePage {
+// Define a separate interface for the raw database response
+interface SupabasePageRow {
   id: string;
   title: string;
   content: string;
   slug: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at: string | null;
+}
+
+// Convert database row to application model
+function mapToPageData(page: SupabasePageRow): PageData {
+  return {
+    id: page.id,
+    title: page.title,
+    content: page.content,
+    slug: page.slug || page.id.toLowerCase(),
+    created_at: page.created_at,
+    updated_at: page.updated_at || page.created_at
+  };
 }
 
 export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error: any }> => {
@@ -18,15 +30,8 @@ export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error:
     .select('*')
     .order('title', { ascending: true });
     
-  // Transformation explicite pour éviter des problèmes de typage
-  const pagesData: PageData[] | null = data ? data.map((page: SupabasePage) => ({
-    id: page.id,
-    title: page.title,
-    content: page.content,
-    slug: page.slug || page.id.toLowerCase(), // Utiliser l'ID si le slug est vide
-    created_at: page.created_at,
-    updated_at: page.updated_at
-  })) : null;
+  // Map the database rows to our application model
+  const pagesData = data ? data.map((row: SupabasePageRow) => mapToPageData(row)) : null;
     
   return {
     data: pagesData,
@@ -35,32 +40,24 @@ export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error:
 };
 
 export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | null; error: any }> => {
-  // Requête simple à Supabase
+  console.log(`Fetching page with slug: ${slug}`);
+  
   const { data, error } = await supabase
     .from('pages')
     .select('*')
     .eq('slug', slug)
     .single();
   
-  // Transformation explicite du résultat avec gestion des valeurs nulles
-  let pageData: PageData | null = null;
+  console.log('Supabase response:', data);
   
-  if (data) {
-    pageData = {
-      id: data.id,
-      title: data.title,
-      content: data.content,
-      slug: data.slug || data.id.toLowerCase(), // Utiliser l'ID comme slug par défaut
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    };
-  }
+  // Map the database row to our application model
+  const pageData = data ? mapToPageData(data as SupabasePageRow) : null;
   
   return { data: pageData, error };
 };
 
 export const createPage = async (title: string, content: string, slug: string): Promise<{ error: any }> => {
-  // Générer un slug si non fourni
+  // Generate a slug if not provided
   const pageSlug = slug || title.toLowerCase().replace(/\s+/g, '-');
   
   const { error } = await supabase
@@ -75,7 +72,7 @@ export const createPage = async (title: string, content: string, slug: string): 
 };
 
 export const updatePage = async (pageId: string, title: string, content: string, slug: string): Promise<{ error: any }> => {
-  // Générer un slug si non fourni
+  // Generate a slug if not provided
   const pageSlug = slug || title.toLowerCase().replace(/\s+/g, '-');
   
   const { error } = await supabase
