@@ -5,14 +5,40 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Search, Settings } from "lucide-react";
+import { useNavigation } from "@/hooks/use-navigation";
 
 const Navbar = () => {
   const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { navigationItems, isLoading } = useNavigation("header");
   
   const userRole = user?.user_metadata?.role || "creator";
   const isAdminUser = isAdmin();
+
+  // Liens statiques toujours présents
+  const staticLinks = [
+    {
+      title: "Accueil",
+      url: "/",
+      active: location.pathname === '/'
+    },
+    {
+      title: "Produits",
+      url: "/products",
+      active: location.pathname === '/products'
+    },
+    {
+      title: "Créateurs",
+      url: "/artists",
+      active: location.pathname === '/artists'
+    },
+    {
+      title: "Imprimeurs",
+      url: "/printers",
+      active: location.pathname === '/printers'
+    }
+  ];
 
   return (
     <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
@@ -28,30 +54,45 @@ const Navbar = () => {
       </div>
       
       <div className="hidden md:flex space-x-6">
-        <Link 
-          to="/" 
-          className={`${location.pathname === '/' ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
-        >
-          Accueil
-        </Link>
-        <Link 
-          to="/products" 
-          className={`${location.pathname === '/products' ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
-        >
-          Produits
-        </Link>
-        <Link 
-          to="/artists" 
-          className={`${location.pathname === '/artists' ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
-        >
-          Créateurs
-        </Link>
-        <Link 
-          to="/printers" 
-          className={`${location.pathname === '/printers' ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
-        >
-          Imprimeurs
-        </Link>
+        {/* Affichage des liens statiques */}
+        {staticLinks.map((link) => (
+          <Link 
+            key={link.title}
+            to={link.url} 
+            className={`${link.active ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
+          >
+            {link.title}
+          </Link>
+        ))}
+        
+        {/* Affichage des liens personnalisés */}
+        {!isLoading && navigationItems.map((item, index) => {
+          // Si le lien est externe
+          if (item.isExternal) {
+            return (
+              <a 
+                key={`custom-${index}`} 
+                href={item.url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-gray-900 hover:text-[#33C3F0] transition-colors"
+              >
+                {item.title}
+              </a>
+            );
+          }
+          
+          // Si c'est un lien interne
+          return (
+            <Link 
+              key={`custom-${index}`}
+              to={item.url} 
+              className={`${location.pathname === item.url ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
+            >
+              {item.title}
+            </Link>
+          );
+        })}
       </div>
       
       <div className="flex space-x-4">

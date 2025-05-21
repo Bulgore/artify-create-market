@@ -25,11 +25,9 @@ const CustomPage = () => {
           throw new Error("Titre de page non défini");
         }
         
-        // Utiliser directement pageTitle qui est déjà le slug
-        const slug = pageTitle;
-        console.log(`Chargement de la page avec le slug: ${slug}`);
+        console.log(`Chargement de la page avec le slug: ${pageTitle}`);
         
-        const { data, error } = await fetchPageBySlug(slug);
+        const { data, error } = await fetchPageBySlug(pageTitle);
 
         if (error) {
           console.error("Erreur Supabase:", error);
@@ -41,7 +39,7 @@ const CustomPage = () => {
           setPageData(data);
           setPageContent(data.content);
         } else {
-          console.log("Page non trouvée avec le slug:", slug);
+          console.log("Page non trouvée avec le slug:", pageTitle);
           navigate('/404');
         }
       } catch (error) {
