@@ -66,7 +66,7 @@ export default {
 				artify: {
 					blue: "#4871C9",
 					"light-blue": "#83ADDD",
-					orange: "#EE8C50",
+					orange: "#f97316",
 					"light-orange": "#F9C396",
 					cream: "#F8F5F0",
 					beige: "#F2E9DF"
