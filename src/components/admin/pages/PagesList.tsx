@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Edit, Trash, RefreshCw, Link } from "lucide-react";
+import { Edit, Trash, RefreshCw, Link, FileX } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PageData } from "@/types/pages";
@@ -39,7 +39,10 @@ const PagesList: React.FC<PagesListProps> = ({
           ) : pages.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="text-center py-10 text-gray-500">
-                Aucune page trouvée. Créez votre première page !
+                <div className="flex flex-col items-center">
+                  <FileX className="h-12 w-12 text-gray-300 mb-2" />
+                  <p>Aucune page trouvée. Créez votre première page !</p>
+                </div>
               </TableCell>
             </TableRow>
           ) : (

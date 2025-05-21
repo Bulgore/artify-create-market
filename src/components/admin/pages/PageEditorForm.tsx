@@ -1,24 +1,28 @@
 
-import React, { useState, useEffect } from "react";
-import { Save } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import React from "react";
 import { 
   Card, 
-  CardContent,
-  CardHeader,
+  CardContent, 
+  CardHeader, 
   CardTitle,
-  CardDescription
+  CardDescription,
+  CardFooter
 } from "@/components/ui/card";
-import PageEditor from "@/components/PageEditor";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PageData } from "@/types/pages";
+import PageEditor from "@/components/PageEditor";
+import { ArrowLeft, Save } from "lucide-react";
 
 interface PageEditorFormProps {
   selectedPage: PageData | null;
   pageTitle: string;
   pageContent: string;
+  pageSlug?: string;
   setPageTitle: (title: string) => void;
   setPageContent: (content: string) => void;
+  setPageSlug?: (slug: string) => void;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -27,82 +31,83 @@ const PageEditorForm: React.FC<PageEditorFormProps> = ({
   selectedPage,
   pageTitle,
   pageContent,
+  pageSlug = '',
   setPageTitle,
   setPageContent,
+  setPageSlug = () => {},
   onSave,
-  onCancel,
+  onCancel
 }) => {
-  const [pageSlug, setPageSlug] = useState<string>(selectedPage?.slug || '');
-  
-  useEffect(() => {
-    if (selectedPage?.slug) {
-      setPageSlug(selectedPage.slug);
-    }
-  }, [selectedPage]);
-  
-  // Générer un slug automatique basé sur le titre
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPageTitle(e.target.value);
-    if (!selectedPage || !pageSlug) {
-      setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'));
+    const newTitle = e.target.value;
+    setPageTitle(newTitle);
+    
+    // Mettre à jour automatiquement le slug si l'utilisateur n'a pas modifié le slug manuellement
+    // ou si nous sommes en train de créer une nouvelle page
+    if (!selectedPage || pageSlug === '') {
+      setPageSlug(newTitle.toLowerCase().replace(/\s+/g, '-'));
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div>
-            <CardTitle>{selectedPage ? "Modifier la Page" : "Nouvelle Page"}</CardTitle>
+            <CardTitle>{selectedPage ? "Modifier la page" : "Nouvelle page"}</CardTitle>
             <CardDescription>
-              {selectedPage ? "Modifier le contenu de cette page" : "Créer une nouvelle page"}
+              {selectedPage ? "Modifiez le contenu de la page" : "Créez une nouvelle page pour votre site"}
             </CardDescription>
           </div>
-          <div className="space-x-2">
-            <Button onClick={onCancel} variant="outline">
-              Annuler
-            </Button>
-            <Button onClick={onSave} className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white">
-              <Save className="h-4 w-4 mr-2" />
-              Enregistrer
-            </Button>
-          </div>
-        </div>
-        <div className="mt-4 space-y-4">
-          <div>
-            <label htmlFor="page-title" className="text-sm font-medium">
-              Titre de la page
-            </label>
-            <Input
-              id="page-title"
-              placeholder="Titre de la page"
-              value={pageTitle}
-              onChange={handleTitleChange}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <label htmlFor="page-slug" className="text-sm font-medium">
-              URL de la page
-            </label>
-            <div className="flex items-center mt-1">
-              <span className="text-sm text-gray-500 mr-1">/page/</span>
-              <Input
-                id="page-slug"
-                placeholder="url-de-la-page"
-                value={pageSlug}
-                onChange={(e) => setPageSlug(e.target.value)}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Cette URL sera utilisée pour accéder à la page: /page/{pageSlug || 'nom-de-la-page'}
-            </p>
-          </div>
+          <Button variant="outline" onClick={onCancel}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour
+          </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <PageEditor content={pageContent} setContent={setPageContent} />
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="page-title">Titre de la page</Label>
+          <Input 
+            id="page-title"
+            value={pageTitle} 
+            onChange={handleTitleChange}
+            placeholder="Entrez le titre de la page"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="page-slug">URL de la page (slug)</Label>
+          <div className="flex items-center">
+            <span className="text-gray-500 mr-2">/page/</span>
+            <Input 
+              id="page-slug"
+              value={pageSlug} 
+              onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+              placeholder="slug-de-la-page"
+              className="flex-1"
+            />
+          </div>
+          <p className="text-xs text-gray-500">L'URL sera accessible à /page/{pageSlug || 'votre-slug'}</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Contenu de la page</Label>
+          <div className="min-h-[400px] border rounded-md">
+            <PageEditor 
+              initialContent={pageContent}
+              onChange={setPageContent}
+            />
+          </div>
+        </div>
       </CardContent>
+      <CardFooter className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onCancel}>Annuler</Button>
+        <Button onClick={onSave} className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white">
+          <Save className="h-4 w-4 mr-2" />
+          Enregistrer
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

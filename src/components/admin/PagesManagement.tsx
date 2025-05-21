@@ -15,6 +15,7 @@ import PageEditorForm from "./pages/PageEditorForm";
 import { fetchAllPages, createPage, updatePage, deletePage } from "@/services/pagesService";
 import NavigationEditor from "./pages/NavigationEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlusCircle, RefreshCw } from "lucide-react";
 
 const PagesManagement = () => {
   const { toast } = useToast();
@@ -26,6 +27,7 @@ const PagesManagement = () => {
   const [pageSlug, setPageSlug] = useState<string>("");
   const [editingPage, setEditingPage] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("pages");
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     fetchPages();
@@ -33,12 +35,14 @@ const PagesManagement = () => {
   
   const fetchPages = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       console.log("Récupération des pages...");
       const { data, error } = await fetchAllPages();
       
       if (error) {
         console.error("Erreur lors de la récupération des pages:", error);
+        setError("Erreur lors du chargement des pages");
         throw error;
       }
       
@@ -46,6 +50,7 @@ const PagesManagement = () => {
       setPages(data || []);
     } catch (error: any) {
       console.error("Erreur lors de la récupération des pages:", error);
+      setError("Impossible de charger la liste des pages");
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -154,8 +159,10 @@ const PagesManagement = () => {
         selectedPage={selectedPage}
         pageTitle={pageTitle}
         pageContent={pageContent}
+        pageSlug={pageSlug}
         setPageTitle={setPageTitle}
         setPageContent={setPageContent}
+        setPageSlug={setPageSlug}
         onSave={savePage}
         onCancel={() => setEditingPage(false)}
       />
@@ -170,6 +177,15 @@ const PagesManagement = () => {
             <CardTitle>Gestion des Pages et Navigation</CardTitle>
             <CardDescription>Modifiez ou créez des pages pour votre site et configurez la navigation</CardDescription>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchPages}
+            className="mt-2 md:mt-0"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualiser
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -185,16 +201,26 @@ const PagesManagement = () => {
                 onClick={createNewPage}
                 className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
               >
+                <PlusCircle className="h-4 w-4 mr-2" />
                 Nouvelle Page
               </Button>
             </div>
             
-            <PagesList 
-              pages={pages} 
-              isLoading={isLoading}
-              onEdit={selectPageForEditing}
-              onDelete={handleDeletePage}
-            />
+            {error ? (
+              <div className="bg-red-50 border border-red-200 p-4 rounded-md text-red-600">
+                {error}
+                <Button variant="outline" size="sm" onClick={fetchPages} className="ml-4">
+                  Réessayer
+                </Button>
+              </div>
+            ) : (
+              <PagesList 
+                pages={pages} 
+                isLoading={isLoading}
+                onEdit={selectPageForEditing}
+                onDelete={handleDeletePage}
+              />
+            )}
           </TabsContent>
           
           <TabsContent value="navigation">

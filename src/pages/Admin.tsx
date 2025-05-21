@@ -48,12 +48,17 @@ const Admin = () => {
     return null; // Ne rien rendre pendant la redirection
   }
 
-  const menuItems = [
-    { name: "General", icon: LayoutDashboard },
-    { name: "Utilisateurs", icon: Users },
-    { name: "Statistiques", icon: Activity },
-    { name: "Paramètres", icon: Settings },
-  ];
+  const handleTabChange = (tabName: string) => {
+    // Trouver l'élément AdminTabs
+    const adminTabs = document.querySelector('[data-admin-tabs="true"]');
+    if (!adminTabs) return;
+    
+    // Trouver le trigger du tab correspondant et le cliquer
+    const tabTrigger = adminTabs.querySelector(`[value="${tabName}"]`);
+    if (tabTrigger instanceof HTMLElement) {
+      tabTrigger.click();
+    }
+  };
 
   return (
     <div className="h-screen w-full bg-slate-100">
@@ -74,14 +79,42 @@ const Admin = () => {
             </SidebarHeader>
             <SidebarContent className="bg-[#333945] text-white px-2 py-4">
               <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.name}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
+                    onClick={() => handleTabChange("general")}
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                    <span>General</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
+                    onClick={() => handleTabChange("users")}
+                  >
+                    <Users className="h-5 w-5" />
+                    <span>Utilisateurs</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
+                    onClick={() => handleTabChange("statistics")}
+                  >
+                    <Activity className="h-5 w-5" />
+                    <span>Statistiques</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
+                    onClick={() => handleTabChange("settings")}
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span>Paramètres</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarContent>
             <SidebarFooter className="bg-[#333945] border-t border-gray-700 p-4">
@@ -118,7 +151,7 @@ const Admin = () => {
               className="p-6"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <AdminTabs />
+                <AdminTabs data-admin-tabs="true" />
               </div>
             </motion.div>
           </div>

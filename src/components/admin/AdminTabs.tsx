@@ -8,6 +8,7 @@ import PagesManagement from "@/components/admin/PagesManagement";
 import SiteSettings from "@/components/admin/SiteSettings";
 import PricingManagement from "@/components/admin/pricing/PricingManagement";
 import { Card } from "@/components/ui/card";
+import { Activity } from "lucide-react";
 
 interface AdminTabsProps {
   defaultTab?: string;
@@ -15,9 +16,15 @@ interface AdminTabsProps {
 
 const AdminTabs: React.FC<AdminTabsProps> = ({ defaultTab = "users" }) => {
   return (
-    <div className="w-full col-span-full">
+    <div className="w-full col-span-full" data-admin-tabs="true">
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="mb-6 bg-white border p-1 rounded-md">
+          <TabsTrigger 
+            value="general" 
+            className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+          >
+            General
+          </TabsTrigger>
           <TabsTrigger 
             value="users" 
             className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
@@ -54,9 +61,22 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ defaultTab = "users" }) => {
           >
             Paramètres
           </TabsTrigger>
+          <TabsTrigger 
+            value="statistics" 
+            className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+          >
+            Statistiques
+          </TabsTrigger>
         </TabsList>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+          <TabsContent value="general" className="col-span-full">
+            <Card className="p-6 shadow-sm border rounded-lg">
+              <h2 className="text-2xl font-bold mb-4">Dashboard Général</h2>
+              <p>Aperçu général des activités de la plateforme.</p>
+            </Card>
+          </TabsContent>
+          
           <TabsContent value="users" className="col-span-full">
             <Card className="p-6 shadow-sm border rounded-lg">
               <UsersManagement />
@@ -90,6 +110,16 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ defaultTab = "users" }) => {
           <TabsContent value="settings" className="col-span-full">
             <Card className="p-6 shadow-sm border rounded-lg">
               <SiteSettings />
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="statistics" className="col-span-full">
+            <Card className="p-6 shadow-sm border rounded-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="h-6 w-6 text-orange-500" />
+                <h2 className="text-2xl font-bold">Statistiques</h2>
+              </div>
+              <p>Visualisation des statistiques de la plateforme.</p>
             </Card>
           </TabsContent>
         </div>
