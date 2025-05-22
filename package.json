@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@builder.io/react": "^8.2.1",
-    "@builder.io/sdk": "^6.0.9",
+    "@builder.io/sdk": "^2.1.1",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",

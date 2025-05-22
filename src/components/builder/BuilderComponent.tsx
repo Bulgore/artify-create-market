@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { BuilderComponent as BuilderComponentLib, builder, useIsPreviewing } from '@builder.io/react';
+import { builder, BuilderComponent as BuilderComponentLib } from '@builder.io/react';
 import { BUILDER_API_KEY } from '@/integrations/builder-io/config';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -11,17 +11,18 @@ interface BuilderComponentProps {
   apiKey?: string;
 }
 
-builder.init(BUILDER_API_KEY);
+// We don't need to initialize here since we're doing it in App.tsx
+// through the initBuilder function from config.ts
 
 export const BuilderComponent: React.FC<BuilderComponentProps> = ({ 
   model, 
   contentId, 
   apiKey = BUILDER_API_KEY 
 }) => {
-  const isPreviewing = useIsPreviewing();
   const [content, setContent] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { toast } = useToast();
+  const isPreviewing = false; // We'll simplify this for now
 
   useEffect(() => {
     async function fetchContent() {
@@ -31,7 +32,7 @@ export const BuilderComponent: React.FC<BuilderComponentProps> = ({
           .get(model, {
             apiKey,
             ...(contentId && { id: contentId }),
-            ...(isPreviewing && { includeUnpublished: true }),
+            includeRefs: true,
           })
           .promise();
 
@@ -49,7 +50,7 @@ export const BuilderComponent: React.FC<BuilderComponentProps> = ({
     }
 
     fetchContent();
-  }, [model, contentId, apiKey, isPreviewing, toast]);
+  }, [model, contentId, apiKey, toast]);
 
   if (loading) {
     return (
@@ -61,7 +62,7 @@ export const BuilderComponent: React.FC<BuilderComponentProps> = ({
     );
   }
 
-  if (!content && !isPreviewing) {
+  if (!content) {
     return null;
   }
 
