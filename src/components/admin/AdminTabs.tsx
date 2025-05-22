@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UsersManagement from "./UsersManagement";
@@ -11,7 +12,7 @@ import BuilderManagement from "./BuilderManagement";
 const AdminTabs = () => {
   return (
     <Tabs defaultValue="general" className="w-full">
-      <TabsList className="grid grid-cols-5 mb-6">
+      <TabsList className="grid grid-cols-1 md:grid-cols-5 mb-6">
         <TabsTrigger value="general">Général</TabsTrigger>
         <TabsTrigger value="users">Utilisateurs</TabsTrigger>
         <TabsTrigger value="statistics">Statistiques</TabsTrigger>
@@ -38,7 +39,7 @@ const AdminTabs = () => {
       </TabsContent>
 
       <TabsContent value="settings" className="w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <PagesManagement />
         </div>
       </TabsContent>

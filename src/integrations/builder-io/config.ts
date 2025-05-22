@@ -1,15 +1,14 @@
 
-// Import the builder SDK
+// Import du SDK builder
 import { builder } from '@builder.io/react';
 
-// Replace this API key with your own public Builder.io key
-// You'll need to register on builder.io to get a key
+// Remplacez cette clé API par votre propre clé publique Builder.io
+// Vous devrez vous inscrire sur builder.io pour obtenir une clé
 export const BUILDER_API_KEY = 'YOUR_API_KEY';
 
-// Initialize Builder.io
+// Initialisation de Builder.io
 export const initBuilder = () => {
   builder.init(BUILDER_API_KEY);
 };
 
-// You can add additional configurations here
-
+// Vous pouvez ajouter des configurations supplémentaires ici
