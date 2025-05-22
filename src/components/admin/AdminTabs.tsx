@@ -8,15 +8,17 @@ import PricingManagement from "./pricing/PricingManagement";
 import DesignsManagement from "./DesignsManagement";
 import SiteSettings from "./SiteSettings";
 import BuilderManagement from "./BuilderManagement";
+import StatisticsPanel from "./StatisticsPanel";
 
 const AdminTabs = () => {
   return (
     <Tabs defaultValue="general" className="w-full">
-      <TabsList className="flex flex-wrap justify-between md:grid md:grid-cols-5 mb-6">
+      <TabsList className="flex flex-wrap justify-between md:grid md:grid-cols-6 mb-6">
         <TabsTrigger value="general">Général</TabsTrigger>
         <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+        <TabsTrigger value="pricing">Prix et Marges</TabsTrigger>
         <TabsTrigger value="statistics">Statistiques</TabsTrigger>
-        <TabsTrigger value="settings">Paramètres</TabsTrigger>
+        <TabsTrigger value="pages">Pages</TabsTrigger>
         <TabsTrigger value="builder">Builder.io</TabsTrigger>
       </TabsList>
 
@@ -31,14 +33,20 @@ const AdminTabs = () => {
           <UsersManagement />
         </div>
       </TabsContent>
-
-      <TabsContent value="statistics" className="w-full">
+      
+      <TabsContent value="pricing" className="w-full">
         <div className="grid grid-cols-1 gap-6">
           <PricingManagement />
         </div>
       </TabsContent>
 
-      <TabsContent value="settings" className="w-full">
+      <TabsContent value="statistics" className="w-full">
+        <div className="grid grid-cols-1 gap-6">
+          <StatisticsPanel />
+        </div>
+      </TabsContent>
+
+      <TabsContent value="pages" className="w-full">
         <div className="grid grid-cols-1 gap-6">
           <PagesManagement />
         </div>

@@ -11,10 +11,7 @@ interface BuilderComponentProps {
   apiKey?: string;
 }
 
-// Nous n'avons pas besoin d'initialiser ici car nous le faisons dans App.tsx
-// via la fonction initBuilder de config.ts
-
-export const BuilderComponent: React.FC<BuilderComponentProps> = ({ 
+const BuilderComponent: React.FC<BuilderComponentProps> = ({ 
   model, 
   contentId, 
   apiKey = BUILDER_API_KEY 
@@ -22,7 +19,6 @@ export const BuilderComponent: React.FC<BuilderComponentProps> = ({
   const [content, setContent] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { toast } = useToast();
-  const isPreviewing = false; // On va simplifier pour l'instant
 
   useEffect(() => {
     async function fetchContent() {
@@ -63,7 +59,11 @@ export const BuilderComponent: React.FC<BuilderComponentProps> = ({
   }
 
   if (!content) {
-    return null;
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-500">Aucun contenu trouvé pour ce modèle.</p>
+      </div>
+    );
   }
 
   return (

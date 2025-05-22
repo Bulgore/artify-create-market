@@ -21,7 +21,9 @@ import {
   LayoutDashboard, 
   Search,
   Activity,
-  LogOut
+  LogOut,
+  CreditCard,
+  FileText
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -30,7 +32,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Redirect if not logged in or not an admin
+  // Rediriger si non connecté ou non admin
   useEffect(() => {
     if (!user) {
       navigate("/auth");
@@ -71,7 +73,7 @@ const Admin = () => {
               </div>
               <div className="mt-4 relative">
                 <Input 
-                  placeholder="Search" 
+                  placeholder="Rechercher" 
                   className="pl-8 bg-white/10 border-none text-white" 
                 />
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-white/60" />
@@ -85,7 +87,7 @@ const Admin = () => {
                     onClick={() => handleTabChange("general")}
                   >
                     <LayoutDashboard className="h-5 w-5" />
-                    <span>General</span>
+                    <span>Général</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -100,6 +102,15 @@ const Admin = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton 
                     className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
+                    onClick={() => handleTabChange("pricing")}
+                  >
+                    <CreditCard className="h-5 w-5" />
+                    <span>Prix et Marges</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
                     onClick={() => handleTabChange("statistics")}
                   >
                     <Activity className="h-5 w-5" />
@@ -109,10 +120,19 @@ const Admin = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton 
                     className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
-                    onClick={() => handleTabChange("settings")}
+                    onClick={() => handleTabChange("pages")}
+                  >
+                    <FileText className="h-5 w-5" />
+                    <span>Pages</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
+                    onClick={() => handleTabChange("builder")}
                   >
                     <Settings className="h-5 w-5" />
-                    <span>Paramètres</span>
+                    <span>Builder.io</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -126,7 +146,7 @@ const Admin = () => {
                 }}
               >
                 <LogOut className="h-5 w-5" />
-                <span>Log out</span>
+                <span>Déconnexion</span>
               </div>
             </SidebarFooter>
           </Sidebar>

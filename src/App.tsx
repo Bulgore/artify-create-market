@@ -20,10 +20,12 @@ import Privacy from "./pages/Privacy";
 import Admin from "./pages/Admin";
 import CustomPage from "./pages/CustomPage";
 import BuilderPage from "./pages/BuilderPage";
-import { initBuilder } from "./integrations/builder-io/config";
+import { initBuilder, registerModels } from "./integrations/builder-io/config";
 
 // Initialiser Builder.io
 initBuilder();
+// Enregistrer les modèles personnalisés
+registerModels();
 
 const queryClient = new QueryClient();
 
