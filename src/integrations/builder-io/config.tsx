@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { Builder } from '@builder.io/react';
+import { Builder, builder } from '@builder.io/react';
 
 // Clé API Builder.io
 export const BUILDER_API_KEY = 'ccbbbeef7ae54db5929da7cd0575cf04';
 
 // Initialisation de Builder.io
 export const initBuilder = () => {
-  Builder.init(BUILDER_API_KEY);
+  builder.init(BUILDER_API_KEY);
 };
 
 // Configuration des modèles de contenu
