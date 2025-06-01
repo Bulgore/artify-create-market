@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { builder } from '@builder.io/react';
 
 // Clé API Builder.io
