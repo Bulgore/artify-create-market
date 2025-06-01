@@ -1,19 +1,19 @@
 
 import React from 'react';
-import { builder } from '@builder.io/react';
+import { Builder } from '@builder.io/react';
 
 // Clé API Builder.io
 export const BUILDER_API_KEY = 'ccbbbeef7ae54db5929da7cd0575cf04';
 
 // Initialisation de Builder.io
 export const initBuilder = () => {
-  builder.init(BUILDER_API_KEY);
+  Builder.init(BUILDER_API_KEY);
 };
 
 // Configuration des modèles de contenu
 export const registerModels = () => {
   // Enregistrer le modèle pour la page d'accueil
-  builder.registerComponent(
+  Builder.registerComponent(
     ({ welcomeText, subText, buttonText, buttonLink }) => {
       return (
         <div className="bg-white p-8 rounded-lg shadow-md">
@@ -40,7 +40,7 @@ export const registerModels = () => {
   );
 
   // Enregistrer le modèle pour les carousels d'images
-  builder.registerComponent(
+  Builder.registerComponent(
     ({ images, autoPlay = true, showDots = true }) => {
       const [currentSlide, setCurrentSlide] = React.useState(0);
       
@@ -119,7 +119,7 @@ export const registerModels = () => {
   );
 
   // Enregistrer le modèle pour les bannières publicitaires
-  builder.registerComponent(
+  Builder.registerComponent(
     ({ title, description, buttonText, buttonLink, backgroundImage, backgroundColor = '#f3f4f6' }) => {
       return (
         <div 
