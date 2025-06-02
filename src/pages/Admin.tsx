@@ -1,5 +1,4 @@
-
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -50,16 +49,43 @@ const Admin = () => {
     return null; // Ne rien rendre pendant la redirection
   }
 
-  const handleTabChange = (tabName: string) => {
-    // Trouver l'élément AdminTabs
-    const adminTabs = document.querySelector('[data-admin-tabs="true"]');
-    if (!adminTabs) return;
-    
-    // Trouver le trigger du tab correspondant et le cliquer
-    const tabTrigger = adminTabs.querySelector(`[value="${tabName}"]`);
-    if (tabTrigger instanceof HTMLElement) {
-      tabTrigger.click();
+  const [activeSection, setActiveSection] = useState<string>("content");
+  const [activeTab, setActiveTab] = useState<string>("users");
+
+  const sidebarSections = [
+    {
+      title: "Contenu",
+      items: [
+        { id: "pages", name: "Pages", component: "PagesManagement" },
+        { id: "products", name: "Produits", component: "ProductsManagement" },
+        { id: "blocks", name: "Blocs", component: "BlocksManagement" }
+      ]
+    },
+    {
+      title: "Apparence", 
+      items: [
+        { id: "menu", name: "Menu principal", component: "MenuManagement" },
+        { id: "footer", name: "Pied de page", component: "FooterManagement" },
+        { id: "theme", name: "Thème du site", component: "ThemeManagement" }
+      ]
+    },
+    {
+      title: "Outils",
+      items: [
+        { id: "media", name: "Médias", component: "MediaManagement" },
+        { id: "calendar", name: "Calendrier", component: "CalendarManagement" },
+        { id: "automation", name: "Automatisations", component: "AutomationManagement" }
+      ]
     }
+  ];
+
+  const renderMainContent = () => {
+    if (activeSection === "content") {
+      return <NewAdminTabs />;
+    }
+    
+    // Gérer les autres sections ici
+    return <div className="p-6">Section en développement</div>;
   };
 
   return (
@@ -69,7 +95,7 @@ const Admin = () => {
           <Sidebar side="left" variant="sidebar">
             <SidebarHeader className="bg-[#333945] text-white p-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-orange-400">DASHBOARD</h2>
+                <h2 className="text-xl font-bold text-orange-400">ADMINISTRATION</h2>
               </div>
               <div className="mt-4 relative">
                 <Input 
@@ -81,60 +107,36 @@ const Admin = () => {
             </SidebarHeader>
             <SidebarContent className="bg-[#333945] text-white px-2 py-4">
               <SidebarMenu>
+                {/* Section principale - Dashboard */}
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
-                    onClick={() => handleTabChange("general")}
+                    className={`w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38] ${activeSection === "content" ? "bg-[#282f38] text-white" : ""}`}
+                    onClick={() => setActiveSection("content")}
                   >
                     <LayoutDashboard className="h-5 w-5" />
-                    <span>Général</span>
+                    <span>Dashboard</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
-                    onClick={() => handleTabChange("users")}
-                  >
-                    <Users className="h-5 w-5" />
-                    <span>Utilisateurs</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
-                    onClick={() => handleTabChange("pricing")}
-                  >
-                    <CreditCard className="h-5 w-5" />
-                    <span>Prix et Marges</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
-                    onClick={() => handleTabChange("statistics")}
-                  >
-                    <Activity className="h-5 w-5" />
-                    <span>Statistiques</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
-                    onClick={() => handleTabChange("pages")}
-                  >
-                    <FileText className="h-5 w-5" />
-                    <span>Pages</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    className="w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38]"
-                    onClick={() => handleTabChange("builder")}
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span>Builder.io</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+
+                {/* Sections dynamiques */}
+                {sidebarSections.map((section) => (
+                  <div key={section.title} className="mt-6">
+                    <div className="px-3 py-2 text-xs font-semibold text-white/60 uppercase tracking-wider">
+                      {section.title}
+                    </div>
+                    {section.items.map((item) => (
+                      <SidebarMenuItem key={item.id}>
+                        <SidebarMenuButton 
+                          className={`w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38] ${activeSection === item.id ? "bg-[#282f38] text-white" : ""}`}
+                          onClick={() => setActiveSection(item.id)}
+                        >
+                          <FileText className="h-5 w-5" />
+                          <span>{item.name}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </div>
+                ))}
               </SidebarMenu>
             </SidebarContent>
             <SidebarFooter className="bg-[#333945] border-t border-gray-700 p-4">
@@ -170,7 +172,7 @@ const Admin = () => {
               transition={{ duration: 0.5 }}
               className="p-6"
             >
-              <AdminTabs data-admin-tabs="true" />
+              {renderMainContent()}
             </motion.div>
           </div>
         </div>
