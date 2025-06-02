@@ -416,6 +416,7 @@ export type Database = {
           default_commission: number | null
           full_name: string | null
           id: string
+          is_super_admin: boolean | null
           role: string
           updated_at: string | null
         }
@@ -425,6 +426,7 @@ export type Database = {
           default_commission?: number | null
           full_name?: string | null
           id: string
+          is_super_admin?: boolean | null
           role: string
           updated_at?: string | null
         }
@@ -434,6 +436,7 @@ export type Database = {
           default_commission?: number | null
           full_name?: string | null
           id?: string
+          is_super_admin?: boolean | null
           role?: string
           updated_at?: string | null
         }

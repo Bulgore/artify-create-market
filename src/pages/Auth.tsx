@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
@@ -23,7 +22,7 @@ const loginSchema = z.object({
 const registerSchema = loginSchema.extend({
   fullName: z.string().min(2, { message: "Le nom doit contenir au moins 2 caractères" }),
   confirmPassword: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
-  role: z.enum(["creator", "printer", "admin"], {
+  role: z.enum(["créateur", "imprimeur", "admin", "superAdmin"], {
     required_error: "Veuillez sélectionner un rôle",
   }),
   adminKey: z.string().optional(),
@@ -31,7 +30,7 @@ const registerSchema = loginSchema.extend({
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
 }).refine(
-  (data) => !(data.role === "admin" && data.adminKey !== "superadmin123"),
+  (data) => !(["admin", "superAdmin"].includes(data.role) && data.adminKey !== "superadmin123"),
   {
     message: "Clé d'administration invalide",
     path: ["adminKey"],
@@ -64,7 +63,7 @@ const Auth: React.FC = () => {
       fullName: "",
       password: "",
       confirmPassword: "",
-      role: "creator",
+      role: "créateur",
       adminKey: "",
     },
   });
@@ -104,7 +103,7 @@ const Auth: React.FC = () => {
   // Watch for role changes to show/hide admin key field
   const selectedRole = registerForm.watch("role");
   React.useEffect(() => {
-    setShowAdminKey(selectedRole === "admin");
+    setShowAdminKey(["admin", "superAdmin"].includes(selectedRole));
   }, [selectedRole]);
 
   return (
@@ -203,13 +202,13 @@ const Auth: React.FC = () => {
                             >
                               <FormItem className="flex items-center space-x-2 space-y-0">
                                 <FormControl>
-                                  <RadioGroupItem value="creator" />
+                                  <RadioGroupItem value="créateur" />
                                 </FormControl>
                                 <FormLabel className="font-normal cursor-pointer">Créateur</FormLabel>
                               </FormItem>
                               <FormItem className="flex items-center space-x-2 space-y-0">
                                 <FormControl>
-                                  <RadioGroupItem value="printer" />
+                                  <RadioGroupItem value="imprimeur" />
                                 </FormControl>
                                 <FormLabel className="font-normal cursor-pointer">Imprimeur</FormLabel>
                               </FormItem>
@@ -218,6 +217,12 @@ const Auth: React.FC = () => {
                                   <RadioGroupItem value="admin" />
                                 </FormControl>
                                 <FormLabel className="font-normal cursor-pointer">Administrateur</FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="superAdmin" />
+                                </FormControl>
+                                <FormLabel className="font-normal cursor-pointer">Super Admin</FormLabel>
                               </FormItem>
                             </RadioGroup>
                           </FormControl>
