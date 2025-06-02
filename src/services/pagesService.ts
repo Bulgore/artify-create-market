@@ -46,7 +46,7 @@ export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | 
     .from('pages')
     .select('*')
     .eq('slug', slug)
-    .single();
+    .maybeSingle(); // Use maybeSingle instead of single to handle cases where no data is found
   
   console.log('Supabase response:', data);
   
@@ -57,6 +57,12 @@ export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | 
 };
 
 export const createPage = async (title: string, content: string, slug: string): Promise<{ error: any }> => {
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: { message: "Utilisateur non authentifié" } };
+  }
+
   // Generate a slug if not provided
   const pageSlug = slug || title.toLowerCase().replace(/\s+/g, '-');
   
@@ -72,6 +78,12 @@ export const createPage = async (title: string, content: string, slug: string): 
 };
 
 export const updatePage = async (pageId: string, title: string, content: string, slug: string): Promise<{ error: any }> => {
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: { message: "Utilisateur non authentifié" } };
+  }
+
   // Generate a slug if not provided
   const pageSlug = slug || title.toLowerCase().replace(/\s+/g, '-');
   
@@ -89,6 +101,12 @@ export const updatePage = async (pageId: string, title: string, content: string,
 };
 
 export const deletePage = async (pageId: string): Promise<{ error: any }> => {
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: { message: "Utilisateur non authentifié" } };
+  }
+
   const { error } = await supabase
     .from('pages')
     .delete()
