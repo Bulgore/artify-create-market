@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -13,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarFooter
 } from "@/components/ui/sidebar";
-import AdminTabs from "@/components/admin/AdminTabs";
+import NewAdminTabs from "@/components/admin/NewAdminTabs";
 import { 
   Settings, 
   Users, 
@@ -50,7 +51,6 @@ const Admin = () => {
   }
 
   const [activeSection, setActiveSection] = useState<string>("content");
-  const [activeTab, setActiveTab] = useState<string>("users");
 
   const sidebarSections = [
     {
