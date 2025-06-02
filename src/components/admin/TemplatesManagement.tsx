@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
-  Upload, 
   Edit, 
   Trash, 
   Plus, 
@@ -28,6 +26,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import TemplateFileUpload from "./content/TemplateFileUpload";
+import PrintAreaSelector from "./content/PrintAreaSelector";
 
 interface ProductTemplate {
   id: string;
@@ -240,14 +240,14 @@ const TemplatesManagement = () => {
                   Nouveau gabarit
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
                     {editingTemplate ? 'Modifier le gabarit' : 'Créer un nouveau gabarit'}
                   </DialogTitle>
                 </DialogHeader>
                 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Nom du produit</Label>
@@ -269,43 +269,29 @@ const TemplatesManagement = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="svg_url">URL du fichier SVG</Label>
-                      <Input
-                        id="svg_url"
-                        value={formData.svg_file_url}
-                        onChange={(e) => setFormData({...formData, svg_file_url: e.target.value})}
-                        placeholder="https://..."
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="mockup_url">URL du mockup</Label>
-                      <Input
-                        id="mockup_url"
-                        value={formData.mockup_image_url}
-                        onChange={(e) => setFormData({...formData, mockup_image_url: e.target.value})}
-                        placeholder="https://..."
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Zone de design (JSON)</Label>
-                    <Textarea
-                      value={JSON.stringify(formData.design_area, null, 2)}
-                      onChange={(e) => {
-                        try {
-                          const parsed = JSON.parse(e.target.value);
-                          setFormData({...formData, design_area: parsed});
-                        } catch (error) {
-                          // Ignore invalid JSON during typing
-                        }
-                      }}
-                      placeholder='{"x": 0, "y": 0, "width": 200, "height": 200}'
-                      className="h-20"
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <TemplateFileUpload
+                      label="Fichier SVG du produit"
+                      accept=".svg,image/svg+xml"
+                      currentUrl={formData.svg_file_url}
+                      onUrlChange={(url) => setFormData({...formData, svg_file_url: url})}
+                      fileType="svg"
+                    />
+                    
+                    <TemplateFileUpload
+                      label="Image mockup du produit"
+                      accept="image/*"
+                      currentUrl={formData.mockup_image_url}
+                      onUrlChange={(url) => setFormData({...formData, mockup_image_url: url})}
+                      fileType="image"
                     />
                   </div>
+
+                  <PrintAreaSelector
+                    svgUrl={formData.svg_file_url}
+                    printArea={formData.design_area}
+                    onPrintAreaChange={(area) => setFormData({...formData, design_area: area})}
+                  />
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
