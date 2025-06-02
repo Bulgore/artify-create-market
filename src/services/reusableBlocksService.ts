@@ -20,7 +20,7 @@ export const reusableBlocksService = {
       throw error;
     }
 
-    return data || [];
+    return (data || []) as ReusableBlock[];
   },
 
   async getActiveBlocks(placement?: string): Promise<ReusableBlock[]> {
@@ -41,7 +41,7 @@ export const reusableBlocksService = {
       throw error;
     }
 
-    return data || [];
+    return (data || []) as ReusableBlock[];
   },
 
   async createBlock(blockData: CreateReusableBlockData): Promise<ReusableBlock> {
@@ -65,7 +65,7 @@ export const reusableBlocksService = {
       throw error;
     }
 
-    return data;
+    return data as ReusableBlock;
   },
 
   async updateBlock(id: string, blockData: Partial<CreateReusableBlockData>): Promise<ReusableBlock> {
@@ -84,7 +84,7 @@ export const reusableBlocksService = {
       throw error;
     }
 
-    return data;
+    return data as ReusableBlock;
   },
 
   async deleteBlock(id: string): Promise<void> {
