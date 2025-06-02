@@ -20,7 +20,7 @@ const BuilderPage = () => {
       >
         <BuilderComponent 
           model="page"
-          contentId={contentPath} 
+          content={contentPath} 
         />
       </motion.div>
       <Footer />
