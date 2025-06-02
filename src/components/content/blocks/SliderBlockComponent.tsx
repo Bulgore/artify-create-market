@@ -21,11 +21,15 @@ const SliderBlockComponent: React.FC<SliderBlockComponentProps> = ({ block }) =>
   }, [content.autoPlay, content.slides.length, content.duration]);
 
   if (!content.slides || content.slides.length === 0) {
-    return <div className="bg-gray-200 h-64 flex items-center justify-center">Aucune image</div>;
+    return (
+      <div className="bg-gray-200 h-64 flex items-center justify-center rounded-lg">
+        <p className="text-gray-500">Aucune image configurée</p>
+      </div>
+    );
   }
 
   return (
-    <div className="relative w-full h-64 md:h-96 overflow-hidden">
+    <div className="relative w-full h-64 md:h-96 overflow-hidden rounded-lg">
       {content.slides.map((slide, index) => (
         <div
           key={slide.id}
@@ -39,6 +43,9 @@ const SliderBlockComponent: React.FC<SliderBlockComponentProps> = ({ block }) =>
                 src={slide.image} 
                 alt={slide.title}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             </Link>
           ) : (
@@ -46,6 +53,9 @@ const SliderBlockComponent: React.FC<SliderBlockComponentProps> = ({ block }) =>
               src={slide.image} 
               alt={slide.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
             />
           )}
           {slide.title && (
@@ -68,9 +78,29 @@ const SliderBlockComponent: React.FC<SliderBlockComponentProps> = ({ block }) =>
               className={`w-3 h-3 rounded-full transition-colors ${
                 index === currentSlide ? 'bg-white' : 'bg-white/50'
               }`}
+              aria-label={`Aller à la slide ${index + 1}`}
             />
           ))}
         </div>
+      )}
+      
+      {content.slides.length > 1 && (
+        <>
+          <button
+            onClick={() => setCurrentSlide((prev) => prev === 0 ? content.slides.length - 1 : prev - 1)}
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+            aria-label="Slide précédente"
+          >
+            ‹
+          </button>
+          <button
+            onClick={() => setCurrentSlide((prev) => (prev + 1) % content.slides.length)}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+            aria-label="Slide suivante"
+          >
+            ›
+          </button>
+        </>
       )}
     </div>
   );
