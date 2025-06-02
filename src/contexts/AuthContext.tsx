@@ -8,10 +8,14 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  userRole: string | null;
   signUp: (email: string, password: string, fullName: string, role?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: () => boolean;
+  isSuperAdmin: () => boolean;
+  isImprimeur: () => boolean;
+  isCreateur: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,15 +23,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return null;
+      }
+      
+      return data?.role || null;
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         console.log("Auth state changed:", event);
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          const role = await fetchUserRole(newSession.user.id);
+          setUserRole(role);
+        } else {
+          setUserRole(null);
+        }
       }
     );
 
@@ -36,6 +68,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        const role = await fetchUserRole(currentSession.user.id);
+        setUserRole(role);
+      }
+      
       setLoading(false);
     };
     
@@ -46,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: string = 'creator') => {
+  const signUp = async (email: string, password: string, fullName: string, role: string = 'créateur') => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -105,6 +143,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      setUserRole(null);
+      
       toast({
         title: "Déconnexion réussie",
         description: "À bientôt!",
@@ -119,19 +159,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Helper function to check if user is an admin
+  // Helper functions to check user roles
   const isAdmin = () => {
-    return user?.user_metadata?.role === 'admin';
+    return userRole === 'admin' || userRole === 'superAdmin';
+  };
+
+  const isSuperAdmin = () => {
+    return userRole === 'superAdmin';
+  };
+
+  const isImprimeur = () => {
+    return userRole === 'imprimeur';
+  };
+
+  const isCreateur = () => {
+    return userRole === 'créateur';
   };
 
   const value = {
     user,
     session,
     loading,
+    userRole,
     signUp,
     signIn,
     signOut,
-    isAdmin
+    isAdmin,
+    isSuperAdmin,
+    isImprimeur,
+    isCreateur
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -59,6 +59,44 @@ export type Database = {
           },
         ]
       }
+      media_files: {
+        Row: {
+          created_at: string | null
+          file_size: number
+          file_type: string
+          file_url: string
+          filename: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_size: number
+          file_type: string
+          file_url: string
+          filename: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          filename?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_files_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string | null
@@ -164,6 +202,62 @@ export type Database = {
         }
         Relationships: []
       }
+      product_templates: {
+        Row: {
+          available_colors: string[] | null
+          available_positions: string[] | null
+          created_at: string | null
+          created_by: string
+          design_area: Json
+          id: string
+          is_active: boolean | null
+          mockup_image_url: string
+          name: string
+          svg_file_url: string
+          technical_instructions: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          available_colors?: string[] | null
+          available_positions?: string[] | null
+          created_at?: string | null
+          created_by: string
+          design_area: Json
+          id?: string
+          is_active?: boolean | null
+          mockup_image_url: string
+          name: string
+          svg_file_url: string
+          technical_instructions?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          available_colors?: string[] | null
+          available_positions?: string[] | null
+          created_at?: string | null
+          created_by?: string
+          design_area?: Json
+          id?: string
+          is_active?: boolean | null
+          mockup_image_url?: string
+          name?: string
+          svg_file_url?: string
+          technical_instructions?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           comment: string | null
@@ -265,6 +359,7 @@ export type Database = {
           print_area: Json
           printer_id: string | null
           stock_quantity: number
+          template_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -279,6 +374,7 @@ export type Database = {
           print_area: Json
           printer_id?: string | null
           stock_quantity?: number
+          template_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -293,6 +389,7 @@ export type Database = {
           print_area?: Json
           printer_id?: string | null
           stock_quantity?: number
+          template_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -301,6 +398,13 @@ export type Database = {
             columns: ["printer_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tshirt_templates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -375,7 +479,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "superAdmin" | "admin" | "imprimeur" | "créateur"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -490,6 +594,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["superAdmin", "admin", "imprimeur", "créateur"],
+    },
   },
 } as const

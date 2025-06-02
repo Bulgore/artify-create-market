@@ -5,95 +5,125 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, Trash, Search, Image, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MediaFile {
   id: string;
-  name: string;
-  url: string;
-  type: string;
-  size: number;
-  uploadDate: string;
+  filename: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
+  created_at: string;
+  user_id: string;
 }
 
 const MediaManagement = () => {
   const { toast } = useToast();
+  const { user, isSuperAdmin } = useAuth();
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadMediaFiles();
-  }, []);
+    if (user) {
+      loadMediaFiles();
+    }
+  }, [user]);
 
-  const loadMediaFiles = () => {
-    const saved = localStorage.getItem('media_files');
-    if (saved) {
-      setMediaFiles(JSON.parse(saved));
-    } else {
-      // Exemples de fichiers par défaut
-      const defaultFiles: MediaFile[] = [
-        {
-          id: '1',
-          name: 'logo.png',
-          url: '/placeholder.svg',
-          type: 'image/png',
-          size: 15420,
-          uploadDate: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'banner.jpg',
-          url: '/placeholder.svg',
-          type: 'image/jpeg',
-          size: 245680,
-          uploadDate: new Date().toISOString()
-        }
-      ];
-      setMediaFiles(defaultFiles);
+  const loadMediaFiles = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      let query = supabase.from('media_files').select('*');
+      
+      // Si ce n'est pas un superAdmin, ne montrer que ses fichiers
+      if (!isSuperAdmin()) {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setMediaFiles(data || []);
+    } catch (error: any) {
+      console.error('Error loading media files:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger les fichiers médias.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const saveMediaFiles = (files: MediaFile[]) => {
-    localStorage.setItem('media_files', JSON.stringify(files));
-    setMediaFiles(files);
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files) return;
+    if (!files || !user) return;
 
-    Array.from(files).forEach(file => {
+    Array.from(files).forEach(async (file) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const newFile: MediaFile = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          name: file.name,
-          url: e.target?.result as string,
-          type: file.type,
-          size: file.size,
-          uploadDate: new Date().toISOString()
-        };
-        
-        const updatedFiles = [...mediaFiles, newFile];
-        saveMediaFiles(updatedFiles);
-        
-        toast({
-          title: "Fichier uploadé",
-          description: `${file.name} a été ajouté à votre médiathèque.`
-        });
+      reader.onload = async (e) => {
+        try {
+          const newFile = {
+            user_id: user.id,
+            filename: file.name,
+            file_url: e.target?.result as string,
+            file_type: file.type,
+            file_size: file.size
+          };
+          
+          const { error } = await supabase
+            .from('media_files')
+            .insert([newFile]);
+
+          if (error) throw error;
+          
+          toast({
+            title: "Fichier uploadé",
+            description: `${file.name} a été ajouté à votre médiathèque.`
+          });
+          
+          loadMediaFiles();
+        } catch (error: any) {
+          console.error('Error uploading file:', error);
+          toast({
+            variant: "destructive",
+            title: "Erreur d'upload",
+            description: "Impossible d'uploader le fichier.",
+          });
+        }
       };
       reader.readAsDataURL(file);
     });
   };
 
-  const deleteFile = (fileId: string) => {
-    const updatedFiles = mediaFiles.filter(file => file.id !== fileId);
-    saveMediaFiles(updatedFiles);
-    
-    toast({
-      title: "Fichier supprimé",
-      description: "Le fichier a été retiré de votre médiathèque."
-    });
+  const deleteFile = async (fileId: string, fileName: string) => {
+    try {
+      const { error } = await supabase
+        .from('media_files')
+        .delete()
+        .eq('id', fileId);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Fichier supprimé",
+        description: `${fileName} a été retiré de votre médiathèque.`
+      });
+      
+      loadMediaFiles();
+    } catch (error: any) {
+      console.error('Error deleting file:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer le fichier.",
+      });
+    }
   };
 
   const copyToClipboard = (url: string) => {
@@ -113,8 +143,8 @@ const MediaManagement = () => {
   };
 
   const filteredFiles = mediaFiles.filter(file => {
-    const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === "all" || file.type.startsWith(selectedType);
+    const matchesSearch = file.filename.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === "all" || file.file_type.startsWith(selectedType);
     return matchesSearch && matchesType;
   });
 
@@ -132,6 +162,11 @@ const MediaManagement = () => {
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
             Gestionnaire de Médias
+            {isSuperAdmin() && (
+              <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">
+                Vue Super Admin
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -174,63 +209,74 @@ const MediaManagement = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredFiles.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-gray-500">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Aucun fichier trouvé</p>
-                <p className="text-sm">Uploadez vos premiers fichiers pour commencer</p>
-              </div>
-            ) : (
-              filteredFiles.map((file) => (
-                <Card key={file.id} className="group hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                      {file.type.startsWith('image/') ? (
-                        <img
-                          src={file.url}
-                          alt={file.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        getFileIcon(file.type)
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h3 className="font-medium text-sm truncate" title={file.name}>
-                        {file.name}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {formatFileSize(file.size)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(file.uploadDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                    
-                    <div className="flex justify-between mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(file.url)}
-                      >
-                        <Download className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => deleteFile(file.id)}
-                      >
-                        <Trash className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+          {isLoading ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500">Chargement des fichiers...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredFiles.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-gray-500">
+                  <Upload className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>Aucun fichier trouvé</p>
+                  <p className="text-sm">Uploadez vos premiers fichiers pour commencer</p>
+                </div>
+              ) : (
+                filteredFiles.map((file) => (
+                  <Card key={file.id} className="group hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {file.file_type.startsWith('image/') ? (
+                          <img
+                            src={file.file_url}
+                            alt={file.filename}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          getFileIcon(file.file_type)
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="font-medium text-sm truncate" title={file.filename}>
+                          {file.filename}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {formatFileSize(file.file_size)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(file.created_at).toLocaleDateString()}
+                        </p>
+                        {isSuperAdmin() && (
+                          <p className="text-xs text-orange-500">
+                            Propriétaire: {file.user_id}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(file.file_url)}
+                        >
+                          <Download className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => deleteFile(file.id, file.filename)}
+                        >
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

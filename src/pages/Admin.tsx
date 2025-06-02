@@ -24,6 +24,7 @@ import ThemeManagement from "@/components/admin/ThemeManagement";
 import MediaManagement from "@/components/admin/MediaManagement";
 import CalendarManagement from "@/components/admin/CalendarManagement";
 import AutomationManagement from "@/components/admin/AutomationManagement";
+import TemplatesManagement from "@/components/admin/TemplatesManagement";
 import { 
   Settings, 
   Users, 
@@ -39,12 +40,13 @@ import {
   Image,
   Calendar,
   Zap,
-  Palette
+  Palette,
+  Layers
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const Admin = () => {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, isSuperAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -74,7 +76,11 @@ const Admin = () => {
       items: [
         { id: "pages", name: "Pages", component: "PagesManagement", icon: FileText },
         { id: "products", name: "Produits", component: "ProductsManagement", icon: Package },
-        { id: "blocks", name: "Blocs", component: "BlocksManagement", icon: Blocks }
+        { id: "blocks", name: "Blocs", component: "BlocksManagement", icon: Blocks },
+        // Gabarits visible uniquement pour superAdmin
+        ...(isSuperAdmin() ? [
+          { id: "templates", name: "Gabarits", component: "TemplatesManagement", icon: Layers }
+        ] : [])
       ]
     },
     {
@@ -105,6 +111,8 @@ const Admin = () => {
         return <ProductsManagement />;
       case "blocks":
         return <BlocksManagement />;
+      case "templates":
+        return <TemplatesManagement />;
       case "menu":
         return <MenuManagement />;
       case "footer":
@@ -175,6 +183,11 @@ const Admin = () => {
                           >
                             <IconComponent className="h-5 w-5" />
                             <span>{item.name}</span>
+                            {item.id === "templates" && (
+                              <span className="ml-auto text-xs bg-orange-500 px-1.5 py-0.5 rounded text-white">
+                                SA
+                              </span>
+                            )}
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       );
