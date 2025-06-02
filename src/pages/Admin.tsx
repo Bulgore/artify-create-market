@@ -15,6 +15,15 @@ import {
   SidebarFooter
 } from "@/components/ui/sidebar";
 import NewAdminTabs from "@/components/admin/NewAdminTabs";
+import PagesManagement from "@/components/admin/PagesManagement";
+import ProductsManagement from "@/components/admin/ProductsManagement";
+import BlocksManagement from "@/components/admin/content/BlocksManagement";
+import MenuManagement from "@/components/admin/content/MenuManagement";
+import FooterManagement from "@/components/admin/FooterManagement";
+import ThemeManagement from "@/components/admin/ThemeManagement";
+import MediaManagement from "@/components/admin/MediaManagement";
+import CalendarManagement from "@/components/admin/CalendarManagement";
+import AutomationManagement from "@/components/admin/AutomationManagement";
 import { 
   Settings, 
   Users, 
@@ -23,7 +32,14 @@ import {
   Activity,
   LogOut,
   CreditCard,
-  FileText
+  FileText,
+  Package,
+  Blocks,
+  Menu,
+  Image,
+  Calendar,
+  Zap,
+  Palette
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -50,42 +66,67 @@ const Admin = () => {
     return null; // Ne rien rendre pendant la redirection
   }
 
-  const [activeSection, setActiveSection] = useState<string>("content");
+  const [activeSection, setActiveSection] = useState<string>("dashboard");
 
   const sidebarSections = [
     {
       title: "Contenu",
       items: [
-        { id: "pages", name: "Pages", component: "PagesManagement" },
-        { id: "products", name: "Produits", component: "ProductsManagement" },
-        { id: "blocks", name: "Blocs", component: "BlocksManagement" }
+        { id: "pages", name: "Pages", component: "PagesManagement", icon: FileText },
+        { id: "products", name: "Produits", component: "ProductsManagement", icon: Package },
+        { id: "blocks", name: "Blocs", component: "BlocksManagement", icon: Blocks }
       ]
     },
     {
       title: "Apparence", 
       items: [
-        { id: "menu", name: "Menu principal", component: "MenuManagement" },
-        { id: "footer", name: "Pied de page", component: "FooterManagement" },
-        { id: "theme", name: "Thème du site", component: "ThemeManagement" }
+        { id: "menu", name: "Menu principal", component: "MenuManagement", icon: Menu },
+        { id: "footer", name: "Pied de page", component: "FooterManagement", icon: FileText },
+        { id: "theme", name: "Thème du site", component: "ThemeManagement", icon: Palette }
       ]
     },
     {
       title: "Outils",
       items: [
-        { id: "media", name: "Médias", component: "MediaManagement" },
-        { id: "calendar", name: "Calendrier", component: "CalendarManagement" },
-        { id: "automation", name: "Automatisations", component: "AutomationManagement" }
+        { id: "media", name: "Médias", component: "MediaManagement", icon: Image },
+        { id: "calendar", name: "Calendrier", component: "CalendarManagement", icon: Calendar },
+        { id: "automation", name: "Automatisations", component: "AutomationManagement", icon: Zap }
       ]
     }
   ];
 
   const renderMainContent = () => {
-    if (activeSection === "content") {
-      return <NewAdminTabs />;
+    switch (activeSection) {
+      case "dashboard":
+        return <NewAdminTabs />;
+      case "pages":
+        return <PagesManagement />;
+      case "products":
+        return <ProductsManagement />;
+      case "blocks":
+        return <BlocksManagement />;
+      case "menu":
+        return <MenuManagement />;
+      case "footer":
+        return <FooterManagement />;
+      case "theme":
+        return <ThemeManagement />;
+      case "media":
+        return <MediaManagement />;
+      case "calendar":
+        return <CalendarManagement />;
+      case "automation":
+        return <AutomationManagement />;
+      default:
+        return <NewAdminTabs />;
     }
-    
-    // Gérer les autres sections ici
-    return <div className="p-6">Section en développement</div>;
+  };
+
+  const getSectionTitle = () => {
+    if (activeSection === "dashboard") return "Dashboard";
+    const allItems = sidebarSections.flatMap(section => section.items);
+    const currentItem = allItems.find(item => item.id === activeSection);
+    return currentItem?.name || "Administration";
   };
 
   return (
@@ -110,8 +151,8 @@ const Admin = () => {
                 {/* Section principale - Dashboard */}
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    className={`w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38] ${activeSection === "content" ? "bg-[#282f38] text-white" : ""}`}
-                    onClick={() => setActiveSection("content")}
+                    className={`w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38] ${activeSection === "dashboard" ? "bg-[#282f38] text-white" : ""}`}
+                    onClick={() => setActiveSection("dashboard")}
                   >
                     <LayoutDashboard className="h-5 w-5" />
                     <span>Dashboard</span>
@@ -124,17 +165,20 @@ const Admin = () => {
                     <div className="px-3 py-2 text-xs font-semibold text-white/60 uppercase tracking-wider">
                       {section.title}
                     </div>
-                    {section.items.map((item) => (
-                      <SidebarMenuItem key={item.id}>
-                        <SidebarMenuButton 
-                          className={`w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38] ${activeSection === item.id ? "bg-[#282f38] text-white" : ""}`}
-                          onClick={() => setActiveSection(item.id)}
-                        >
-                          <FileText className="h-5 w-5" />
-                          <span>{item.name}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
+                    {section.items.map((item) => {
+                      const IconComponent = item.icon;
+                      return (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton 
+                            className={`w-full flex items-center gap-3 text-white/80 hover:text-white hover:bg-[#282f38] ${activeSection === item.id ? "bg-[#282f38] text-white" : ""}`}
+                            onClick={() => setActiveSection(item.id)}
+                          >
+                            <IconComponent className="h-5 w-5" />
+                            <span>{item.name}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
                   </div>
                 ))}
               </SidebarMenu>
@@ -155,7 +199,7 @@ const Admin = () => {
 
           <div className="flex-1 overflow-auto">
             <header className="bg-white p-4 flex items-center justify-between border-b">
-              <h1 className="text-xl font-semibold">Administration</h1>
+              <h1 className="text-xl font-semibold">{getSectionTitle()}</h1>
               <div className="flex items-center gap-2">
                 <span className="text-orange-500">
                   {user.user_metadata?.full_name || "Admin User"}
