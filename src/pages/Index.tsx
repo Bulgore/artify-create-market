@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import ContentRenderer from "@/components/content/ContentRenderer";
+import ReusableBlockRenderer from "@/components/content/ReusableBlockRenderer";
 import FeaturedArtists from "@/components/FeaturedArtists";
 import CallToAction from "@/components/CallToAction";
 import { ContentBlock } from "@/types/content";
@@ -46,9 +47,16 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
+        {/* Blocs réutilisables en haut de page */}
+        <ReusableBlockRenderer placement="homepage" />
+        
+        {/* Contenu existant */}
         <ContentRenderer blocks={blocks} />
         <FeaturedArtists />
         <CallToAction />
+        
+        {/* Blocs réutilisables globaux */}
+        <ReusableBlockRenderer placement="global" />
       </main>
       <Footer />
     </div>

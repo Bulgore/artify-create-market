@@ -258,6 +258,65 @@ export type Database = {
           },
         ]
       }
+      reusable_blocks: {
+        Row: {
+          button_text: string | null
+          content: Json
+          created_at: string
+          created_by: string
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          link_url: string | null
+          placement: string
+          title: string
+          type: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          button_text?: string | null
+          content?: Json
+          created_at?: string
+          created_by: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_url?: string | null
+          placement: string
+          title: string
+          type: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          button_text?: string | null
+          content?: Json
+          created_at?: string
+          created_by?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_url?: string | null
+          placement?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reusable_blocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           comment: string | null
