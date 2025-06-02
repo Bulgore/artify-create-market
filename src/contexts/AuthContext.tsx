@@ -30,13 +30,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('role')
+        .select('role, is_super_admin')
         .eq('id', userId)
         .single();
       
       if (error) {
         console.error('Error fetching user role:', error);
         return null;
+      }
+      
+      // Si l'utilisateur est super admin, retourner 'superAdmin'
+      if (data?.is_super_admin) {
+        return 'superAdmin';
       }
       
       return data?.role || null;
@@ -46,35 +51,84 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const createUserProfile = async (userId: string, email: string, fullName: string, role: string) => {
+    try {
+      // Vérifier si l'utilisateur est creatahiti@gmail.com pour le rendre super admin
+      const isSuperAdmin = email === 'creatahiti@gmail.com';
+      
+      const { error } = await supabase
+        .from('users')
+        .upsert({
+          id: userId,
+          full_name: fullName,
+          role: isSuperAdmin ? 'superAdmin' : role,
+          is_super_admin: isSuperAdmin,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error creating user profile:', error);
+      }
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed:", event, newSession?.user?.email);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
+          // Créer le profil utilisateur s'il n'existe pas
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            await createUserProfile(
+              newSession.user.id, 
+              newSession.user.email || '', 
+              newSession.user.user_metadata?.full_name || '', 
+              newSession.user.user_metadata?.role || 'créateur'
+            );
+          }
+          
           const role = await fetchUserRole(newSession.user.id);
           setUserRole(role);
         } else {
           setUserRole(null);
         }
+        
+        setLoading(false);
       }
     );
 
     // THEN check for existing session
     const initSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        const role = await fetchUserRole(currentSession.user.id);
-        setUserRole(role);
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log("Initial session:", currentSession?.user?.email);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          // Créer le profil utilisateur s'il n'existe pas
+          await createUserProfile(
+            currentSession.user.id, 
+            currentSession.user.email || '', 
+            currentSession.user.user_metadata?.full_name || '', 
+            currentSession.user.user_metadata?.role || 'créateur'
+          );
+          
+          const role = await fetchUserRole(currentSession.user.id);
+          setUserRole(role);
+        }
+      } catch (error) {
+        console.error('Error initializing session:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     initSession();
@@ -86,7 +140,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName: string, role: string = 'créateur') => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -116,7 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -125,7 +179,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       toast({
         title: "Connexion réussie",
-        description: "Bienvenue sur Artify!",
+        description: "Bienvenue sur Podsleek!",
       });
     } catch (error: any) {
       console.error("Erreur lors de la connexion:", error);

@@ -8,13 +8,23 @@ import { Search, Settings } from "lucide-react";
 import { useNavigation } from "@/hooks/use-navigation";
 
 const Navbar = () => {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { navigationItems, isLoading } = useNavigation("header");
   
   const userRole = user?.user_metadata?.role || "creator";
   const isAdminUser = isAdmin();
+
+  // Ne pas afficher la navbar pendant le chargement initial de l'auth
+  if (loading) {
+    return (
+      <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
+        <Link to="/" className="text-2xl font-bold text-black">Podsleek</Link>
+        <div className="w-32 h-10 bg-gray-200 animate-pulse rounded"></div>
+      </nav>
+    );
+  }
 
   // Liens statiques toujours présents
   const staticLinks = [
@@ -39,6 +49,15 @@ const Navbar = () => {
       active: location.pathname === '/printers'
     }
   ];
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+    }
+  };
 
   return (
     <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
@@ -127,10 +146,7 @@ const Navbar = () => {
             
             <Button 
               className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
-              onClick={() => {
-                signOut();
-                navigate("/");
-              }}
+              onClick={handleSignOut}
             >
               Déconnexion
             </Button>
