@@ -1,33 +1,14 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Edit, 
-  Trash, 
-  Plus, 
-  Save, 
-  X,
-  FileImage,
-  Settings,
-  Palette,
-  MapPin
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import TemplateFileUpload from "./content/TemplateFileUpload";
-import PrintAreaSelector from "./content/PrintAreaSelector";
+import { Plus, Settings } from "lucide-react";
+import { DialogTrigger } from "@/components/ui/dialog";
+import TemplatesGrid from "./templates/TemplatesGrid";
+import TemplateDialog from "./templates/TemplateDialog";
 
 interface ProductTemplate {
   id: string;
@@ -62,7 +43,6 @@ const TemplatesManagement = () => {
     is_active: true
   });
 
-  // Vérifier que l'utilisateur est bien superAdmin
   useEffect(() => {
     if (!isSuperAdmin()) {
       toast({
@@ -233,188 +213,30 @@ const TemplatesManagement = () => {
                 Créez et gérez les modèles de produits utilisables par les imprimeurs
               </p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={openCreateDialog} className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nouveau gabarit
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingTemplate ? 'Modifier le gabarit' : 'Créer un nouveau gabarit'}
-                  </DialogTitle>
-                </DialogHeader>
-                
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name">Nom du produit</Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        placeholder="T-shirt classique"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="type">Type</Label>
-                      <Input
-                        id="type"
-                        value={formData.type}
-                        onChange={(e) => setFormData({...formData, type: e.target.value})}
-                        placeholder="T-shirt, Mug, Sac..."
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <TemplateFileUpload
-                      label="Fichier SVG du produit"
-                      accept=".svg,image/svg+xml"
-                      currentUrl={formData.svg_file_url}
-                      onUrlChange={(url) => setFormData({...formData, svg_file_url: url})}
-                      fileType="svg"
-                    />
-                    
-                    <TemplateFileUpload
-                      label="Image mockup du produit"
-                      accept="image/*"
-                      currentUrl={formData.mockup_image_url}
-                      onUrlChange={(url) => setFormData({...formData, mockup_image_url: url})}
-                      fileType="image"
-                    />
-                  </div>
-
-                  <PrintAreaSelector
-                    svgUrl={formData.svg_file_url}
-                    printArea={formData.design_area}
-                    onPrintAreaChange={(area) => setFormData({...formData, design_area: area})}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Positions disponibles (séparées par des virgules)</Label>
-                      <Input
-                        value={formData.available_positions.join(', ')}
-                        onChange={(e) => setFormData({
-                          ...formData, 
-                          available_positions: e.target.value.split(',').map(s => s.trim())
-                        })}
-                        placeholder="face, dos, manche"
-                      />
-                    </div>
-                    <div>
-                      <Label>Couleurs disponibles (séparées par des virgules)</Label>
-                      <Input
-                        value={formData.available_colors.join(', ')}
-                        onChange={(e) => setFormData({
-                          ...formData, 
-                          available_colors: e.target.value.split(',').map(s => s.trim())
-                        })}
-                        placeholder="white, black, red"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="instructions">Instructions techniques</Label>
-                    <Textarea
-                      id="instructions"
-                      value={formData.technical_instructions}
-                      onChange={(e) => setFormData({...formData, technical_instructions: e.target.value})}
-                      placeholder="Instructions pour les créateurs..."
-                      className="h-24"
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      <X className="h-4 w-4 mr-2" />
-                      Annuler
-                    </Button>
-                    <Button onClick={handleSaveTemplate} className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
-                      <Save className="h-4 w-4 mr-2" />
-                      {editingTemplate ? 'Mettre à jour' : 'Créer'}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={openCreateDialog} className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau gabarit
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="text-center py-10">
-              <p className="text-gray-500">Chargement des gabarits...</p>
-            </div>
-          ) : templates.length === 0 ? (
-            <div className="text-center py-10">
-              <Settings className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500 mb-2">Aucun gabarit créé</p>
-              <p className="text-sm text-gray-400">Créez votre premier gabarit pour commencer</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {templates.map((template) => (
-                <Card key={template.id} className="group hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                      {template.mockup_image_url ? (
-                        <img
-                          src={template.mockup_image_url}
-                          alt={template.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <FileImage className="h-8 w-8 text-gray-400" />
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-sm truncate">{template.name}</h3>
-                        <Badge variant="outline" className="text-xs">
-                          {template.type}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <MapPin className="h-3 w-3" />
-                        <span>{template.available_positions.join(', ')}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <Palette className="h-3 w-3" />
-                        <span>{template.available_colors.join(', ')}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(template)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => handleDeleteTemplate(template.id)}
-                      >
-                        <Trash className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <TemplatesGrid
+            templates={templates}
+            isLoading={isLoading}
+            onEditTemplate={openEditDialog}
+            onDeleteTemplate={handleDeleteTemplate}
+          />
         </CardContent>
       </Card>
+
+      <TemplateDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        editingTemplate={editingTemplate}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSaveTemplate}
+      />
     </div>
   );
 };
