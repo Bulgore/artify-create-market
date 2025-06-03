@@ -43,7 +43,7 @@ export const usePrintAreaInteractions = ({
     mockupImageRef
   });
 
-  // Hook pour les interactions spécifiques au mockup
+  // Hook pour les interactions spécifiques au mockup avec proportions exactes
   const { handleMockupInputChange, handleMockupCanvasInteraction } = useMockupAreaInteractions({
     mockupCanvasRef,
     mockupImageRef,
@@ -80,7 +80,7 @@ export const usePrintAreaInteractions = ({
     if (!isDragging && !isResizing) return;
 
     if (activeView === 'svg') {
-      // Logique existante pour SVG
+      // Logique pour SVG - pas de contrainte proportionnelle
       const canvas = svgCanvasRef.current;
       const image = svgImageRef.current;
       const { x, y } = getCanvasCoordinates(e, canvas, image);
@@ -112,7 +112,7 @@ export const usePrintAreaInteractions = ({
         onPrintAreaChange(newArea);
       }
     } else if (activeView === 'mockup' && onMockupPrintAreaChange) {
-      // Utiliser la logique spécialisée pour mockup
+      // Utiliser la logique spécialisée pour mockup avec proportions exactes
       const interactionType = isDragging ? 'drag' : 'resize';
       const result = handleMockupCanvasInteraction(e, interactionType, dragStart);
       
@@ -129,9 +129,11 @@ export const usePrintAreaInteractions = ({
 
   const handleInputChange = (field: keyof PrintArea, value: number, type: ViewType) => {
     if (type === 'svg') {
+      // SVG : pas de contrainte proportionnelle
       const newArea = { ...currentSvgArea, [field]: Math.max(0, value) };
       onPrintAreaChange(newArea);
     } else if (type === 'mockup') {
+      // Mockup : avec maintien des proportions exactes
       handleMockupInputChange(field, value);
     }
   };

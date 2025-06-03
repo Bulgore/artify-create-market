@@ -7,7 +7,7 @@ interface UseMockupAreaInteractionsProps {
   mockupImageRef: React.RefObject<HTMLImageElement>;
   mockupArea: PrintArea;
   onMockupAreaChange: (area: PrintArea) => void;
-  getSvgProportions: () => { widthRatio: number; heightRatio: number };
+  getSvgProportions: () => { widthRatio: number; heightRatio: number; aspectRatio: number };
 }
 
 export const useMockupAreaInteractions = ({
@@ -27,18 +27,18 @@ export const useMockupAreaInteractions = ({
     let newArea = { ...mockupArea };
 
     if (field === 'x' || field === 'y') {
-      // Position libre
+      // Position libre - pas de contrainte proportionnelle
       newArea[field] = Math.max(0, value);
     } else if (field === 'width') {
-      // Largeur proportionnelle
+      // Largeur avec maintien des proportions exactes
       const newWidth = Math.max(50, value);
-      const newHeight = newWidth * (svgProps.heightRatio / svgProps.widthRatio);
+      const newHeight = newWidth / svgProps.aspectRatio;
       newArea.width = newWidth;
       newArea.height = newHeight;
     } else if (field === 'height') {
-      // Hauteur proportionnelle
+      // Hauteur avec maintien des proportions exactes
       const newHeight = Math.max(50, value);
-      const newWidth = newHeight * (svgProps.widthRatio / svgProps.heightRatio);
+      const newWidth = newHeight * svgProps.aspectRatio;
       newArea.width = newWidth;
       newArea.height = newHeight;
     }
@@ -46,7 +46,13 @@ export const useMockupAreaInteractions = ({
     // Contraindre dans les limites de l'image
     newArea = constrainAreaToBounds(newArea, mockupImage.naturalWidth, mockupImage.naturalHeight);
     
-    console.log('Mockup area change:', { field, value, newArea, svgProps });
+    console.log('Mockup area change:', { 
+      field, 
+      value, 
+      aspectRatio: svgProps.aspectRatio,
+      newArea 
+    });
+    
     onMockupAreaChange(newArea);
   };
 
@@ -63,6 +69,7 @@ export const useMockupAreaInteractions = ({
     const { x, y } = getCanvasCoordinates(e, canvas, image);
     
     if (interactionType === 'drag') {
+      // Déplacement simple sans changement de taille
       const deltaX = x - dragStart.x;
       const deltaY = y - dragStart.y;
       
@@ -75,12 +82,13 @@ export const useMockupAreaInteractions = ({
       onMockupAreaChange(newArea);
       return { x, y };
     } else if (interactionType === 'resize') {
+      // Redimensionnement avec maintien des proportions exactes
       const svgProps = getSvgProportions();
       
       // Calculer la nouvelle largeur basée sur la position de la souris
       const newWidth = Math.max(50, x - mockupArea.x);
-      // Calculer la hauteur proportionnelle
-      const newHeight = newWidth * (svgProps.heightRatio / svgProps.widthRatio);
+      // Calculer la hauteur proportionnelle exacte
+      const newHeight = newWidth / svgProps.aspectRatio;
       
       const newArea = constrainAreaToBounds({
         ...mockupArea,

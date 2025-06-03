@@ -347,6 +347,7 @@ export type Database = {
           design_area: Json
           id: string
           is_active: boolean | null
+          mockup_area: Json | null
           mockup_image_url: string
           name: string
           svg_file_url: string
@@ -362,6 +363,7 @@ export type Database = {
           design_area: Json
           id?: string
           is_active?: boolean | null
+          mockup_area?: Json | null
           mockup_image_url: string
           name: string
           svg_file_url: string
@@ -377,6 +379,7 @@ export type Database = {
           design_area?: Json
           id?: string
           is_active?: boolean | null
+          mockup_area?: Json | null
           mockup_image_url?: string
           name?: string
           svg_file_url?: string
