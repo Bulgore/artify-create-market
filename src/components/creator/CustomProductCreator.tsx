@@ -28,7 +28,7 @@ interface PrintProduct {
     svg_file_url: string;
     mockup_image_url: string;
     design_area: any;
-  };
+  } | null;
 }
 
 interface CustomProductCreatorProps {
@@ -92,7 +92,7 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
 
   const handleDesignUpload = (url: string) => {
     setDesignUrl(url);
-    if (url && selectedProduct) {
+    if (url && selectedProduct && selectedProduct.product_templates) {
       setShowPositioner(true);
     } else {
       setShowPositioner(false);
@@ -112,7 +112,7 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedProduct || !designUrl || !designPosition || !user) {
+    if (!selectedProduct || !selectedProduct.product_templates || !designUrl || !designPosition || !user) {
       toast({
         variant: "destructive",
         title: "Informations manquantes",
@@ -205,6 +205,9 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
                     <p className="text-sm text-gray-600">{selectedProduct.description}</p>
                     <p className="text-sm font-medium">Prix de base: {selectedProduct.base_price}€</p>
                     <p className="text-sm">Matériau: {selectedProduct.material}</p>
+                    {!selectedProduct.product_templates && (
+                      <p className="text-sm text-red-500 mt-2">⚠️ Ce produit n'a pas de gabarit configuré</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -212,7 +215,7 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
           </Card>
 
           {/* Upload du design */}
-          {selectedProduct && (
+          {selectedProduct && selectedProduct.product_templates && (
             <DesignUploader
               onDesignUpload={handleDesignUpload}
               currentDesignUrl={designUrl}
@@ -220,7 +223,7 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
           )}
 
           {/* Informations du produit */}
-          {selectedProduct && (
+          {selectedProduct && selectedProduct.product_templates && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -282,7 +285,7 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
 
         {/* Interface de positionnement */}
         <div>
-          {showPositioner && selectedProduct && designUrl && (
+          {showPositioner && selectedProduct && selectedProduct.product_templates && designUrl && (
             <DesignPositioner
               templateSvgUrl={selectedProduct.product_templates.svg_file_url}
               designImageUrl={designUrl}
