@@ -17,12 +17,16 @@ import {
 
 interface User {
   id: string;
-  full_name: string;
-  email: string;
+  full_name: string | null;
   role: string;
   is_super_admin: boolean;
   created_at: string;
-  is_active: boolean;
+  updated_at: string;
+  default_commission: number;
+  avatar_url: string | null;
+  // Champs supplémentaires pour l'affichage
+  email?: string;
+  is_active?: boolean;
 }
 
 const UsersManagement = () => {
@@ -38,13 +42,14 @@ const UsersManagement = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Récupérer d'abord les utilisateurs de la table publique
+      const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Erreur lors de la récupération des utilisateurs:", error);
+      if (usersError) {
+        console.error("Erreur lors de la récupération des utilisateurs:", usersError);
         toast({
           variant: "destructive",
           title: "Erreur",
@@ -53,7 +58,29 @@ const UsersManagement = () => {
         return;
       }
 
-      setUsers(data || []);
+      // Enrichir avec les données d'authentification
+      const enrichedUsers = await Promise.all(
+        (usersData || []).map(async (user) => {
+          try {
+            // Récupérer l'email depuis auth.users si on a les permissions admin
+            const { data: authUser } = await supabase.auth.admin.getUserById(user.id);
+            return {
+              ...user,
+              email: authUser.user?.email || 'N/A',
+              is_active: true // Par défaut actif, vous pouvez ajouter ce champ à votre table si nécessaire
+            };
+          } catch (error) {
+            console.warn(`Impossible de récupérer l'email pour l'utilisateur ${user.id}:`, error);
+            return {
+              ...user,
+              email: 'N/A',
+              is_active: true
+            };
+          }
+        })
+      );
+
+      setUsers(enrichedUsers);
     } catch (error) {
       console.error("Erreur lors de la récupération des utilisateurs:", error);
       toast({
@@ -68,22 +95,8 @@ const UsersManagement = () => {
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_active: !currentStatus })
-        .eq('id', userId);
-
-      if (error) {
-        console.error("Erreur lors de la mise à jour du statut:", error);
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de mettre à jour le statut de l'utilisateur.",
-        });
-        return;
-      }
-
-      // Mettre à jour l'état local
+      // Pour l'instant, on simule le changement de statut localement
+      // Vous pouvez ajouter un champ is_active à votre table users si nécessaire
       setUsers(users.map(user => 
         user.id === userId 
           ? { ...user, is_active: !currentStatus }
@@ -280,7 +293,7 @@ const UsersManagement = () => {
                       <Button 
                         variant="outline" 
                         size="icon" 
-                        onClick={() => toggleUserStatus(user.id, user.is_active)}
+                        onClick={() => toggleUserStatus(user.id, user.is_active || false)}
                         title={user.is_active ? "Désactiver" : "Activer"}
                       >
                         {user.is_active ? (
