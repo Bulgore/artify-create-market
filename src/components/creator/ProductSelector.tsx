@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { Package, AlertTriangle, CheckCircle, Info, Settings } from 'lucide-react';
 
 interface PrintProduct {
   id: string;
@@ -49,6 +49,46 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     }
     return { type: 'success', message: 'Gabarit configuré' };
   };
+
+  if (printProducts.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            1. Choisir un produit de base
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 space-y-4">
+            <div className="flex justify-center">
+              <div className="p-4 bg-orange-50 rounded-full">
+                <Settings className="h-8 w-8 text-orange-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-medium text-gray-900">Aucun produit disponible</h3>
+              <p className="text-sm text-gray-600 max-w-md mx-auto">
+                Pour pouvoir créer des produits personnalisés, les imprimeurs doivent d'abord :
+              </p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left max-w-md mx-auto">
+              <h4 className="font-medium text-blue-900 mb-2">Instructions pour l'imprimeur :</h4>
+              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                <li>Créer des gabarits (templates) dans l'admin</li>
+                <li>Assigner ces gabarits à vos produits d'impression</li>
+                <li>Définir les zones d'impression sur chaque gabarit</li>
+                <li>Activer vos produits pour la personnalisation</li>
+              </ol>
+            </div>
+            <p className="text-xs text-gray-500 max-w-md mx-auto">
+              Une fois ces étapes complétées par l'imprimeur, vous pourrez sélectionner ses produits ici pour créer vos designs personnalisés.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

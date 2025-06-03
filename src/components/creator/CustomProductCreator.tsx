@@ -69,8 +69,7 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
             mockup_area
           )
         `)
-        .eq('is_active', true)
-        .not('template_id', 'is', null); // Only products with templates
+        .eq('is_active', true);
 
       if (error) {
         console.error("Error fetching print products:", error);
@@ -79,15 +78,22 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
 
       console.log("Raw data from database:", data);
 
-      // Filter out products without valid templates
-      const validProducts = (data || []).filter(product => {
-        const hasTemplate = product.template_id && product.product_templates;
+      // Séparer les produits avec et sans gabarits pour le debug
+      const allProducts = data || [];
+      const productsWithTemplates = allProducts.filter(product => product.template_id && product.product_templates);
+      const productsWithoutTemplates = allProducts.filter(product => !product.template_id || !product.product_templates);
+
+      console.log(`Total products found: ${allProducts.length}`);
+      console.log(`Products with templates: ${productsWithTemplates.length}`);
+      console.log(`Products without templates: ${productsWithoutTemplates.length}`);
+
+      if (productsWithoutTemplates.length > 0) {
+        console.log("Products missing templates:", productsWithoutTemplates.map(p => p.name));
+      }
+
+      // Filter out products without valid templates and design areas
+      const validProducts = productsWithTemplates.filter(product => {
         const hasDesignArea = product.product_templates?.design_area;
-        
-        if (!hasTemplate) {
-          console.log(`Product ${product.name} has no template_id or template data`);
-          return false;
-        }
         
         if (!hasDesignArea) {
           console.log(`Product ${product.name} has no design_area in template`);
@@ -97,14 +103,19 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
         return true;
       });
 
-      console.log(`Found ${validProducts.length} valid products out of ${data?.length || 0} total products`);
+      console.log(`Valid products for customization: ${validProducts.length}`);
       
       setPrintProducts(validProducts);
       
-      if (validProducts.length === 0) {
+      if (validProducts.length === 0 && allProducts.length > 0) {
+        toast({
+          title: "Configuration requise",
+          description: `${allProducts.length} produit(s) trouvé(s) mais aucun n'est configuré pour la personnalisation. L'imprimeur doit assigner des gabarits à ses produits.`,
+        });
+      } else if (allProducts.length === 0) {
         toast({
           title: "Aucun produit disponible",
-          description: "Aucun produit configuré pour la personnalisation n'a été trouvé. Les imprimeurs doivent d'abord configurer leurs gabarits.",
+          description: "Aucun produit d'impression actif trouvé. Les imprimeurs doivent d'abord créer des produits.",
         });
       }
     } catch (error: any) {
@@ -245,55 +256,44 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
         <h2 className="text-2xl font-bold">Créer un produit personnalisé</h2>
       </div>
 
-      {printProducts.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500 mb-4">Aucun produit disponible pour la personnalisation.</p>
-          <p className="text-sm text-gray-400">
-            Les imprimeurs doivent d'abord créer des produits avec des gabarits configurés.
-          </p>
-        </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <ProductSelector
+            printProducts={printProducts}
+            selectedProduct={selectedProduct}
+            onProductSelect={handleProductSelect}
+          />
 
-      {printProducts.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <ProductSelector
-              printProducts={printProducts}
-              selectedProduct={selectedProduct}
-              onProductSelect={handleProductSelect}
+          {selectedProduct && selectedProduct.product_templates && (
+            <DesignUploader
+              onDesignUpload={handleDesignUpload}
+              currentDesignUrl={designUrl}
             />
+          )}
 
-            {selectedProduct && selectedProduct.product_templates && (
-              <DesignUploader
-                onDesignUpload={handleDesignUpload}
-                currentDesignUrl={designUrl}
-              />
-            )}
-
-            {selectedProduct && selectedProduct.product_templates && (
-              <ProductDetailsForm
-                productData={productData}
-                setProductData={setProductData}
-                finalPrice={calculateFinalPrice()}
-                isLoading={isLoading}
-                canSubmit={!!designPosition}
-                onSubmit={handleSubmit}
-              />
-            )}
-          </div>
-
-          <div>
-            {showPositioner && selectedProduct && selectedProduct.product_templates && designUrl && (
-              <DesignPositioner
-                templateSvgUrl={selectedProduct.product_templates.svg_file_url}
-                designImageUrl={designUrl}
-                designArea={selectedProduct.product_templates.design_area}
-                onPositionChange={handlePositionChange}
-              />
-            )}
-          </div>
+          {selectedProduct && selectedProduct.product_templates && (
+            <ProductDetailsForm
+              productData={productData}
+              setProductData={setProductData}
+              finalPrice={calculateFinalPrice()}
+              isLoading={isLoading}
+              canSubmit={!!designPosition}
+              onSubmit={handleSubmit}
+            />
+          )}
         </div>
-      )}
+
+        <div>
+          {showPositioner && selectedProduct && selectedProduct.product_templates && designUrl && (
+            <DesignPositioner
+              templateSvgUrl={selectedProduct.product_templates.svg_file_url}
+              designImageUrl={designUrl}
+              designArea={selectedProduct.product_templates.design_area}
+              onPositionChange={handlePositionChange}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 };
