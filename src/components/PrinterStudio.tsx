@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useProductForm } from "@/hooks/useProductForm";
 import PrinterTabs from "@/components/printer/PrinterTabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface PrintProduct {
   id: string;
@@ -78,9 +80,24 @@ const PrinterStudio: React.FC = () => {
     }
   };
 
+  // Compter les produits sans gabarit
+  const productsWithoutTemplate = printProducts.filter(product => !product.template_id);
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8">Dashboard Imprimeur</h1>
+      
+      {/* Alerte pour les produits sans gabarit */}
+      {productsWithoutTemplate.length > 0 && (
+        <Alert className="mb-6 border-orange-200 bg-orange-50">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800">
+            <strong>Attention :</strong> {productsWithoutTemplate.length} produit{productsWithoutTemplate.length > 1 ? 's' : ''} 
+            {productsWithoutTemplate.length > 1 ? ' ne sont' : ' n\'est'} pas encore configuré{productsWithoutTemplate.length > 1 ? 's' : ''} 
+            pour la personnalisation. Les créateurs ne pourront pas les utiliser tant qu'un gabarit ne leur aura pas été assigné.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <PrinterTabs
         activeTab={activeTab}

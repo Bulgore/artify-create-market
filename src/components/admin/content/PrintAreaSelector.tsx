@@ -1,10 +1,10 @@
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RotateCcw, Move, Square } from 'lucide-react';
+import { Move, RotateCcw } from 'lucide-react';
 
 interface PrintArea {
   x: number;
@@ -15,232 +15,267 @@ interface PrintArea {
 
 interface PrintAreaSelectorProps {
   svgUrl: string;
+  mockupUrl?: string;
   printArea: PrintArea;
   onPrintAreaChange: (area: PrintArea) => void;
 }
 
 const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
   svgUrl,
+  mockupUrl,
   printArea,
   onPrintAreaChange
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [svgDimensions, setSvgDimensions] = useState({ width: 400, height: 400 });
-  const svgRef = useRef<SVGSVGElement>(null);
+  const [activeView, setActiveView] = useState<'svg' | 'mockup'>('svg');
+  const svgRef = useRef<HTMLDivElement>(null);
+  const mockupRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, action: 'drag' | 'resize') => {
+  const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();
-    const rect = svgRef.current?.getBoundingClientRect();
+    const rect = (activeView === 'svg' ? svgRef.current : mockupRef.current)?.getBoundingClientRect();
     if (!rect) return;
 
-    const x = ((e.clientX - rect.left) / rect.width) * svgDimensions.width;
-    const y = ((e.clientY - rect.top) / rect.height) * svgDimensions.height;
+    setDragStart({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
 
     if (action === 'drag') {
       setIsDragging(true);
-      setDragStart({
-        x: x - printArea.x,
-        y: y - printArea.y
-      });
     } else {
       setIsResizing(true);
-      setDragStart({ x, y });
     }
-  }, [printArea, svgDimensions]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging && !isResizing) return;
-
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const x = ((e.clientX - rect.left) / rect.width) * svgDimensions.width;
-    const y = ((e.clientY - rect.top) / rect.height) * svgDimensions.height;
-
-    if (isDragging) {
-      const newX = Math.max(0, Math.min(svgDimensions.width - printArea.width, x - dragStart.x));
-      const newY = Math.max(0, Math.min(svgDimensions.height - printArea.height, y - dragStart.y));
-      
-      onPrintAreaChange({
-        ...printArea,
-        x: newX,
-        y: newY
-      });
-    } else if (isResizing) {
-      const newWidth = Math.max(20, Math.min(svgDimensions.width - printArea.x, x - printArea.x));
-      const newHeight = Math.max(20, Math.min(svgDimensions.height - printArea.y, y - printArea.y));
-      
-      onPrintAreaChange({
-        ...printArea,
-        width: newWidth,
-        height: newHeight
-      });
-    }
-  }, [isDragging, isResizing, dragStart, printArea, svgDimensions, onPrintAreaChange]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-    setIsResizing(false);
-  }, []);
-
-  const resetArea = () => {
-    onPrintAreaChange({
-      x: svgDimensions.width * 0.3,
-      y: svgDimensions.height * 0.3,
-      width: svgDimensions.width * 0.4,
-      height: svgDimensions.height * 0.4
-    });
   };
 
-  const handleInputChange = (field: keyof PrintArea, value: number) => {
-    const constrainedValue = Math.max(0, value);
-    let newArea = { ...printArea, [field]: constrainedValue };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging && !isResizing) return;
+    
+    const rect = (activeView === 'svg' ? svgRef.current : mockupRef.current)?.getBoundingClientRect();
+    if (!rect) return;
 
-    // Constrain position and size within SVG bounds
-    if (field === 'x' || field === 'width') {
-      newArea.x = Math.max(0, Math.min(svgDimensions.width - newArea.width, newArea.x));
-      newArea.width = Math.max(10, Math.min(svgDimensions.width - newArea.x, newArea.width));
-    }
-    if (field === 'y' || field === 'height') {
-      newArea.y = Math.max(0, Math.min(svgDimensions.height - newArea.height, newArea.y));
-      newArea.height = Math.max(10, Math.min(svgDimensions.height - newArea.y, newArea.height));
-    }
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-    onPrintAreaChange(newArea);
+    if (isDragging) {
+      const deltaX = x - dragStart.x;
+      const deltaY = y - dragStart.y;
+      
+      onPrintAreaChange({
+        ...printArea,
+        x: Math.max(0, Math.min(rect.width - printArea.width, printArea.x + deltaX)),
+        y: Math.max(0, Math.min(rect.height - printArea.height, printArea.y + deltaY))
+      });
+      
+      setDragStart({ x, y });
+    } else if (isResizing) {
+      const newWidth = Math.max(50, x - printArea.x);
+      const newHeight = Math.max(50, y - printArea.y);
+      
+      onPrintAreaChange({
+        ...printArea,
+        width: Math.min(newWidth, rect.width - printArea.x),
+        height: Math.min(newHeight, rect.height - printArea.y)
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setIsResizing(false);
+  };
+
+  const resetArea = () => {
+    onPrintAreaChange({ x: 50, y: 50, width: 200, height: 200 });
   };
 
   useEffect(() => {
-    if (svgUrl) {
-      // Try to get SVG dimensions from the loaded SVG
-      const img = new Image();
-      img.onload = () => {
-        setSvgDimensions({ width: img.width || 400, height: img.height || 400 });
-      };
-      img.src = svgUrl;
-    }
-  }, [svgUrl]);
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Square className="h-5 w-5" />
+          <Move className="h-5 w-5" />
           Zone d'impression
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {svgUrl ? (
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <svg
-              ref={svgRef}
-              viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
-              className="w-full h-64 border rounded cursor-crosshair"
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant={activeView === 'svg' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveView('svg')}
+            disabled={!svgUrl}
+          >
+            Vue SVG
+          </Button>
+          <Button
+            type="button"
+            variant={activeView === 'mockup' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveView('mockup')}
+            disabled={!mockupUrl}
+          >
+            Vue Mockup
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={resetArea}
+          >
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Reset
+          </Button>
+        </div>
+
+        {/* Affichage SVG */}
+        {activeView === 'svg' && svgUrl && (
+          <div
+            ref={svgRef}
+            className="relative border-2 border-gray-300 rounded bg-white overflow-hidden"
+            style={{ height: '400px' }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+          >
+            <img
+              src={svgUrl}
+              alt="Template SVG"
+              className="w-full h-full object-contain"
+              draggable={false}
+            />
+            
+            {/* Zone d'impression draggable */}
+            <div
+              className="absolute border-2 border-blue-500 bg-blue-200/30 cursor-move"
+              style={{
+                left: `${printArea.x}px`,
+                top: `${printArea.y}px`,
+                width: `${printArea.width}px`,
+                height: `${printArea.height}px`,
+              }}
+              onMouseDown={(e) => handleMouseDown(e, 'drag')}
             >
-              {/* Background SVG */}
-              <image
-                href={svgUrl}
-                x="0"
-                y="0"
-                width={svgDimensions.width}
-                height={svgDimensions.height}
-                opacity="0.3"
-              />
-              
-              {/* Print area rectangle */}
-              <rect
-                x={printArea.x}
-                y={printArea.y}
-                width={printArea.width}
-                height={printArea.height}
-                fill="rgba(51, 195, 240, 0.2)"
-                stroke="#33C3F0"
-                strokeWidth="2"
-                strokeDasharray="5,5"
-                onMouseDown={(e) => handleMouseDown(e, 'drag')}
-                className="cursor-move"
-              />
-              
-              {/* Resize handle */}
-              <circle
-                cx={printArea.x + printArea.width}
-                cy={printArea.y + printArea.height}
-                r="6"
-                fill="#33C3F0"
-                stroke="white"
-                strokeWidth="2"
-                onMouseDown={(e) => handleMouseDown(e, 'resize')}
-                className="cursor-se-resize"
-              />
-              
-              {/* Zone label */}
-              <text
-                x={printArea.x + printArea.width / 2}
-                y={printArea.y + printArea.height / 2}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="#33C3F0"
-                fontSize="12"
-                fontWeight="bold"
-                pointerEvents="none"
-              >
+              <div className="absolute inset-0 flex items-center justify-center text-blue-700 text-xs font-medium">
                 Zone d'impression
-              </text>
-            </svg>
-          </div>
-        ) : (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <Square className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p className="text-gray-500">Uploadez d'abord un fichier SVG pour définir la zone d'impression</p>
+              </div>
+              
+              {/* Handle de redimensionnement */}
+              <div
+                className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handleMouseDown(e, 'resize');
+                }}
+              />
+            </div>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Position X</Label>
+        {/* Affichage Mockup */}
+        {activeView === 'mockup' && mockupUrl && (
+          <div
+            ref={mockupRef}
+            className="relative border-2 border-gray-300 rounded bg-white overflow-hidden"
+            style={{ height: '400px' }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+          >
+            <img
+              src={mockupUrl}
+              alt="Template Mockup"
+              className="w-full h-full object-contain"
+              draggable={false}
+            />
+            
+            {/* Zone d'impression sur le mockup */}
+            <div
+              className="absolute border-2 border-green-500 bg-green-200/30 cursor-move"
+              style={{
+                left: `${printArea.x}px`,
+                top: `${printArea.y}px`,
+                width: `${printArea.width}px`,
+                height: `${printArea.height}px`,
+              }}
+              onMouseDown={(e) => handleMouseDown(e, 'drag')}
+            >
+              <div className="absolute inset-0 flex items-center justify-center text-green-700 text-xs font-medium">
+                Aperçu zone
+              </div>
+              
+              {/* Handle de redimensionnement */}
+              <div
+                className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 cursor-se-resize"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handleMouseDown(e, 'resize');
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Pas de fichier disponible */}
+        {!svgUrl && !mockupUrl && (
+          <div className="h-60 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500">
+            Uploadez un fichier SVG ou une image mockup pour configurer la zone d'impression
+          </div>
+        )}
+
+        {/* Contrôles manuels */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <Label htmlFor="area-x">X</Label>
             <Input
+              id="area-x"
               type="number"
-              value={Math.round(printArea.x)}
-              onChange={(e) => handleInputChange('x', parseInt(e.target.value) || 0)}
+              value={printArea.x}
+              onChange={(e) => onPrintAreaChange({ ...printArea, x: Number(e.target.value) })}
+              min="0"
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label>Position Y</Label>
+          <div>
+            <Label htmlFor="area-y">Y</Label>
             <Input
+              id="area-y"
               type="number"
-              value={Math.round(printArea.y)}
-              onChange={(e) => handleInputChange('y', parseInt(e.target.value) || 0)}
+              value={printArea.y}
+              onChange={(e) => onPrintAreaChange({ ...printArea, y: Number(e.target.value) })}
+              min="0"
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label>Largeur</Label>
+          <div>
+            <Label htmlFor="area-width">Largeur</Label>
             <Input
+              id="area-width"
               type="number"
-              value={Math.round(printArea.width)}
-              onChange={(e) => handleInputChange('width', parseInt(e.target.value) || 0)}
+              value={printArea.width}
+              onChange={(e) => onPrintAreaChange({ ...printArea, width: Number(e.target.value) })}
+              min="50"
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label>Hauteur</Label>
+          <div>
+            <Label htmlFor="area-height">Hauteur</Label>
             <Input
+              id="area-height"
               type="number"
-              value={Math.round(printArea.height)}
-              onChange={(e) => handleInputChange('height', parseInt(e.target.value) || 0)}
+              value={printArea.height}
+              onChange={(e) => onPrintAreaChange({ ...printArea, height: Number(e.target.value) })}
+              min="50"
             />
           </div>
         </div>
-
-        <Button onClick={resetArea} variant="outline" size="sm">
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Réinitialiser la zone
-        </Button>
       </CardContent>
     </Card>
   );

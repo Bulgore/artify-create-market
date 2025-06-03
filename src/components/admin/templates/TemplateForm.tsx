@@ -78,6 +78,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
 
       <PrintAreaSelector
         svgUrl={formData.svg_file_url}
+        mockupUrl={formData.mockup_image_url}
         printArea={formData.design_area}
         onPrintAreaChange={(area) => setFormData({...formData, design_area: area})}
       />
@@ -89,7 +90,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
             value={formData.available_positions.join(', ')}
             onChange={(e) => setFormData({
               ...formData, 
-              available_positions: e.target.value.split(',').map(s => s.trim())
+              available_positions: e.target.value.split(',').map(s => s.trim()).filter(s => s)
             })}
             placeholder="face, dos, manche"
           />
@@ -100,7 +101,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
             value={formData.available_colors.join(', ')}
             onChange={(e) => setFormData({
               ...formData, 
-              available_colors: e.target.value.split(',').map(s => s.trim())
+              available_colors: e.target.value.split(',').map(s => s.trim()).filter(s => s)
             })}
             placeholder="white, black, red"
           />

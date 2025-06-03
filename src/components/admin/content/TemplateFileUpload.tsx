@@ -35,50 +35,57 @@ const TemplateFileUpload: React.FC<TemplateFileUploadProps> = ({
 
     setIsUploading(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const newFile = {
-            user_id: user.id,
-            filename: file.name,
-            file_url: e.target?.result as string,
-            file_type: file.type,
-            file_size: file.size
-          };
-          
-          const { data, error } = await supabase
-            .from('media_files')
-            .insert([newFile])
-            .select()
-            .single();
+      // Générer un nom de fichier unique
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `template-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
+      const filePath = `templates/${fileName}`;
 
-          if (error) throw error;
-          
-          onUrlChange(data.file_url);
-          
-          toast({
-            title: "Fichier uploadé",
-            description: `${file.name} a été ajouté à votre médiathèque.`
-          });
-        } catch (error: any) {
-          console.error('Error uploading file:', error);
-          toast({
-            variant: "destructive",
-            title: "Erreur d'upload",
-            description: "Impossible d'uploader le fichier.",
-          });
-        } finally {
-          setIsUploading(false);
-        }
-      };
-      reader.readAsDataURL(file);
+      // Upload vers le bucket templates (sera créé automatiquement si nécessaire)
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('templates')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Obtenir l'URL publique
+      const { data: urlData } = supabase.storage
+        .from('templates')
+        .getPublicUrl(filePath);
+
+      const publicUrl = urlData.publicUrl;
+
+      // Sauvegarder les infos du fichier dans media_files
+      const { error: dbError } = await supabase
+        .from('media_files')
+        .insert({
+          user_id: user.id,
+          filename: file.name,
+          file_url: publicUrl,
+          file_type: file.type,
+          file_size: file.size
+        });
+
+      if (dbError) {
+        console.error('Error saving to database:', dbError);
+        // Ne pas faire échouer l'upload si la DB échoue
+      }
+
+      onUrlChange(publicUrl);
+      
+      toast({
+        title: "Fichier uploadé",
+        description: `${file.name} a été ajouté avec succès.`
+      });
     } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Une erreur est survenue lors de l'upload.",
+        title: "Erreur d'upload",
+        description: error.message || "Impossible d'uploader le fichier.",
       });
+    } finally {
       setIsUploading(false);
     }
   };
