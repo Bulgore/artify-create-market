@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,8 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
     handleCanvasMouseUp,
     handleInputChange,
     svgImageLoaded,
-    mockupImageLoaded
+    mockupImageLoaded,
+    forceRedraw
   } = usePrintArea({
     svgUrl,
     mockupUrl,
@@ -57,6 +59,18 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
     }
   };
 
+  const handleTabChange = (value: string) => {
+    console.log('Tab changed to:', value);
+    // Force redraw when switching tabs
+    setTimeout(() => {
+      if (value === 'svg' && svgImageLoaded) {
+        forceRedraw('svg');
+      } else if (value === 'mockup' && mockupImageLoaded) {
+        forceRedraw('mockup');
+      }
+    }, 50);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -70,7 +84,7 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="svg" className="w-full">
+        <Tabs defaultValue="svg" className="w-full" onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="svg">Zone SVG (Impression)</TabsTrigger>
             <TabsTrigger value="mockup">Zone Mockup (Aperçu)</TabsTrigger>

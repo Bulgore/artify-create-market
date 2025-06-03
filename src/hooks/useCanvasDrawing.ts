@@ -23,13 +23,14 @@ export const useCanvasDrawing = ({
   const mockupCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const drawCanvas = (type: ViewType) => {
+    console.log(`Drawing canvas for ${type}`);
     const canvas = type === 'svg' ? svgCanvasRef.current : mockupCanvasRef.current;
     const image = type === 'svg' ? svgImageRef.current : mockupImageRef.current;
     const area = type === 'svg' ? printArea : (mockupPrintArea || { x: 50, y: 50, width: 200, height: 200 });
     const imageLoaded = type === 'svg' ? svgImageLoaded : mockupImageLoaded;
 
     if (!canvas || !image || !imageLoaded) {
-      console.log(`Canvas, image or loading state not ready for ${type}`, { 
+      console.log(`Canvas drawing skipped for ${type}:`, { 
         canvas: !!canvas, 
         image: !!image, 
         imageLoaded 
@@ -52,13 +53,11 @@ export const useCanvasDrawing = ({
       const newWidth = image.naturalWidth * scale;
       const newHeight = image.naturalHeight * scale;
       
-      // Resize canvas if necessary
-      if (canvas.width !== newWidth || canvas.height !== newHeight) {
-        canvas.width = newWidth;
-        canvas.height = newHeight;
-        canvas.style.width = `${newWidth}px`;
-        canvas.style.height = `${newHeight}px`;
-      }
+      // Always resize canvas to ensure it's visible
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      canvas.style.width = `${newWidth}px`;
+      canvas.style.height = `${newHeight}px`;
 
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -99,6 +98,12 @@ export const useCanvasDrawing = ({
     }
   };
 
+  // Force redraw function for manual triggering
+  const forceRedraw = (type: ViewType) => {
+    console.log(`Force redrawing ${type} canvas`);
+    setTimeout(() => drawCanvas(type), 100);
+  };
+
   // Redraw canvas when areas change
   useEffect(() => {
     if (svgImageLoaded && svgImageRef.current) {
@@ -117,6 +122,7 @@ export const useCanvasDrawing = ({
   return {
     svgCanvasRef,
     mockupCanvasRef,
-    drawCanvas
+    drawCanvas,
+    forceRedraw
   };
 };

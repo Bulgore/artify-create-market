@@ -21,7 +21,8 @@ export const usePrintArea = ({
 
   const {
     svgCanvasRef,
-    mockupCanvasRef
+    mockupCanvasRef,
+    forceRedraw
   } = useCanvasDrawing({
     svgImageRef,
     mockupImageRef,
@@ -59,6 +60,7 @@ export const usePrintArea = ({
     handleCanvasMouseUp,
     handleInputChange,
     svgImageLoaded,
-    mockupImageLoaded
+    mockupImageLoaded,
+    forceRedraw
   };
 };
