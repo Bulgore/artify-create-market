@@ -1,11 +1,12 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import ProductsList from "@/components/printer/ProductsList";
-import AddProductForm from "@/components/printer/AddProductForm";
-import OrdersList from "@/components/printer/OrdersList";
-import SalesPanel from "@/components/printer/SalesPanel";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Package, Plus, ShoppingCart, BarChart3 } from "lucide-react";
+import ProductsList from "./ProductsList";
+import AddProductForm from "./AddProductForm";
+import OrdersList from "./OrdersList";
+import SalesPanel from "./SalesPanel";
 
 interface PrintProduct {
   id: string;
@@ -21,13 +22,25 @@ interface PrintProduct {
   is_active: boolean;
 }
 
+interface FormData {
+  name: string;
+  description: string;
+  base_price: number;
+  material: string;
+  stock_quantity: number;
+  template_id: string | null;
+  selectedTemplate: any | null;
+  available_sizes: string[];
+  available_colors: string[];
+}
+
 interface PrinterTabsProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   printProducts: PrintProduct[];
   isLoading: boolean;
   onRefreshProducts: () => void;
-  formData: any;
+  formData: FormData;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onTemplateSelect: (templateId: string, template: any) => void;
   onSizeToggle: (size: string) => void;
@@ -48,70 +61,75 @@ const PrinterTabs: React.FC<PrinterTabsProps> = ({
   onColorToggle,
   onSubmit
 }) => {
-  const handleAddProduct = () => {
-    setActiveTab("addProduct");
-  };
-
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="mb-8">
-        <TabsTrigger value="products">Mes Produits</TabsTrigger>
-        <TabsTrigger value="addProduct">Ajouter un Produit</TabsTrigger>
-        <TabsTrigger value="orders">Commandes</TabsTrigger>
-        <TabsTrigger value="sales">Mes Ventes</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="products" className="flex items-center gap-2">
+          <Package className="h-4 w-4" />
+          Mes produits
+        </TabsTrigger>
+        <TabsTrigger value="addProduct" className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Ajouter produit
+        </TabsTrigger>
+        <TabsTrigger value="orders" className="flex items-center gap-2">
+          <ShoppingCart className="h-4 w-4" />
+          Commandes
+        </TabsTrigger>
+        <TabsTrigger value="sales" className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4" />
+          Ventes
+        </TabsTrigger>
       </TabsList>
-      
-      <TabsContent value="products">
+
+      <TabsContent value="products" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Mes Produits d'Impression</CardTitle>
-            <CardDescription>
-              Gérez les produits que vous proposez aux créateurs.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Mes produits d'impression
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ProductsList 
-              isLoading={isLoading}
-              printProducts={printProducts}
-              onEditProduct={(id) => {
-                // TODO: Implement edit functionality
-                console.log("Edit product:", id);
-              }}
-              onAddProduct={handleAddProduct}
+              isLoading={isLoading} 
+              printProducts={printProducts} 
+              onRefreshProducts={onRefreshProducts}
+              onAddProduct={() => setActiveTab("addProduct")}
             />
           </CardContent>
         </Card>
       </TabsContent>
-      
-      <TabsContent value="addProduct">
+
+      <TabsContent value="addProduct" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Créer un nouveau produit d'impression</CardTitle>
-            <CardDescription>
-              Sélectionnez un gabarit et définissez vos paramètres d'impression.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Ajouter un nouveau produit
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <AddProductForm
               formData={formData}
-              isLoading={isLoading}
               onInputChange={onInputChange}
               onTemplateSelect={onTemplateSelect}
               onSizeToggle={onSizeToggle}
               onColorToggle={onColorToggle}
               onSubmit={onSubmit}
+              isLoading={isLoading}
             />
           </CardContent>
         </Card>
       </TabsContent>
-      
-      <TabsContent value="orders">
+
+      <TabsContent value="orders" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Commandes à imprimer</CardTitle>
-            <CardDescription>
-              Consultez et gérez les commandes à produire.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Commandes reçues
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <OrdersList />
@@ -119,7 +137,7 @@ const PrinterTabs: React.FC<PrinterTabsProps> = ({
         </Card>
       </TabsContent>
 
-      <TabsContent value="sales">
+      <TabsContent value="sales" className="space-y-6">
         <SalesPanel />
       </TabsContent>
     </Tabs>

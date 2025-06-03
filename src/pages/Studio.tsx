@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -22,9 +21,11 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Studio = () => {
-  const { user, userRole, isAdmin, signOut, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
+  const { isCreator, isPrinter, isSuperAdmin, userRole } = useUserRole();
   const navigate = useNavigate();
   
   // Redirect if not logged in
@@ -36,10 +37,10 @@ const Studio = () => {
 
   // Redirect admin to admin page
   useEffect(() => {
-    if (!loading && user && isAdmin()) {
+    if (!loading && user && isSuperAdmin) {
       navigate("/admin");
     }
-  }, [user, userRole, loading, isAdmin, navigate]);
+  }, [user, loading, isSuperAdmin, navigate]);
   
   // Show loading while auth is initializing
   if (loading) {
@@ -58,18 +59,27 @@ const Studio = () => {
   }
 
   // If user is admin, we'll redirect in the useEffect
-  if (isAdmin()) {
+  if (isSuperAdmin) {
     return null;
+  }
+
+  // Check if user has a valid role
+  if (!isCreator && !isPrinter) {
+    return (
+      <div className="h-screen w-full bg-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Accès non autorisé</h2>
+          <p className="text-gray-600 mb-4">Rôle d'utilisateur non reconnu: {userRole}</p>
+          <p className="text-sm text-gray-400">Veuillez contacter l'administrateur.</p>
+        </div>
+      </div>
+    );
   }
 
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard },
     { name: "Paramètres", icon: Settings },
   ];
-
-  // Use userRole from context (from database) instead of user_metadata
-  const isCreator = userRole === 'créateur';
-  const isPrinter = userRole === 'imprimeur';
 
   // Debug log to help track the issue
   console.log("Studio - userRole:", userRole, "user_metadata.role:", user.user_metadata?.role);
@@ -140,16 +150,8 @@ const Studio = () => {
               transition={{ duration: 0.5 }}
               className="p-6"
             >
-              {isCreator ? (
-                <CreatorStudio />
-              ) : isPrinter ? (
-                <PrinterStudio />
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-500">Rôle d'utilisateur non reconnu: {userRole}</p>
-                  <p className="text-sm text-gray-400 mt-2">Veuillez contacter l'administrateur.</p>
-                </div>
-              )}
+              {isCreator && <CreatorStudio />}
+              {isPrinter && <PrinterStudio />}
             </motion.div>
           </div>
         </div>

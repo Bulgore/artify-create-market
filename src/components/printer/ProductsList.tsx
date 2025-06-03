@@ -1,9 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import EditPrintProductModal from "./EditPrintProductModal";
 
 interface PrintProduct {
   id: string;
@@ -21,16 +22,30 @@ interface PrintProduct {
 interface ProductsListProps {
   isLoading: boolean;
   printProducts: PrintProduct[];
-  onEditProduct?: (productId: string) => void;
+  onRefreshProducts: () => void;
   onAddProduct?: () => void;
 }
 
 const ProductsList: React.FC<ProductsListProps> = ({ 
   isLoading, 
   printProducts, 
-  onEditProduct,
+  onRefreshProducts,
   onAddProduct 
 }) => {
+  const [editingProduct, setEditingProduct] = useState<PrintProduct | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleEditProduct = (product: PrintProduct) => {
+    console.log("Edit product:", product.id);
+    setEditingProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingProduct(null);
+  };
+
   const handleAddProductClick = () => {
     if (onAddProduct) {
       onAddProduct();
@@ -71,12 +86,12 @@ const ProductsList: React.FC<ProductsListProps> = ({
                   <p className="text-xs text-gray-500">Tailles: {product.available_sizes.join(', ')}</p>
                   <p className="text-xs text-gray-500">Couleurs: {product.available_colors.join(', ')}</p>
                 </div>
-                <p className="font-medium mb-4">{product.base_price} XPF</p>
+                <p className="font-medium mb-4">{product.base_price}€</p>
                 <div className="flex justify-between">
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => onEditProduct && onEditProduct(product.id)}
+                    onClick={() => handleEditProduct(product)}
                   >
                     Modifier
                   </Button>
@@ -108,6 +123,13 @@ const ProductsList: React.FC<ProductsListProps> = ({
           </Button>
         </div>
       )}
+
+      <EditPrintProductModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        product={editingProduct}
+        onProductUpdated={onRefreshProducts}
+      />
     </>
   );
 };
