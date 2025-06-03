@@ -36,8 +36,9 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const fetchTemplates = async () => {
     setIsLoading(true);
     try {
-      console.log("Fetching active templates for printer...");
+      console.log("Fetching all active templates for printer...");
       
+      // Récupérer TOUS les gabarits actifs, peu importe qui les a créés
       const { data, error } = await supabase
         .from('product_templates')
         .select('*')
@@ -49,13 +50,13 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         throw error;
       }
 
-      console.log("Templates fetched successfully:", data?.length || 0, "templates");
+      console.log("All active templates fetched successfully:", data?.length || 0, "templates");
       setTemplates(data || []);
       
       if (!data || data.length === 0) {
         toast({
           title: "Information",
-          description: "Aucun gabarit actif disponible. Contactez l'administrateur pour en créer.",
+          description: "Aucun gabarit actif disponible. Les gabarits doivent être créés par l'administrateur.",
         });
       }
     } catch (error: any) {
@@ -63,7 +64,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de charger les gabarits disponibles. Vérifiez vos permissions.",
+        description: "Impossible de charger les gabarits disponibles.",
       });
     } finally {
       setIsLoading(false);
@@ -135,15 +136,19 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               <div className="flex-1 space-y-1">
                 <h4 className="font-medium text-sm">{selectedTemplate.name}</h4>
                 <p className="text-xs text-gray-600">Type: {selectedTemplate.type}</p>
-                <p className="text-xs text-gray-600">
-                  Positions: {selectedTemplate.available_positions?.join(', ') || 'Non spécifié'}
-                </p>
-                <p className="text-xs text-gray-600">
-                  Couleurs: {selectedTemplate.available_colors?.join(', ') || 'Non spécifié'}
-                </p>
+                {selectedTemplate.available_positions && selectedTemplate.available_positions.length > 0 && (
+                  <p className="text-xs text-gray-600">
+                    Positions: {selectedTemplate.available_positions.join(', ')}
+                  </p>
+                )}
+                {selectedTemplate.available_colors && selectedTemplate.available_colors.length > 0 && (
+                  <p className="text-xs text-gray-600">
+                    Couleurs: {selectedTemplate.available_colors.join(', ')}
+                  </p>
+                )}
                 {selectedTemplate.technical_instructions && (
                   <p className="text-xs text-gray-500 italic">
-                    {selectedTemplate.technical_instructions}
+                    Instructions: {selectedTemplate.technical_instructions}
                   </p>
                 )}
               </div>
