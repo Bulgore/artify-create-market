@@ -2,9 +2,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Move, RotateCcw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { MousePointer, Square, Info } from 'lucide-react';
 
 interface PrintArea {
   x: number;
@@ -18,13 +19,17 @@ interface PrintAreaSelectorProps {
   mockupUrl?: string;
   printArea: PrintArea;
   onPrintAreaChange: (area: PrintArea) => void;
+  mockupPrintArea?: PrintArea;
+  onMockupPrintAreaChange?: (area: PrintArea) => void;
 }
 
 const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
   svgUrl,
   mockupUrl,
   printArea,
-  onPrintAreaChange
+  onPrintAreaChange,
+  mockupPrintArea,
+  onMockupPrintAreaChange
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
