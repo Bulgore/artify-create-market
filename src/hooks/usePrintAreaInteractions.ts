@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { PrintArea, ViewType } from '@/types/printArea';
 import { getCanvasCoordinates, isPointInResizeHandle, isPointInArea, constrainAreaToBounds } from '@/utils/printAreaUtils';
+import { usePrintAreaSync } from './usePrintAreaSync';
+import { useMockupAreaInteractions } from './useMockupAreaInteractions';
 
 interface UsePrintAreaInteractionsProps {
   svgCanvasRef: React.RefObject<HTMLCanvasElement>;
@@ -32,6 +34,24 @@ export const usePrintAreaInteractions = ({
   const currentSvgArea = printArea;
   const currentMockupArea = mockupPrintArea || { x: 50, y: 50, width: 200, height: 200 };
 
+  // Hook de synchronisation des proportions
+  const { getSvgProportions } = usePrintAreaSync({
+    svgArea: currentSvgArea,
+    mockupArea: currentMockupArea,
+    onMockupAreaChange: onMockupPrintAreaChange,
+    svgImageRef,
+    mockupImageRef
+  });
+
+  // Hook pour les interactions spécifiques au mockup
+  const { handleMockupInputChange, handleMockupCanvasInteraction } = useMockupAreaInteractions({
+    mockupCanvasRef,
+    mockupImageRef,
+    mockupArea: currentMockupArea,
+    onMockupAreaChange: onMockupPrintAreaChange || (() => {}),
+    getSvgProportions
+  });
+
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>, type: ViewType) => {
     e.preventDefault();
     setActiveView(type);
@@ -59,45 +79,45 @@ export const usePrintAreaInteractions = ({
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDragging && !isResizing) return;
 
-    const canvas = activeView === 'svg' ? svgCanvasRef.current : mockupCanvasRef.current;
-    const image = activeView === 'svg' ? svgImageRef.current : mockupImageRef.current;
-    const { x, y } = getCanvasCoordinates(e, canvas, image);
-    
-    if (!image) return;
-
-    if (isDragging) {
-      const deltaX = x - dragStart.x;
-      const deltaY = y - dragStart.y;
+    if (activeView === 'svg') {
+      // Logique existante pour SVG
+      const canvas = svgCanvasRef.current;
+      const image = svgImageRef.current;
+      const { x, y } = getCanvasCoordinates(e, canvas, image);
       
-      const currentArea = activeView === 'svg' ? currentSvgArea : currentMockupArea;
-      const newArea = constrainAreaToBounds({
-        ...currentArea,
-        x: currentArea.x + deltaX,
-        y: currentArea.y + deltaY
-      }, image.width, image.height);
+      if (!image) return;
 
-      if (activeView === 'svg') {
+      if (isDragging) {
+        const deltaX = x - dragStart.x;
+        const deltaY = y - dragStart.y;
+        
+        const newArea = constrainAreaToBounds({
+          ...currentSvgArea,
+          x: currentSvgArea.x + deltaX,
+          y: currentSvgArea.y + deltaY
+        }, image.width, image.height);
+
         onPrintAreaChange(newArea);
-      } else if (onMockupPrintAreaChange) {
-        onMockupPrintAreaChange(newArea);
+        setDragStart({ x, y });
+      } else if (isResizing) {
+        const newWidth = Math.max(50, x - currentSvgArea.x);
+        const newHeight = Math.max(50, y - currentSvgArea.y);
+        
+        const newArea = constrainAreaToBounds({
+          ...currentSvgArea,
+          width: newWidth,
+          height: newHeight
+        }, image.width, image.height);
+
+        onPrintAreaChange(newArea);
       }
+    } else if (activeView === 'mockup' && onMockupPrintAreaChange) {
+      // Utiliser la logique spécialisée pour mockup
+      const interactionType = isDragging ? 'drag' : 'resize';
+      const result = handleMockupCanvasInteraction(e, interactionType, dragStart);
       
-      setDragStart({ x, y });
-    } else if (isResizing) {
-      const currentArea = activeView === 'svg' ? currentSvgArea : currentMockupArea;
-      const newWidth = Math.max(50, x - currentArea.x);
-      const newHeight = Math.max(50, y - currentArea.y);
-      
-      const newArea = constrainAreaToBounds({
-        ...currentArea,
-        width: newWidth,
-        height: newHeight
-      }, image.width, image.height);
-
-      if (activeView === 'svg') {
-        onPrintAreaChange(newArea);
-      } else if (onMockupPrintAreaChange) {
-        onMockupPrintAreaChange(newArea);
+      if (result && isDragging) {
+        setDragStart(result);
       }
     }
   };
@@ -108,13 +128,11 @@ export const usePrintAreaInteractions = ({
   };
 
   const handleInputChange = (field: keyof PrintArea, value: number, type: ViewType) => {
-    const currentArea = type === 'svg' ? currentSvgArea : currentMockupArea;
-    const newArea = { ...currentArea, [field]: Math.max(0, value) };
-
     if (type === 'svg') {
+      const newArea = { ...currentSvgArea, [field]: Math.max(0, value) };
       onPrintAreaChange(newArea);
-    } else if (onMockupPrintAreaChange) {
-      onMockupPrintAreaChange(newArea);
+    } else if (type === 'mockup') {
+      handleMockupInputChange(field, value);
     }
   };
 

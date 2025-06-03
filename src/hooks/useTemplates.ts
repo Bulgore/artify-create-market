@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,12 +51,38 @@ export const useTemplates = () => {
     if (!user) return;
 
     try {
-      const templateData = {
-        ...formData,
-        created_by: user.id,
-        design_area: JSON.stringify(formData.design_area),
-        mockup_area: formData.mockup_area ? JSON.stringify(formData.mockup_area) : null
+      console.log('Saving template with data:', formData);
+      
+      // S'assurer que les zones sont des objets valides avec des nombres
+      const cleanDesignArea = {
+        x: Number(formData.design_area.x) || 0,
+        y: Number(formData.design_area.y) || 0,
+        width: Number(formData.design_area.width) || 200,
+        height: Number(formData.design_area.height) || 200
       };
+
+      const cleanMockupArea = formData.mockup_area ? {
+        x: Number(formData.mockup_area.x) || 50,
+        y: Number(formData.mockup_area.y) || 50,
+        width: Number(formData.mockup_area.width) || 200,
+        height: Number(formData.mockup_area.height) || 200
+      } : null;
+
+      const templateData = {
+        name: formData.name || '',
+        type: formData.type || '',
+        svg_file_url: formData.svg_file_url || '',
+        mockup_image_url: formData.mockup_image_url || '',
+        created_by: user.id,
+        design_area: JSON.stringify(cleanDesignArea),
+        mockup_area: cleanMockupArea ? JSON.stringify(cleanMockupArea) : null,
+        available_positions: formData.available_positions || ['face'],
+        available_colors: formData.available_colors || ['white', 'black'],
+        technical_instructions: formData.technical_instructions || '',
+        is_active: Boolean(formData.is_active)
+      };
+
+      console.log('Template data to save:', templateData);
 
       if (editingTemplate) {
         const { error } = await supabase
@@ -65,7 +90,10 @@ export const useTemplates = () => {
           .update(templateData)
           .eq('id', editingTemplate.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
         
         toast({
           title: "Gabarit mis à jour",
@@ -76,7 +104,10 @@ export const useTemplates = () => {
           .from('product_templates')
           .insert([templateData]);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
         
         toast({
           title: "Gabarit créé",
@@ -93,7 +124,7 @@ export const useTemplates = () => {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de sauvegarder le gabarit.",
+        description: `Impossible de sauvegarder le gabarit: ${error.message || 'Erreur inconnue'}`,
       });
     }
   };
