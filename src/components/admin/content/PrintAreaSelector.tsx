@@ -53,10 +53,12 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
   });
 
   const resetSvgArea = () => {
+    console.log('Resetting SVG area');
     onPrintAreaChange({ x: 50, y: 50, width: 200, height: 200 });
   };
 
   const resetMockupArea = () => {
+    console.log('Resetting mockup area');
     if (onMockupPrintAreaChange) {
       onMockupPrintAreaChange({ x: 50, y: 50, width: 200, height: 200 });
     }
@@ -97,19 +99,29 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                   </Button>
                 </div>
                 {svgUrl ? (
-                  <div className="border border-gray-300 rounded overflow-hidden">
-                    <canvas
-                      ref={svgCanvasRef}
-                      className="cursor-move max-w-full block"
-                      onMouseDown={(e) => handleCanvasMouseDown(e, 'svg')}
-                      onMouseMove={handleCanvasMouseMove}
-                      onMouseUp={handleCanvasMouseUp}
-                      onMouseLeave={handleCanvasMouseUp}
-                    />
+                  <div className="border border-gray-300 rounded overflow-hidden bg-white">
+                    {svgImageLoaded ? (
+                      <canvas
+                        ref={svgCanvasRef}
+                        className="cursor-move max-w-full block mx-auto"
+                        onMouseDown={(e) => handleCanvasMouseDown(e, 'svg')}
+                        onMouseMove={handleCanvasMouseMove}
+                        onMouseUp={handleCanvasMouseUp}
+                        onMouseLeave={handleCanvasMouseUp}
+                        style={{ maxHeight: '400px' }}
+                      />
+                    ) : (
+                      <div className="h-48 flex items-center justify-center text-gray-500">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                          <p>Chargement de l'image SVG...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500">
-                    Aucun fichier SVG
+                  <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500 bg-gray-50">
+                    Aucun fichier SVG sélectionné
                   </div>
                 )}
               </div>
@@ -122,8 +134,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     <Input
                       id="svg-x"
                       type="number"
-                      value={currentSvgArea.x}
+                      value={Math.round(currentSvgArea.x * 100) / 100}
                       onChange={(e) => handleInputChange('x', Number(e.target.value), 'svg')}
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                   <div>
@@ -131,8 +145,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     <Input
                       id="svg-y"
                       type="number"
-                      value={currentSvgArea.y}
+                      value={Math.round(currentSvgArea.y * 100) / 100}
                       onChange={(e) => handleInputChange('y', Number(e.target.value), 'svg')}
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                   <div>
@@ -140,8 +156,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     <Input
                       id="svg-width"
                       type="number"
-                      value={currentSvgArea.width}
+                      value={Math.round(currentSvgArea.width * 100) / 100}
                       onChange={(e) => handleInputChange('width', Number(e.target.value), 'svg')}
+                      min="10"
+                      step="0.01"
                     />
                   </div>
                   <div>
@@ -149,8 +167,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     <Input
                       id="svg-height"
                       type="number"
-                      value={currentSvgArea.height}
+                      value={Math.round(currentSvgArea.height * 100) / 100}
                       onChange={(e) => handleInputChange('height', Number(e.target.value), 'svg')}
+                      min="10"
+                      step="0.01"
                     />
                   </div>
                 </div>
@@ -174,19 +194,29 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                   </Button>
                 </div>
                 {mockupUrl ? (
-                  <div className="border border-gray-300 rounded overflow-hidden">
-                    <canvas
-                      ref={mockupCanvasRef}
-                      className="cursor-move max-w-full block"
-                      onMouseDown={(e) => handleCanvasMouseDown(e, 'mockup')}
-                      onMouseMove={handleCanvasMouseMove}
-                      onMouseUp={handleCanvasMouseUp}
-                      onMouseLeave={handleCanvasMouseUp}
-                    />
+                  <div className="border border-gray-300 rounded overflow-hidden bg-white">
+                    {mockupImageLoaded ? (
+                      <canvas
+                        ref={mockupCanvasRef}
+                        className="cursor-move max-w-full block mx-auto"
+                        onMouseDown={(e) => handleCanvasMouseDown(e, 'mockup')}
+                        onMouseMove={handleCanvasMouseMove}
+                        onMouseUp={handleCanvasMouseUp}
+                        onMouseLeave={handleCanvasMouseUp}
+                        style={{ maxHeight: '400px' }}
+                      />
+                    ) : (
+                      <div className="h-48 flex items-center justify-center text-gray-500">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                          <p>Chargement de l'image mockup...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500">
-                    Aucune image mockup
+                  <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500 bg-gray-50">
+                    Aucune image mockup sélectionnée
                   </div>
                 )}
               </div>
@@ -199,8 +229,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     <Input
                       id="mockup-x"
                       type="number"
-                      value={currentMockupArea.x}
+                      value={Math.round(currentMockupArea.x * 100) / 100}
                       onChange={(e) => handleInputChange('x', Number(e.target.value), 'mockup')}
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                   <div>
@@ -208,8 +240,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     <Input
                       id="mockup-y"
                       type="number"
-                      value={currentMockupArea.y}
+                      value={Math.round(currentMockupArea.y * 100) / 100}
                       onChange={(e) => handleInputChange('y', Number(e.target.value), 'mockup')}
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                   <div>
@@ -217,8 +251,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     <Input
                       id="mockup-width"
                       type="number"
-                      value={currentMockupArea.width}
+                      value={Math.round(currentMockupArea.width * 100) / 100}
                       onChange={(e) => handleInputChange('width', Number(e.target.value), 'mockup')}
+                      min="10"
+                      step="0.01"
                     />
                   </div>
                   <div>
@@ -226,8 +262,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     <Input
                       id="mockup-height"
                       type="number"
-                      value={currentMockupArea.height}
+                      value={Math.round(currentMockupArea.height * 100) / 100}
                       onChange={(e) => handleInputChange('height', Number(e.target.value), 'mockup')}
+                      min="10"
+                      step="0.01"
                     />
                   </div>
                 </div>
