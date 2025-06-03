@@ -37,6 +37,7 @@ const PrinterStudio: React.FC = () => {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<ProductTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("products");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -107,6 +108,10 @@ const PrinterStudio: React.FC = () => {
         available_sizes: [...prev.available_sizes, size]
       }));
     }
+  };
+
+  const handleAddProduct = () => {
+    setActiveTab("addProduct");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,6 +195,9 @@ const PrinterStudio: React.FC = () => {
       // Refresh the templates list
       fetchTemplates();
       
+      // Switch to products tab
+      setActiveTab("products");
+      
     } catch (error: any) {
       console.error("Error adding product:", error);
       toast({
@@ -206,7 +214,7 @@ const PrinterStudio: React.FC = () => {
     <div>
       <h1 className="text-3xl font-bold mb-8">Dashboard Imprimeur</h1>
       
-      <Tabs defaultValue="products" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-8">
           <TabsTrigger value="products">Mes Produits</TabsTrigger>
           <TabsTrigger value="addProduct">Ajouter un Produit</TabsTrigger>
@@ -232,6 +240,7 @@ const PrinterStudio: React.FC = () => {
                     description: "La modification de produits sera bientôt disponible."
                   });
                 }}
+                onAddProduct={handleAddProduct}
               />
             </CardContent>
           </Card>

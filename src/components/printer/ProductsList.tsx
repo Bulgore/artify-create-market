@@ -18,9 +18,27 @@ interface ProductsListProps {
   isLoading: boolean;
   templates: Product[];
   onEditProduct?: (productId: string) => void;
+  onAddProduct?: () => void;
 }
 
-const ProductsList: React.FC<ProductsListProps> = ({ isLoading, templates, onEditProduct }) => {
+const ProductsList: React.FC<ProductsListProps> = ({ 
+  isLoading, 
+  templates, 
+  onEditProduct,
+  onAddProduct 
+}) => {
+  const handleAddProductClick = () => {
+    if (onAddProduct) {
+      onAddProduct();
+    } else {
+      // Fallback: trigger the tab change programmatically
+      const addProductTab = document.querySelector('[data-value="addProduct"]') as HTMLElement;
+      if (addProductTab) {
+        addProductTab.click();
+      }
+    }
+  };
+
   return (
     <>
       {isLoading ? (
@@ -71,7 +89,7 @@ const ProductsList: React.FC<ProductsListProps> = ({ isLoading, templates, onEdi
           <p>Vous n'avez pas encore ajouté de produits.</p>
           <Button 
             className="mt-4 bg-[#33C3F0] hover:bg-[#0FA0CE]"
-            onClick={() => document.querySelector('[data-value="addProduct"]')?.dispatchEvent(new MouseEvent('click'))}
+            onClick={handleAddProductClick}
           >
             Ajouter mon premier produit
           </Button>
