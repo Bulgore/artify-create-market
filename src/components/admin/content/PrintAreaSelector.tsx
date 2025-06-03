@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -7,13 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { MousePointer, Info, RotateCcw } from 'lucide-react';
 import { usePrintArea } from '@/hooks/usePrintArea';
-
-interface PrintArea {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import { PrintArea } from '@/types/printArea';
 
 interface PrintAreaSelectorProps {
   svgUrl: string;
