@@ -26,9 +26,14 @@ export const useCanvasDrawing = ({
     const canvas = type === 'svg' ? svgCanvasRef.current : mockupCanvasRef.current;
     const image = type === 'svg' ? svgImageRef.current : mockupImageRef.current;
     const area = type === 'svg' ? printArea : (mockupPrintArea || { x: 50, y: 50, width: 200, height: 200 });
+    const imageLoaded = type === 'svg' ? svgImageLoaded : mockupImageLoaded;
 
-    if (!canvas || !image) {
-      console.log(`Canvas or image not ready for ${type}`);
+    if (!canvas || !image || !imageLoaded) {
+      console.log(`Canvas, image or loading state not ready for ${type}`, { 
+        canvas: !!canvas, 
+        image: !!image, 
+        imageLoaded 
+      });
       return;
     }
 
@@ -38,25 +43,27 @@ export const useCanvasDrawing = ({
       return;
     }
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Set canvas size to fit the container while maintaining aspect ratio
-    const maxWidth = 400;
-    const maxHeight = 400;
-    const scale = Math.min(maxWidth / image.width, maxHeight / image.height);
-    
-    const newWidth = image.width * scale;
-    const newHeight = image.height * scale;
-    
-    // Only resize if necessary to avoid constant redraws
-    if (canvas.width !== newWidth || canvas.height !== newHeight) {
-      canvas.width = newWidth;
-      canvas.height = newHeight;
-    }
-
-    // Draw the image
     try {
+      // Set canvas size to fit the container while maintaining aspect ratio
+      const maxWidth = 400;
+      const maxHeight = 400;
+      const scale = Math.min(maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+      
+      const newWidth = image.naturalWidth * scale;
+      const newHeight = image.naturalHeight * scale;
+      
+      // Resize canvas if necessary
+      if (canvas.width !== newWidth || canvas.height !== newHeight) {
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        canvas.style.width = `${newWidth}px`;
+        canvas.style.height = `${newHeight}px`;
+      }
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the image
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       
       // Draw the print area overlay
@@ -81,7 +88,12 @@ export const useCanvasDrawing = ({
         handleSize
       );
       
-      console.log(`Canvas drawn successfully for ${type}`);
+      console.log(`Canvas drawn successfully for ${type}`, {
+        imageSize: { width: image.naturalWidth, height: image.naturalHeight },
+        canvasSize: { width: canvas.width, height: canvas.height },
+        scale,
+        area
+      });
     } catch (error) {
       console.error(`Error drawing ${type} canvas:`, error);
     }
@@ -90,12 +102,14 @@ export const useCanvasDrawing = ({
   // Redraw canvas when areas change
   useEffect(() => {
     if (svgImageLoaded && svgImageRef.current) {
+      console.log('Redrawing SVG canvas due to area change');
       drawCanvas('svg');
     }
   }, [printArea, svgImageLoaded]);
 
   useEffect(() => {
     if (mockupImageLoaded && mockupImageRef.current) {
+      console.log('Redrawing mockup canvas due to area change');
       drawCanvas('mockup');
     }
   }, [mockupPrintArea, mockupImageLoaded]);

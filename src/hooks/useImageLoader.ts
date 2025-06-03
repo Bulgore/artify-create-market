@@ -17,20 +17,37 @@ export const useImageLoader = ({ svgUrl, mockupUrl }: UseImageLoaderProps) => {
   useEffect(() => {
     if (svgUrl) {
       console.log('Loading SVG image:', svgUrl);
+      setSvgImageLoaded(false);
+      
       const img = new Image();
       img.crossOrigin = 'anonymous';
+      
       img.onload = () => {
-        console.log('SVG image loaded successfully');
+        console.log('SVG image loaded successfully', {
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+          src: img.src
+        });
         svgImageRef.current = img;
         setSvgImageLoaded(true);
       };
+      
       img.onerror = (error) => {
-        console.error('Error loading SVG image:', error);
+        console.error('Error loading SVG image:', error, 'URL:', svgUrl);
         setSvgImageLoaded(false);
+        svgImageRef.current = null;
       };
-      img.src = svgUrl;
+      
+      // Force reload by adding timestamp if needed
+      const urlWithTimestamp = svgUrl.includes('?') 
+        ? `${svgUrl}&t=${Date.now()}` 
+        : `${svgUrl}?t=${Date.now()}`;
+      
+      img.src = urlWithTimestamp;
     } else {
+      console.log('No SVG URL provided');
       setSvgImageLoaded(false);
+      svgImageRef.current = null;
     }
   }, [svgUrl]);
 
@@ -38,20 +55,37 @@ export const useImageLoader = ({ svgUrl, mockupUrl }: UseImageLoaderProps) => {
   useEffect(() => {
     if (mockupUrl) {
       console.log('Loading mockup image:', mockupUrl);
+      setMockupImageLoaded(false);
+      
       const img = new Image();
       img.crossOrigin = 'anonymous';
+      
       img.onload = () => {
-        console.log('Mockup image loaded successfully');
+        console.log('Mockup image loaded successfully', {
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+          src: img.src
+        });
         mockupImageRef.current = img;
         setMockupImageLoaded(true);
       };
+      
       img.onerror = (error) => {
-        console.error('Error loading mockup image:', error);
+        console.error('Error loading mockup image:', error, 'URL:', mockupUrl);
         setMockupImageLoaded(false);
+        mockupImageRef.current = null;
       };
-      img.src = mockupUrl;
+      
+      // Force reload by adding timestamp if needed
+      const urlWithTimestamp = mockupUrl.includes('?') 
+        ? `${mockupUrl}&t=${Date.now()}` 
+        : `${mockupUrl}?t=${Date.now()}`;
+      
+      img.src = urlWithTimestamp;
     } else {
+      console.log('No mockup URL provided');
       setMockupImageLoaded(false);
+      mockupImageRef.current = null;
     }
   }, [mockupUrl]);
 
