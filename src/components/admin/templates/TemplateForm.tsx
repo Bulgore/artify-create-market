@@ -7,22 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Save, X } from "lucide-react";
 import TemplateFileUpload from "../content/TemplateFileUpload";
 import PrintAreaSelector from "../content/PrintAreaSelector";
-
-interface FormData {
-  name: string;
-  type: string;
-  svg_file_url: string;
-  mockup_image_url: string;
-  design_area: { x: number; y: number; width: number; height: number };
-  available_positions: string[];
-  available_colors: string[];
-  technical_instructions: string;
-  is_active: boolean;
-}
+import { TemplateFormData } from "@/types/templates";
 
 interface TemplateFormProps {
-  formData: FormData;
-  setFormData: (data: FormData) => void;
+  formData: TemplateFormData;
+  setFormData: (data: TemplateFormData) => void;
   onSave: () => void;
   onCancel: () => void;
   isEditing: boolean;
@@ -81,6 +70,8 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
         mockupUrl={formData.mockup_image_url}
         printArea={formData.design_area}
         onPrintAreaChange={(area) => setFormData({...formData, design_area: area})}
+        mockupPrintArea={formData.mockup_area}
+        onMockupPrintAreaChange={(area) => setFormData({...formData, mockup_area: area})}
       />
 
       <div className="grid grid-cols-2 gap-4">

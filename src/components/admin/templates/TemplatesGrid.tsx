@@ -2,20 +2,7 @@
 import React from "react";
 import { Settings } from "lucide-react";
 import TemplateCard from "./TemplateCard";
-
-interface ProductTemplate {
-  id: string;
-  name: string;
-  type: string;
-  svg_file_url: string;
-  mockup_image_url: string;
-  design_area: any;
-  available_positions: string[];
-  available_colors: string[];
-  technical_instructions: string;
-  is_active: boolean;
-  created_at: string;
-}
+import { ProductTemplate } from "@/types/templates";
 
 interface TemplatesGridProps {
   templates: ProductTemplate[];

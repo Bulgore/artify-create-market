@@ -7,39 +7,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import TemplateForm from "./TemplateForm";
-
-interface ProductTemplate {
-  id: string;
-  name: string;
-  type: string;
-  svg_file_url: string;
-  mockup_image_url: string;
-  design_area: any;
-  available_positions: string[];
-  available_colors: string[];
-  technical_instructions: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface FormData {
-  name: string;
-  type: string;
-  svg_file_url: string;
-  mockup_image_url: string;
-  design_area: { x: number; y: number; width: number; height: number };
-  available_positions: string[];
-  available_colors: string[];
-  technical_instructions: string;
-  is_active: boolean;
-}
+import { ProductTemplate, TemplateFormData } from "@/types/templates";
 
 interface TemplateDialogProps {
   isOpen: boolean;
   onClose: () => void;
   editingTemplate: ProductTemplate | null;
-  formData: FormData;
-  setFormData: (data: FormData) => void;
+  formData: TemplateFormData;
+  setFormData: (data: TemplateFormData) => void;
   onSave: () => void;
 }
 
