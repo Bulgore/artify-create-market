@@ -12,12 +12,14 @@ interface MediaUploadProps {
   onMediaSelect: (url: string) => void;
   accept?: string;
   fileType?: 'image' | 'video' | 'document' | 'all';
+  bucketName?: string;
 }
 
 const MediaUpload: React.FC<MediaUploadProps> = ({ 
   onMediaSelect, 
   accept = "image/*",
-  fileType = 'image'
+  fileType = 'image',
+  bucketName = 'designs'
 }) => {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -47,28 +49,28 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     setIsUploading(true);
 
     try {
-      // Generate unique filename
+      // Générer un nom de fichier unique
       const fileExtension = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
-      const filePath = `media/${fileName}`;
+      const filePath = bucketName === 'designs' ? `${user.id}/${fileName}` : fileName;
 
-      // Upload to Supabase Storage (we'll need to create a bucket)
+      // Upload vers le bucket spécifié
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('media')
+        .from(bucketName)
         .upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;
       }
 
-      // Get public URL
+      // Obtenir l'URL publique
       const { data: urlData } = supabase.storage
-        .from('media')
+        .from(bucketName)
         .getPublicUrl(filePath);
 
       const publicUrl = urlData.publicUrl;
 
-      // Save file info to media_files table
+      // Sauvegarder les infos du fichier dans media_files
       const { error: dbError } = await supabase
         .from('media_files')
         .insert({
@@ -81,7 +83,7 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
 
       if (dbError) {
         console.error('Error saving to database:', dbError);
-        // Don't throw here as the file is already uploaded
+        // Ne pas faire échouer l'upload si la DB échoue
       }
 
       toast({
