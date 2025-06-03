@@ -19,6 +19,18 @@ interface ProductTemplate {
   stock_quantity: number;
   images: string[];
   available_sizes: string[];
+  template_id: string | null;
+}
+
+interface SelectedTemplate {
+  id: string;
+  name: string;
+  type: string;
+  mockup_image_url: string;
+  design_area: any;
+  available_positions: string[];
+  available_colors: string[];
+  technical_instructions: string;
 }
 
 const PrinterStudio: React.FC = () => {
@@ -31,9 +43,9 @@ const PrinterStudio: React.FC = () => {
     base_price: 0,
     material: "",
     stock_quantity: 0,
-    print_area: { width: 20, height: 30, unit: "cm" },
-    images: ["/placeholder.svg"],
-    available_sizes: ["S", "M", "L", "XL"]
+    template_id: null as string | null,
+    selectedTemplate: null as SelectedTemplate | null,
+    available_sizes: [] as string[]
   });
 
   // Fetch templates on component mount
@@ -70,14 +82,16 @@ const PrinterStudio: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === "base_price" || name === "stock_quantity" ? parseFloat(value) : value
+      [name]: name === "base_price" || name === "stock_quantity" ? parseFloat(value) || 0 : value
     }));
   };
 
-  const handleSelectChange = (name: string, value: string) => {
+  const handleTemplateSelect = (templateId: string, template: SelectedTemplate) => {
+    console.log("Template selected:", templateId, template);
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      template_id: templateId,
+      selectedTemplate: template
     }));
   };
 
@@ -97,27 +111,64 @@ const PrinterStudio: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.template_id) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner un gabarit de produit."
+      });
+      return;
+    }
+
+    if (formData.available_sizes.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner au moins une taille."
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
+      
+      console.log("Submitting product data:", {
+        printer_id: user?.id,
+        template_id: formData.template_id,
+        name: formData.name,
+        description: formData.description,
+        base_price: formData.base_price,
+        material: formData.material,
+        stock_quantity: formData.stock_quantity,
+        available_sizes: formData.available_sizes,
+        images: [formData.selectedTemplate?.mockup_image_url || "/placeholder.svg"]
+      });
       
       const { data, error } = await supabase
         .from('tshirt_templates')
         .insert([
           {
             printer_id: user?.id,
+            template_id: formData.template_id,
             name: formData.name,
             description: formData.description,
             base_price: formData.base_price,
             material: formData.material,
             stock_quantity: formData.stock_quantity,
-            print_area: formData.print_area,
-            images: formData.images,
+            print_area: formData.selectedTemplate?.design_area || { width: 20, height: 30, unit: "cm" },
+            images: [formData.selectedTemplate?.mockup_image_url || "/placeholder.svg"],
             available_sizes: formData.available_sizes
           }
         ])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
+      
+      console.log("Product created successfully:", data);
       
       toast({
         title: "Produit ajouté",
@@ -131,16 +182,16 @@ const PrinterStudio: React.FC = () => {
         base_price: 0,
         material: "",
         stock_quantity: 0,
-        print_area: { width: 20, height: 30, unit: "cm" },
-        images: ["/placeholder.svg"],
-        available_sizes: ["S", "M", "L", "XL"]
+        template_id: null,
+        selectedTemplate: null,
+        available_sizes: []
       });
       
       // Refresh the templates list
       fetchTemplates();
       
     } catch (error: any) {
-      console.error("Error adding template:", error);
+      console.error("Error adding product:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -191,7 +242,7 @@ const PrinterStudio: React.FC = () => {
             <CardHeader>
               <CardTitle>Ajouter un nouveau produit</CardTitle>
               <CardDescription>
-                Créez un nouveau produit disponible pour les créateurs.
+                Créez un nouveau produit basé sur un gabarit disponible.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -199,7 +250,7 @@ const PrinterStudio: React.FC = () => {
                 formData={formData}
                 isLoading={isLoading}
                 onInputChange={handleInputChange}
-                onSelectChange={handleSelectChange}
+                onTemplateSelect={handleTemplateSelect}
                 onSizeToggle={handleSizeToggle}
                 onSubmit={handleSubmit}
               />
