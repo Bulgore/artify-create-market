@@ -1,10 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { MousePointer, Square, Info, RotateCcw } from 'lucide-react';
+import { MousePointer, Info, RotateCcw } from 'lucide-react';
+import { usePrintArea } from '@/hooks/usePrintArea';
 
 interface PrintArea {
   x: number;
@@ -30,80 +32,35 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
   mockupPrintArea,
   onMockupPrintAreaChange
 }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [activeView, setActiveView] = useState<'svg' | 'mockup'>('svg');
-  const svgRef = useRef<HTMLDivElement>(null);
-  const mockupRef = useRef<HTMLDivElement>(null);
+  const {
+    svgCanvasRef,
+    mockupCanvasRef,
+    currentSvgArea,
+    currentMockupArea,
+    handleCanvasMouseDown,
+    handleCanvasMouseMove,
+    handleCanvasMouseUp,
+    handleInputChange,
+    svgImageLoaded,
+    mockupImageLoaded
+  } = usePrintArea({
+    svgUrl,
+    mockupUrl,
+    printArea,
+    onPrintAreaChange,
+    mockupPrintArea,
+    onMockupPrintAreaChange
+  });
 
-  const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
-    e.preventDefault();
-    const rect = (activeView === 'svg' ? svgRef.current : mockupRef.current)?.getBoundingClientRect();
-    if (!rect) return;
-
-    setDragStart({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-
-    if (action === 'drag') {
-      setIsDragging(true);
-    } else {
-      setIsResizing(true);
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging && !isResizing) return;
-    
-    const rect = (activeView === 'svg' ? svgRef.current : mockupRef.current)?.getBoundingClientRect();
-    if (!rect) return;
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (isDragging) {
-      const deltaX = x - dragStart.x;
-      const deltaY = y - dragStart.y;
-      
-      onPrintAreaChange({
-        ...printArea,
-        x: Math.max(0, Math.min(rect.width - printArea.width, printArea.x + deltaX)),
-        y: Math.max(0, Math.min(rect.height - printArea.height, printArea.y + deltaY))
-      });
-      
-      setDragStart({ x, y });
-    } else if (isResizing) {
-      const newWidth = Math.max(50, x - printArea.x);
-      const newHeight = Math.max(50, y - printArea.y);
-      
-      onPrintAreaChange({
-        ...printArea,
-        width: Math.min(newWidth, rect.width - printArea.x),
-        height: Math.min(newHeight, rect.height - printArea.y)
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    setIsResizing(false);
-  };
-
-  const resetArea = () => {
+  const resetSvgArea = () => {
     onPrintAreaChange({ x: 50, y: 50, width: 200, height: 200 });
   };
 
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      setIsDragging(false);
-      setIsResizing(false);
-    };
-
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, []);
+  const resetMockupArea = () => {
+    if (onMockupPrintAreaChange) {
+      onMockupPrintAreaChange({ x: 50, y: 50, width: 200, height: 200 });
+    }
+  };
 
   return (
     <Card>
@@ -127,16 +84,29 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
           <TabsContent value="svg" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <Label>Fichier SVG - Zone d'impression</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Fichier SVG - Zone d'impression</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetSvgArea}
+                    className="flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Reset
+                  </Button>
+                </div>
                 {svgUrl ? (
-                  <canvas
-                    ref={svgCanvasRef}
-                    className="border border-gray-300 rounded cursor-move max-w-full"
-                    onMouseDown={(e) => handleCanvasMouseDown(e, 'svg')}
-                    onMouseMove={handleCanvasMouseMove}
-                    onMouseUp={handleCanvasMouseUp}
-                    onMouseLeave={handleCanvasMouseUp}
-                  />
+                  <div className="border border-gray-300 rounded overflow-hidden">
+                    <canvas
+                      ref={svgCanvasRef}
+                      className="cursor-move max-w-full block"
+                      onMouseDown={(e) => handleCanvasMouseDown(e, 'svg')}
+                      onMouseMove={handleCanvasMouseMove}
+                      onMouseUp={handleCanvasMouseUp}
+                      onMouseLeave={handleCanvasMouseUp}
+                    />
+                  </div>
                 ) : (
                   <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500">
                     Aucun fichier SVG
@@ -191,16 +161,29 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
           <TabsContent value="mockup" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <Label>Image Mockup - Zone d'aperçu</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Image Mockup - Zone d'aperçu</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetMockupArea}
+                    className="flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Reset
+                  </Button>
+                </div>
                 {mockupUrl ? (
-                  <canvas
-                    ref={mockupCanvasRef}
-                    className="border border-gray-300 rounded cursor-move max-w-full"
-                    onMouseDown={(e) => handleCanvasMouseDown(e, 'mockup')}
-                    onMouseMove={handleCanvasMouseMove}
-                    onMouseUp={handleCanvasMouseUp}
-                    onMouseLeave={handleCanvasMouseUp}
-                  />
+                  <div className="border border-gray-300 rounded overflow-hidden">
+                    <canvas
+                      ref={mockupCanvasRef}
+                      className="cursor-move max-w-full block"
+                      onMouseDown={(e) => handleCanvasMouseDown(e, 'mockup')}
+                      onMouseMove={handleCanvasMouseMove}
+                      onMouseUp={handleCanvasMouseUp}
+                      onMouseLeave={handleCanvasMouseUp}
+                    />
+                  </div>
                 ) : (
                   <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500">
                     Aucune image mockup
