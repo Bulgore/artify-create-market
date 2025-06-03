@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { MousePointer, Square, Info } from 'lucide-react';
+import { MousePointer, Square, Info, RotateCcw } from 'lucide-react';
 
 interface PrintArea {
   x: number;
@@ -110,177 +109,149 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Move className="h-5 w-5" />
-          Zone d'impression
+          <MousePointer className="h-5 w-5" />
+          Configuration des zones d'impression
         </CardTitle>
+        <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 p-3 rounded">
+          <Info className="h-4 w-4" />
+          <span>Les zones SVG et mockup sont indépendantes. Seule la zone SVG sera utilisée pour l'impression.</span>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant={activeView === 'svg' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveView('svg')}
-            disabled={!svgUrl}
-          >
-            Vue SVG
-          </Button>
-          <Button
-            type="button"
-            variant={activeView === 'mockup' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveView('mockup')}
-            disabled={!mockupUrl}
-          >
-            Vue Mockup
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={resetArea}
-          >
-            <RotateCcw className="h-4 w-4 mr-1" />
-            Reset
-          </Button>
-        </div>
-
-        {/* Affichage SVG */}
-        {activeView === 'svg' && svgUrl && (
-          <div
-            ref={svgRef}
-            className="relative border-2 border-gray-300 rounded bg-white overflow-hidden"
-            style={{ height: '400px' }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-          >
-            <img
-              src={svgUrl}
-              alt="Template SVG"
-              className="w-full h-full object-contain"
-              draggable={false}
-            />
-            
-            {/* Zone d'impression draggable */}
-            <div
-              className="absolute border-2 border-blue-500 bg-blue-200/30 cursor-move"
-              style={{
-                left: `${printArea.x}px`,
-                top: `${printArea.y}px`,
-                width: `${printArea.width}px`,
-                height: `${printArea.height}px`,
-              }}
-              onMouseDown={(e) => handleMouseDown(e, 'drag')}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-blue-700 text-xs font-medium">
-                Zone d'impression
+      <CardContent>
+        <Tabs defaultValue="svg" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="svg">Zone SVG (Impression)</TabsTrigger>
+            <TabsTrigger value="mockup">Zone Mockup (Aperçu)</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="svg" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <Label>Fichier SVG - Zone d'impression</Label>
+                {svgUrl ? (
+                  <canvas
+                    ref={svgCanvasRef}
+                    className="border border-gray-300 rounded cursor-move max-w-full"
+                    onMouseDown={(e) => handleCanvasMouseDown(e, 'svg')}
+                    onMouseMove={handleCanvasMouseMove}
+                    onMouseUp={handleCanvasMouseUp}
+                    onMouseLeave={handleCanvasMouseUp}
+                  />
+                ) : (
+                  <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500">
+                    Aucun fichier SVG
+                  </div>
+                )}
               </div>
               
-              {/* Handle de redimensionnement */}
-              <div
-                className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize"
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  handleMouseDown(e, 'resize');
-                }}
-              />
+              <div className="space-y-4">
+                <Label>Coordonnées de la zone d'impression SVG</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="svg-x">X</Label>
+                    <Input
+                      id="svg-x"
+                      type="number"
+                      value={currentSvgArea.x}
+                      onChange={(e) => handleInputChange('x', Number(e.target.value), 'svg')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="svg-y">Y</Label>
+                    <Input
+                      id="svg-y"
+                      type="number"
+                      value={currentSvgArea.y}
+                      onChange={(e) => handleInputChange('y', Number(e.target.value), 'svg')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="svg-width">Largeur</Label>
+                    <Input
+                      id="svg-width"
+                      type="number"
+                      value={currentSvgArea.width}
+                      onChange={(e) => handleInputChange('width', Number(e.target.value), 'svg')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="svg-height">Hauteur</Label>
+                    <Input
+                      id="svg-height"
+                      type="number"
+                      value={currentSvgArea.height}
+                      onChange={(e) => handleInputChange('height', Number(e.target.value), 'svg')}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Affichage Mockup */}
-        {activeView === 'mockup' && mockupUrl && (
-          <div
-            ref={mockupRef}
-            className="relative border-2 border-gray-300 rounded bg-white overflow-hidden"
-            style={{ height: '400px' }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-          >
-            <img
-              src={mockupUrl}
-              alt="Template Mockup"
-              className="w-full h-full object-contain"
-              draggable={false}
-            />
-            
-            {/* Zone d'impression sur le mockup */}
-            <div
-              className="absolute border-2 border-green-500 bg-green-200/30 cursor-move"
-              style={{
-                left: `${printArea.x}px`,
-                top: `${printArea.y}px`,
-                width: `${printArea.width}px`,
-                height: `${printArea.height}px`,
-              }}
-              onMouseDown={(e) => handleMouseDown(e, 'drag')}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-green-700 text-xs font-medium">
-                Aperçu zone
+          </TabsContent>
+          
+          <TabsContent value="mockup" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <Label>Image Mockup - Zone d'aperçu</Label>
+                {mockupUrl ? (
+                  <canvas
+                    ref={mockupCanvasRef}
+                    className="border border-gray-300 rounded cursor-move max-w-full"
+                    onMouseDown={(e) => handleCanvasMouseDown(e, 'mockup')}
+                    onMouseMove={handleCanvasMouseMove}
+                    onMouseUp={handleCanvasMouseUp}
+                    onMouseLeave={handleCanvasMouseUp}
+                  />
+                ) : (
+                  <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500">
+                    Aucune image mockup
+                  </div>
+                )}
               </div>
               
-              {/* Handle de redimensionnement */}
-              <div
-                className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 cursor-se-resize"
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  handleMouseDown(e, 'resize');
-                }}
-              />
+              <div className="space-y-4">
+                <Label>Coordonnées de la zone d'aperçu mockup</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="mockup-x">X</Label>
+                    <Input
+                      id="mockup-x"
+                      type="number"
+                      value={currentMockupArea.x}
+                      onChange={(e) => handleInputChange('x', Number(e.target.value), 'mockup')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="mockup-y">Y</Label>
+                    <Input
+                      id="mockup-y"
+                      type="number"
+                      value={currentMockupArea.y}
+                      onChange={(e) => handleInputChange('y', Number(e.target.value), 'mockup')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="mockup-width">Largeur</Label>
+                    <Input
+                      id="mockup-width"
+                      type="number"
+                      value={currentMockupArea.width}
+                      onChange={(e) => handleInputChange('width', Number(e.target.value), 'mockup')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="mockup-height">Hauteur</Label>
+                    <Input
+                      id="mockup-height"
+                      type="number"
+                      value={currentMockupArea.height}
+                      onChange={(e) => handleInputChange('height', Number(e.target.value), 'mockup')}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Pas de fichier disponible */}
-        {!svgUrl && !mockupUrl && (
-          <div className="h-60 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500">
-            Uploadez un fichier SVG ou une image mockup pour configurer la zone d'impression
-          </div>
-        )}
-
-        {/* Contrôles manuels */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <Label htmlFor="area-x">X</Label>
-            <Input
-              id="area-x"
-              type="number"
-              value={printArea.x}
-              onChange={(e) => onPrintAreaChange({ ...printArea, x: Number(e.target.value) })}
-              min="0"
-            />
-          </div>
-          <div>
-            <Label htmlFor="area-y">Y</Label>
-            <Input
-              id="area-y"
-              type="number"
-              value={printArea.y}
-              onChange={(e) => onPrintAreaChange({ ...printArea, y: Number(e.target.value) })}
-              min="0"
-            />
-          </div>
-          <div>
-            <Label htmlFor="area-width">Largeur</Label>
-            <Input
-              id="area-width"
-              type="number"
-              value={printArea.width}
-              onChange={(e) => onPrintAreaChange({ ...printArea, width: Number(e.target.value) })}
-              min="50"
-            />
-          </div>
-          <div>
-            <Label htmlFor="area-height">Hauteur</Label>
-            <Input
-              id="area-height"
-              type="number"
-              value={printArea.height}
-              onChange={(e) => onPrintAreaChange({ ...printArea, height: Number(e.target.value) })}
-              min="50"
-            />
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
