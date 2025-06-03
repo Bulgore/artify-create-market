@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, X } from "lucide-react";
 import MediaUpload from "./MediaUpload";
-import { CreateReusableBlockData } from "@/types/reusableBlocks";
+import { CreateReusableBlockData, ReusableBlock } from "@/types/reusableBlocks";
 
 interface BlockFormProps {
   formData: CreateReusableBlockData;
@@ -16,6 +15,7 @@ interface BlockFormProps {
   onSave: () => void;
   onCancel: () => void;
   isEditing: boolean;
+  block?: ReusableBlock;
 }
 
 const BlockForm: React.FC<BlockFormProps> = ({
@@ -23,13 +23,29 @@ const BlockForm: React.FC<BlockFormProps> = ({
   setFormData,
   onSave,
   onCancel,
-  isEditing
+  isEditing,
+  block
 }) => {
   const [useUrlInput, setUseUrlInput] = useState(!!formData.image_url);
 
   const handleImageSelect = (url: string) => {
     setFormData({ ...formData, image_url: url });
     setUseUrlInput(true);
+  };
+
+  const handleTypeChange = (value: string) => {
+    const validType = value as 'hero' | 'banner' | 'text' | 'image' | 'slider' | 'testimonials' | 'cta';
+    setFormData({ ...formData, type: validType });
+  };
+
+  const handlePlacementChange = (value: string) => {
+    const validPlacement = value as 'homepage' | 'footer' | 'sidebar' | 'product_page' | 'global';
+    setFormData({ ...formData, placement: validPlacement });
+  };
+
+  const handleVisibilityChange = (value: string) => {
+    const validVisibility = value as 'public' | 'authenticated' | 'guests';
+    setFormData({ ...formData, visibility: validVisibility });
   };
 
   return (
@@ -46,7 +62,7 @@ const BlockForm: React.FC<BlockFormProps> = ({
         </div>
         <div>
           <Label htmlFor="type">Type de bloc</Label>
-          <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+          <Select value={formData.type} onValueChange={handleTypeChange}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner le type" />
             </SelectTrigger>
@@ -54,7 +70,10 @@ const BlockForm: React.FC<BlockFormProps> = ({
               <SelectItem value="hero">Hero Banner</SelectItem>
               <SelectItem value="banner">Bannière</SelectItem>
               <SelectItem value="slider">Slider</SelectItem>
-              <SelectItem value="product-grid">Grille de produits</SelectItem>
+              <SelectItem value="text">Texte</SelectItem>
+              <SelectItem value="image">Image</SelectItem>
+              <SelectItem value="testimonials">Témoignages</SelectItem>
+              <SelectItem value="cta">Call to Action</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -63,28 +82,29 @@ const BlockForm: React.FC<BlockFormProps> = ({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="placement">Emplacement</Label>
-          <Select value={formData.placement} onValueChange={(value) => setFormData({ ...formData, placement: value })}>
+          <Select value={formData.placement} onValueChange={handlePlacementChange}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner l'emplacement" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="header">En-tête</SelectItem>
-              <SelectItem value="main">Contenu principal</SelectItem>
-              <SelectItem value="sidebar">Barre latérale</SelectItem>
+              <SelectItem value="homepage">Page d'accueil</SelectItem>
               <SelectItem value="footer">Pied de page</SelectItem>
+              <SelectItem value="sidebar">Barre latérale</SelectItem>
+              <SelectItem value="product_page">Page produit</SelectItem>
+              <SelectItem value="global">Global</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
           <Label htmlFor="visibility">Visibilité</Label>
-          <Select value={formData.visibility} onValueChange={(value) => setFormData({ ...formData, visibility: value })}>
+          <Select value={formData.visibility} onValueChange={handleVisibilityChange}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner la visibilité" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="public">Public</SelectItem>
-              <SelectItem value="private">Privé</SelectItem>
-              <SelectItem value="members">Membres uniquement</SelectItem>
+              <SelectItem value="authenticated">Connectés</SelectItem>
+              <SelectItem value="guests">Invités</SelectItem>
             </SelectContent>
           </Select>
         </div>

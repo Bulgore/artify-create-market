@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,11 +17,50 @@ const BlocksManagement = () => {
   const [editingBlock, setEditingBlock] = useState<ReusableBlock | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filter, setFilter] = useState<string>('all');
+  const [formData, setFormData] = useState<CreateReusableBlockData>({
+    title: '',
+    type: 'hero',
+    content: {},
+    placement: 'homepage',
+    display_order: 0,
+    is_active: true,
+    visibility: 'public'
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     loadBlocks();
   }, []);
+
+  // Réinitialiser les données du formulaire quand on ouvre/ferme le dialog
+  useEffect(() => {
+    if (isDialogOpen) {
+      if (editingBlock) {
+        setFormData({
+          title: editingBlock.title,
+          type: editingBlock.type,
+          content: editingBlock.content,
+          image_url: editingBlock.image_url,
+          link_url: editingBlock.link_url,
+          button_text: editingBlock.button_text,
+          placement: editingBlock.placement,
+          display_order: editingBlock.display_order,
+          is_active: editingBlock.is_active,
+          visibility: editingBlock.visibility
+        });
+      } else {
+        setFormData({
+          title: '',
+          type: 'hero',
+          content: {},
+          placement: 'homepage',
+          display_order: 0,
+          is_active: true,
+          visibility: 'public'
+        });
+      }
+    }
+  }, [isDialogOpen, editingBlock]);
 
   const loadBlocks = async () => {
     try {
@@ -41,10 +79,10 @@ const BlocksManagement = () => {
     }
   };
 
-  const handleCreateBlock = async (data: CreateReusableBlockData) => {
+  const handleCreateBlock = async () => {
     try {
       setFormLoading(true);
-      await reusableBlocksService.createBlock(data);
+      await reusableBlocksService.createBlock(formData);
       await loadBlocks();
       setIsDialogOpen(false);
       toast({
@@ -63,12 +101,12 @@ const BlocksManagement = () => {
     }
   };
 
-  const handleUpdateBlock = async (data: CreateReusableBlockData) => {
+  const handleUpdateBlock = async () => {
     if (!editingBlock) return;
 
     try {
       setFormLoading(true);
-      await reusableBlocksService.updateBlock(editingBlock.id, data);
+      await reusableBlocksService.updateBlock(editingBlock.id, formData);
       await loadBlocks();
       setEditingBlock(null);
       setIsDialogOpen(false);
@@ -186,10 +224,12 @@ const BlocksManagement = () => {
                 </DialogTitle>
               </DialogHeader>
               <BlockForm
-                block={editingBlock || undefined}
-                onSubmit={editingBlock ? handleUpdateBlock : handleCreateBlock}
+                formData={formData}
+                setFormData={setFormData}
+                onSave={editingBlock ? handleUpdateBlock : handleCreateBlock}
                 onCancel={() => setIsDialogOpen(false)}
-                isLoading={formLoading}
+                isEditing={!!editingBlock}
+                block={editingBlock || undefined}
               />
             </DialogContent>
           </Dialog>
