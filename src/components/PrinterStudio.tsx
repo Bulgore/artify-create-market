@@ -66,6 +66,7 @@ const PrinterStudio: React.FC = () => {
       
       if (error) throw error;
       
+      console.log("Printer's products loaded:", data?.length || 0, "products");
       setTemplates(data || []);
     } catch (error: any) {
       console.error("Error fetching templates:", error);
@@ -97,17 +98,12 @@ const PrinterStudio: React.FC = () => {
   };
 
   const handleSizeToggle = (size: string) => {
-    if (formData.available_sizes.includes(size)) {
-      setFormData(prev => ({
-        ...prev,
-        available_sizes: prev.available_sizes.filter(s => s !== size)
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        available_sizes: [...prev.available_sizes, size]
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      available_sizes: prev.available_sizes.includes(size)
+        ? prev.available_sizes.filter(s => s !== size)
+        : [...prev.available_sizes, size]
+    }));
   };
 
   const handleAddProduct = () => {
@@ -116,6 +112,15 @@ const PrinterStudio: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Vous devez être connecté pour ajouter un produit."
+      });
+      return;
+    }
     
     if (!formData.template_id) {
       toast({
@@ -135,37 +140,45 @@ const PrinterStudio: React.FC = () => {
       return;
     }
 
+    if (!formData.name.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez saisir un nom pour le produit."
+      });
+      return;
+    }
+
+    if (formData.base_price <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Le prix de base doit être supérieur à 0."
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       
-      console.log("Submitting product data:", {
-        printer_id: user?.id,
+      const productData = {
+        printer_id: user.id,
         template_id: formData.template_id,
-        name: formData.name,
-        description: formData.description,
+        name: formData.name.trim(),
+        description: formData.description?.trim() || null,
         base_price: formData.base_price,
-        material: formData.material,
+        material: formData.material.trim(),
         stock_quantity: formData.stock_quantity,
-        available_sizes: formData.available_sizes,
-        images: [formData.selectedTemplate?.mockup_image_url || "/placeholder.svg"]
-      });
+        print_area: formData.selectedTemplate?.design_area || { width: 20, height: 30, unit: "cm" },
+        images: [formData.selectedTemplate?.mockup_image_url || "/placeholder.svg"],
+        available_sizes: formData.available_sizes
+      };
+      
+      console.log("Submitting product data:", productData);
       
       const { data, error } = await supabase
         .from('tshirt_templates')
-        .insert([
-          {
-            printer_id: user?.id,
-            template_id: formData.template_id,
-            name: formData.name,
-            description: formData.description,
-            base_price: formData.base_price,
-            material: formData.material,
-            stock_quantity: formData.stock_quantity,
-            print_area: formData.selectedTemplate?.design_area || { width: 20, height: 30, unit: "cm" },
-            images: [formData.selectedTemplate?.mockup_image_url || "/placeholder.svg"],
-            available_sizes: formData.available_sizes
-          }
-        ])
+        .insert([productData])
         .select();
 
       if (error) {
@@ -177,7 +190,7 @@ const PrinterStudio: React.FC = () => {
       
       toast({
         title: "Produit ajouté",
-        description: "Le produit a été ajouté avec succès."
+        description: "Le produit a été ajouté avec succès à votre catalogue."
       });
       
       // Reset form
@@ -193,7 +206,7 @@ const PrinterStudio: React.FC = () => {
       });
       
       // Refresh the templates list
-      fetchTemplates();
+      await fetchTemplates();
       
       // Switch to products tab
       setActiveTab("products");
