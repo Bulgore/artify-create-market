@@ -26,6 +26,7 @@ interface ProductFormData {
   template_id: string | null;
   selectedTemplate: ProductTemplate | null;
   available_sizes: string[];
+  available_colors: string[];
 }
 
 interface AddProductFormProps {
@@ -34,6 +35,7 @@ interface AddProductFormProps {
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onTemplateSelect: (templateId: string, template: ProductTemplate) => void;
   onSizeToggle: (size: string) => void;
+  onColorToggle: (color: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -43,6 +45,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
   onInputChange,
   onTemplateSelect,
   onSizeToggle,
+  onColorToggle,
   onSubmit
 }) => {
   return (
@@ -137,10 +140,33 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
         )}
       </div>
       
+      {formData.selectedTemplate && formData.selectedTemplate.available_colors.length > 0 && (
+        <div className="space-y-2">
+          <Label>Couleurs disponibles *</Label>
+          <div className="flex flex-wrap gap-2">
+            {formData.selectedTemplate.available_colors.map(color => (
+              <Button
+                key={color}
+                type="button"
+                variant={formData.available_colors.includes(color) ? "default" : "outline"}
+                size="sm"
+                onClick={() => onColorToggle(color)}
+                className="capitalize"
+              >
+                {color}
+              </Button>
+            ))}
+          </div>
+          {formData.available_colors.length === 0 && (
+            <p className="text-sm text-red-500">Veuillez sélectionner au moins une couleur</p>
+          )}
+        </div>
+      )}
+      
       <Button 
         type="submit" 
         className="w-full bg-[#33C3F0] hover:bg-[#0FA0CE]"
-        disabled={isLoading || !formData.template_id || formData.available_sizes.length === 0}
+        disabled={isLoading || !formData.template_id || formData.available_sizes.length === 0 || formData.available_colors.length === 0}
       >
         {isLoading ? "Ajout en cours..." : "Ajouter le produit"}
       </Button>
