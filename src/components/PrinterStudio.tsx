@@ -6,7 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { useProductForm } from "@/hooks/useProductForm";
 import PrinterTabs from "@/components/printer/PrinterTabs";
 
-interface ProductTemplate {
+interface PrintProduct {
   id: string;
   name: string;
   description: string | null;
@@ -15,12 +15,14 @@ interface ProductTemplate {
   stock_quantity: number;
   images: string[];
   available_sizes: string[];
+  available_colors: string[];
   template_id: string | null;
+  is_active: boolean;
 }
 
 const PrinterStudio: React.FC = () => {
   const { user } = useAuth();
-  const [templates, setTemplates] = useState<ProductTemplate[]>([]);
+  const [printProducts, setPrintProducts] = useState<PrintProduct[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("products");
   
@@ -30,30 +32,32 @@ const PrinterStudio: React.FC = () => {
     handleInputChange,
     handleTemplateSelect,
     handleSizeToggle,
+    handleColorToggle,
     submitProduct
   } = useProductForm();
 
-  // Fetch templates on component mount
+  // Fetch print products on component mount
   useEffect(() => {
     if (user) {
-      fetchTemplates();
+      fetchPrintProducts();
     }
   }, [user]);
 
-  const fetchTemplates = async () => {
+  const fetchPrintProducts = async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from('tshirt_templates')
+        .from('print_products')
         .select('*')
-        .eq('printer_id', user?.id);
+        .eq('printer_id', user?.id)
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
       console.log("Printer's products loaded:", data?.length || 0, "products");
-      setTemplates(data || []);
+      setPrintProducts(data || []);
     } catch (error: any) {
-      console.error("Error fetching templates:", error);
+      console.error("Error fetching print products:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -69,7 +73,7 @@ const PrinterStudio: React.FC = () => {
     
     const success = await submitProduct();
     if (success) {
-      await fetchTemplates();
+      await fetchPrintProducts();
       setActiveTab("products");
     }
   };
@@ -81,13 +85,14 @@ const PrinterStudio: React.FC = () => {
       <PrinterTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        templates={templates}
+        printProducts={printProducts}
         isLoading={isLoading || formLoading}
-        onRefreshTemplates={fetchTemplates}
+        onRefreshProducts={fetchPrintProducts}
         formData={formData}
         onInputChange={handleInputChange}
         onTemplateSelect={handleTemplateSelect}
         onSizeToggle={handleSizeToggle}
+        onColorToggle={handleColorToggle}
         onSubmit={handleSubmit}
       />
     </div>

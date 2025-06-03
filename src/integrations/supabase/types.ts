@@ -9,6 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      creator_products: {
+        Row: {
+          created_at: string
+          creator_id: string
+          creator_margin_percentage: number
+          description: string | null
+          design_data: Json
+          id: string
+          is_published: boolean
+          name: string
+          preview_url: string | null
+          print_product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          creator_margin_percentage?: number
+          description?: string | null
+          design_data?: Json
+          id?: string
+          is_published?: boolean
+          name: string
+          preview_url?: string | null
+          print_product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          creator_margin_percentage?: number
+          description?: string | null
+          design_data?: Json
+          id?: string
+          is_published?: boolean
+          name?: string
+          preview_url?: string | null
+          print_product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_products_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_products_print_product_id_fkey"
+            columns: ["print_product_id"]
+            isOneToOne: false
+            referencedRelation: "print_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       designs: {
         Row: {
           canvas_data: string
@@ -102,6 +159,7 @@ export type Database = {
           created_at: string | null
           design_id: string | null
           id: string
+          print_product_id: string | null
           quantity: number
           shipping_address: Json
           size: string
@@ -115,6 +173,7 @@ export type Database = {
           created_at?: string | null
           design_id?: string | null
           id?: string
+          print_product_id?: string | null
           quantity: number
           shipping_address: Json
           size: string
@@ -128,6 +187,7 @@ export type Database = {
           created_at?: string | null
           design_id?: string | null
           id?: string
+          print_product_id?: string | null
           quantity?: number
           shipping_address?: Json
           size?: string
@@ -151,6 +211,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "product_pricing"
             referencedColumns: ["design_id"]
+          },
+          {
+            foreignKeyName: "orders_print_product_id_fkey"
+            columns: ["print_product_id"]
+            isOneToOne: false
+            referencedRelation: "print_products"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "orders_template_id_fkey"
@@ -201,6 +268,75 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      print_products: {
+        Row: {
+          available_colors: string[]
+          available_sizes: string[]
+          base_price: number
+          created_at: string
+          description: string | null
+          id: string
+          images: string[]
+          is_active: boolean
+          material: string
+          name: string
+          print_areas: Json
+          printer_id: string
+          stock_quantity: number
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          available_colors?: string[]
+          available_sizes?: string[]
+          base_price: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[]
+          is_active?: boolean
+          material: string
+          name: string
+          print_areas?: Json
+          printer_id: string
+          stock_quantity?: number
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          available_colors?: string[]
+          available_sizes?: string[]
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[]
+          is_active?: boolean
+          material?: string
+          name?: string
+          print_areas?: Json
+          printer_id?: string
+          stock_quantity?: number
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_products_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_products_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_templates: {
         Row: {
@@ -503,6 +639,39 @@ export type Database = {
       }
     }
     Views: {
+      creator_products_with_pricing: {
+        Row: {
+          base_price: number | null
+          created_at: string | null
+          creator_id: string | null
+          creator_margin_percentage: number | null
+          description: string | null
+          design_data: Json | null
+          final_price: number | null
+          id: string | null
+          is_published: boolean | null
+          name: string | null
+          preview_url: string | null
+          print_product_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_products_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_products_print_product_id_fkey"
+            columns: ["print_product_id"]
+            isOneToOne: false
+            referencedRelation: "print_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_pricing: {
         Row: {
           base_price: number | null

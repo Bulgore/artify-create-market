@@ -24,6 +24,7 @@ interface ProductFormData {
   template_id: string | null;
   selectedTemplate: SelectedTemplate | null;
   available_sizes: string[];
+  available_colors: string[];
 }
 
 export const useProductForm = () => {
@@ -37,7 +38,8 @@ export const useProductForm = () => {
     stock_quantity: 0,
     template_id: null,
     selectedTemplate: null,
-    available_sizes: []
+    available_sizes: [],
+    available_colors: []
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -53,7 +55,9 @@ export const useProductForm = () => {
     setFormData(prev => ({
       ...prev,
       template_id: templateId,
-      selectedTemplate: template
+      selectedTemplate: template,
+      // Pré-remplir les couleurs disponibles du gabarit
+      available_colors: template.available_colors || []
     }));
   };
 
@@ -66,6 +70,15 @@ export const useProductForm = () => {
     }));
   };
 
+  const handleColorToggle = (color: string) => {
+    setFormData(prev => ({
+      ...prev,
+      available_colors: prev.available_colors.includes(color)
+        ? prev.available_colors.filter(c => c !== color)
+        : [...prev.available_colors, color]
+    }));
+  };
+
   const validateForm = (): string | null => {
     if (!formData.template_id) {
       return "Veuillez sélectionner un gabarit de produit.";
@@ -73,6 +86,10 @@ export const useProductForm = () => {
 
     if (formData.available_sizes.length === 0) {
       return "Veuillez sélectionner au moins une taille.";
+    }
+
+    if (formData.available_colors.length === 0) {
+      return "Veuillez sélectionner au moins une couleur.";
     }
 
     if (!formData.name.trim()) {
@@ -117,15 +134,16 @@ export const useProductForm = () => {
         base_price: formData.base_price,
         material: formData.material.trim(),
         stock_quantity: formData.stock_quantity,
-        print_area: formData.selectedTemplate?.design_area || { width: 20, height: 30, unit: "cm" },
+        print_areas: formData.selectedTemplate?.design_area || { width: 20, height: 30, unit: "cm" },
         images: [formData.selectedTemplate?.mockup_image_url || "/placeholder.svg"],
-        available_sizes: formData.available_sizes
+        available_sizes: formData.available_sizes,
+        available_colors: formData.available_colors
       };
       
-      console.log("Submitting product data:", productData);
+      console.log("Submitting print product data:", productData);
       
       const { data, error } = await supabase
-        .from('tshirt_templates')
+        .from('print_products')
         .insert([productData])
         .select();
 
@@ -134,7 +152,7 @@ export const useProductForm = () => {
         throw error;
       }
       
-      console.log("Product created successfully:", data);
+      console.log("Print product created successfully:", data);
       
       toast({
         title: "Produit ajouté",
@@ -150,13 +168,14 @@ export const useProductForm = () => {
         stock_quantity: 0,
         template_id: null,
         selectedTemplate: null,
-        available_sizes: []
+        available_sizes: [],
+        available_colors: []
       });
       
       return true;
       
     } catch (error: any) {
-      console.error("Error adding product:", error);
+      console.error("Error adding print product:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -174,6 +193,7 @@ export const useProductForm = () => {
     handleInputChange,
     handleTemplateSelect,
     handleSizeToggle,
+    handleColorToggle,
     submitProduct
   };
 };

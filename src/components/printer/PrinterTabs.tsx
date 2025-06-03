@@ -7,7 +7,7 @@ import AddProductForm from "@/components/printer/AddProductForm";
 import OrdersList from "@/components/printer/OrdersList";
 import SalesPanel from "@/components/printer/SalesPanel";
 
-interface ProductTemplate {
+interface PrintProduct {
   id: string;
   name: string;
   description: string | null;
@@ -16,32 +16,36 @@ interface ProductTemplate {
   stock_quantity: number;
   images: string[];
   available_sizes: string[];
+  available_colors: string[];
   template_id: string | null;
+  is_active: boolean;
 }
 
 interface PrinterTabsProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  templates: ProductTemplate[];
+  printProducts: PrintProduct[];
   isLoading: boolean;
-  onRefreshTemplates: () => void;
+  onRefreshProducts: () => void;
   formData: any;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onTemplateSelect: (templateId: string, template: any) => void;
   onSizeToggle: (size: string) => void;
+  onColorToggle: (color: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
 const PrinterTabs: React.FC<PrinterTabsProps> = ({
   activeTab,
   setActiveTab,
-  templates,
+  printProducts,
   isLoading,
-  onRefreshTemplates,
+  onRefreshProducts,
   formData,
   onInputChange,
   onTemplateSelect,
   onSizeToggle,
+  onColorToggle,
   onSubmit
 }) => {
   const handleAddProduct = () => {
@@ -60,7 +64,7 @@ const PrinterTabs: React.FC<PrinterTabsProps> = ({
       <TabsContent value="products">
         <Card>
           <CardHeader>
-            <CardTitle>Mes Produits</CardTitle>
+            <CardTitle>Mes Produits d'Impression</CardTitle>
             <CardDescription>
               Gérez les produits que vous proposez aux créateurs.
             </CardDescription>
@@ -68,7 +72,7 @@ const PrinterTabs: React.FC<PrinterTabsProps> = ({
           <CardContent>
             <ProductsList 
               isLoading={isLoading}
-              templates={templates}
+              printProducts={printProducts}
               onEditProduct={(id) => {
                 // TODO: Implement edit functionality
                 console.log("Edit product:", id);
@@ -82,9 +86,9 @@ const PrinterTabs: React.FC<PrinterTabsProps> = ({
       <TabsContent value="addProduct">
         <Card>
           <CardHeader>
-            <CardTitle>Ajouter un nouveau produit</CardTitle>
+            <CardTitle>Créer un nouveau produit d'impression</CardTitle>
             <CardDescription>
-              Créez un nouveau produit basé sur un gabarit disponible.
+              Sélectionnez un gabarit et définissez vos paramètres d'impression.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -94,6 +98,7 @@ const PrinterTabs: React.FC<PrinterTabsProps> = ({
               onInputChange={onInputChange}
               onTemplateSelect={onTemplateSelect}
               onSizeToggle={onSizeToggle}
+              onColorToggle={onColorToggle}
               onSubmit={onSubmit}
             />
           </CardContent>
