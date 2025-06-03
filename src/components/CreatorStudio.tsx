@@ -1,15 +1,62 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Palette, Package, ShoppingBag, BarChart3, Plus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import CustomProductCreator from "./creator/CustomProductCreator";
 import DesignList from "./creator/DesignList";
 import SalesPanel from "./creator/SalesPanel";
 
+interface CreatorProduct {
+  id: string;
+  name: string;
+  description?: string;
+  preview_url?: string;
+  is_published: boolean;
+  creator_margin_percentage: number;
+}
+
 const CreatorStudio: React.FC = () => {
+  const { user } = useAuth();
   const [activeView, setActiveView] = useState<'dashboard' | 'create-product'>('dashboard');
+  const [creatorProducts, setCreatorProducts] = useState<CreatorProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchCreatorProducts();
+    }
+  }, [user]);
+
+  const fetchCreatorProducts = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('creator_products')
+        .select('*')
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setCreatorProducts(data || []);
+    } catch (error: any) {
+      console.error('Error fetching creator products:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger vos créations."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateProduct = () => {
     setActiveView('create-product');
@@ -17,11 +64,22 @@ const CreatorStudio: React.FC = () => {
 
   const handleBackToDashboard = () => {
     setActiveView('dashboard');
+    fetchCreatorProducts(); // Refresh products when coming back
   };
 
   if (activeView === 'create-product') {
     return <CustomProductCreator onBack={handleBackToDashboard} />;
   }
+
+  // Transform creator products to match DesignList interface
+  const designs = creatorProducts.map(product => ({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    preview_url: product.preview_url || "/placeholder.svg",
+    is_published: product.is_published,
+    creator_margin: product.creator_margin_percentage
+  }));
 
   return (
     <div className="space-y-6">
@@ -40,9 +98,9 @@ const CreatorStudio: React.FC = () => {
             <Palette className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{creatorProducts.length}</div>
             <p className="text-xs text-muted-foreground">
-              +2 ce mois-ci
+              Produits créés
             </p>
           </CardContent>
         </Card>
@@ -53,9 +111,14 @@ const CreatorStudio: React.FC = () => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+            <div className="text-2xl font-bold">
+              {creatorProducts.filter(p => p.is_published).length}
+            </div>
             <p className="text-xs text-muted-foreground">
-              66% de vos créations
+              {creatorProducts.length > 0 
+                ? `${Math.round((creatorProducts.filter(p => p.is_published).length / creatorProducts.length) * 100)}% de vos créations`
+                : "Aucune création"
+              }
             </p>
           </CardContent>
         </Card>
@@ -66,9 +129,9 @@ const CreatorStudio: React.FC = () => {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">124€</div>
+            <div className="text-2xl font-bold">0€</div>
             <p className="text-xs text-muted-foreground">
-              +18% par rapport au mois dernier
+              Prochainement disponible
             </p>
           </CardContent>
         </Card>
@@ -82,7 +145,11 @@ const CreatorStudio: React.FC = () => {
         </TabsList>
         
         <TabsContent value="designs" className="space-y-6">
-          <DesignList />
+          <DesignList 
+            designs={designs}
+            onDesignUpdated={fetchCreatorProducts}
+            onCreateDesign={handleCreateProduct}
+          />
         </TabsContent>
         
         <TabsContent value="products" className="space-y-6">
