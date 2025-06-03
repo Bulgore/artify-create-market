@@ -1,17 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import DesignUploader from './DesignUploader';
 import DesignPositioner from './DesignPositioner';
-import { Palette, Package, ArrowLeft } from 'lucide-react';
+import ProductSelector from './ProductSelector';
+import ProductDetailsForm from './ProductDetailsForm';
+import { ArrowLeft } from 'lucide-react';
 
 interface PrintProduct {
   id: string;
@@ -173,48 +170,12 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
-          {/* Sélection du produit de base */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                1. Choisir un produit de base
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Produit d'impression</Label>
-                  <Select onValueChange={handleProductSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un produit..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {printProducts.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name} - {product.base_price}€
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {selectedProduct && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium">{selectedProduct.name}</h4>
-                    <p className="text-sm text-gray-600">{selectedProduct.description}</p>
-                    <p className="text-sm font-medium">Prix de base: {selectedProduct.base_price}€</p>
-                    <p className="text-sm">Matériau: {selectedProduct.material}</p>
-                    {!selectedProduct.product_templates && (
-                      <p className="text-sm text-red-500 mt-2">⚠️ Ce produit n'a pas de gabarit configuré</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ProductSelector
+            printProducts={printProducts}
+            selectedProduct={selectedProduct}
+            onProductSelect={handleProductSelect}
+          />
 
-          {/* Upload du design */}
           {selectedProduct && selectedProduct.product_templates && (
             <DesignUploader
               onDesignUpload={handleDesignUpload}
@@ -222,68 +183,18 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
             />
           )}
 
-          {/* Informations du produit */}
           {selectedProduct && selectedProduct.product_templates && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5" />
-                  3. Détails du produit
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nom du produit *</Label>
-                    <Input
-                      id="name"
-                      value={productData.name}
-                      onChange={(e) => setProductData({ ...productData, name: e.target.value })}
-                      placeholder="Ex: Mon T-shirt personnalisé"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={productData.description}
-                      onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-                      placeholder="Description de votre création..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="margin">Marge créateur (%)</Label>
-                    <Input
-                      id="margin"
-                      type="number"
-                      value={productData.margin_percentage}
-                      onChange={(e) => setProductData({ ...productData, margin_percentage: Number(e.target.value) })}
-                      min={5}
-                      max={100}
-                    />
-                    <div className="text-sm text-gray-500">
-                      Prix final: {calculateFinalPrice().toFixed(2)}€
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-[#33C3F0] hover:bg-[#0FA0CE]"
-                    disabled={isLoading || !designPosition}
-                  >
-                    {isLoading ? "Création en cours..." : "Créer le produit"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            <ProductDetailsForm
+              productData={productData}
+              setProductData={setProductData}
+              finalPrice={calculateFinalPrice()}
+              isLoading={isLoading}
+              canSubmit={!!designPosition}
+              onSubmit={handleSubmit}
+            />
           )}
         </div>
 
-        {/* Interface de positionnement */}
         <div>
           {showPositioner && selectedProduct && selectedProduct.product_templates && designUrl && (
             <DesignPositioner
