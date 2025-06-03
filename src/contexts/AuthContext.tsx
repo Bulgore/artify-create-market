@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
 
   const fetchUserRole = async (userId: string) => {
     try {
@@ -39,7 +40,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
       
-      // Si l'utilisateur est super admin, retourner 'superAdmin'
       if (data?.is_super_admin) {
         return 'superAdmin';
       }
@@ -53,7 +53,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const createUserProfile = async (userId: string, email: string, fullName: string, role: string) => {
     try {
-      // Vérifier si l'utilisateur est creatahiti@gmail.com pour le rendre super admin
       const isSuperAdmin = email === 'creatahiti@gmail.com';
       
       const { error } = await supabase
@@ -76,16 +75,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let mounted = true;
+
+    // Configuration initiale
+    const initializeAuth = async () => {
+      try {
+        // Récupérer la session actuelle
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (mounted) {
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          
+          if (currentSession?.user) {
+            const role = await fetchUserRole(currentSession.user.id);
+            if (mounted) {
+              setUserRole(role);
+            }
+          }
+          
+          setInitializing(false);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setInitializing(false);
+          setLoading(false);
+        }
+      }
+    };
+
+    // Listener pour les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        if (!mounted) return;
+        
         console.log("Auth state changed:", event, newSession?.user?.email);
+        
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
-          // Créer le profil utilisateur s'il n'existe pas
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // Créer le profil si nécessaire (uniquement lors de l'inscription)
+          if (event === 'SIGNED_UP') {
             await createUserProfile(
               newSession.user.id, 
               newSession.user.email || '', 
@@ -94,46 +127,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             );
           }
           
-          const role = await fetchUserRole(newSession.user.id);
-          setUserRole(role);
+          // Récupérer le rôle
+          setTimeout(async () => {
+            if (mounted) {
+              const role = await fetchUserRole(newSession.user.id);
+              if (mounted) {
+                setUserRole(role);
+              }
+            }
+          }, 0);
         } else {
           setUserRole(null);
         }
         
-        setLoading(false);
+        if (!initializing) {
+          setLoading(false);
+        }
       }
     );
 
-    // THEN check for existing session
-    const initSession = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        console.log("Initial session:", currentSession?.user?.email);
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          // Créer le profil utilisateur s'il n'existe pas
-          await createUserProfile(
-            currentSession.user.id, 
-            currentSession.user.email || '', 
-            currentSession.user.user_metadata?.full_name || '', 
-            currentSession.user.user_metadata?.role || 'créateur'
-          );
-          
-          const role = await fetchUserRole(currentSession.user.id);
-          setUserRole(role);
-        }
-      } catch (error) {
-        console.error('Error initializing session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    initSession();
+    initializeAuth();
 
     return () => {
+      mounted = false;
       subscription?.unsubscribe();
     };
   }, []);
@@ -170,6 +186,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -189,14 +206,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: error.message || "Email ou mot de passe incorrect.",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      // Réinitialiser l'état immédiatement
+      setUser(null);
+      setSession(null);
       setUserRole(null);
       
       toast({
@@ -210,10 +233,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         title: "Erreur de déconnexion",
         description: error.message || "Une erreur est survenue lors de la déconnexion.",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Helper functions to check user roles
   const isAdmin = () => {
     return userRole === 'admin' || userRole === 'superAdmin';
   };
