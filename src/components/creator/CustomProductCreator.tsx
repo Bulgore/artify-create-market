@@ -25,6 +25,7 @@ interface PrintProduct {
     svg_file_url: string;
     mockup_image_url: string;
     design_area: any;
+    mockup_area?: any;
   } | null;
 }
 
@@ -53,6 +54,8 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
 
   const fetchPrintProducts = async () => {
     try {
+      console.log("Fetching print products with templates...");
+      
       const { data, error } = await supabase
         .from('print_products')
         .select(`
@@ -62,29 +65,103 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
             name,
             svg_file_url,
             mockup_image_url,
-            design_area
+            design_area,
+            mockup_area
           )
         `)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .not('template_id', 'is', null); // Only products with templates
+
+      if (error) {
+        console.error("Error fetching print products:", error);
+        throw error;
+      }
+
+      console.log("Raw data from database:", data);
+
+      // Filter out products without valid templates
+      const validProducts = (data || []).filter(product => {
+        const hasTemplate = product.template_id && product.product_templates;
+        const hasDesignArea = product.product_templates?.design_area;
+        
+        if (!hasTemplate) {
+          console.log(`Product ${product.name} has no template_id or template data`);
+          return false;
+        }
+        
+        if (!hasDesignArea) {
+          console.log(`Product ${product.name} has no design_area in template`);
+          return false;
+        }
+        
+        return true;
+      });
+
+      console.log(`Found ${validProducts.length} valid products out of ${data?.length || 0} total products`);
       
-      if (error) throw error;
-      setPrintProducts(data || []);
+      setPrintProducts(validProducts);
+      
+      if (validProducts.length === 0) {
+        toast({
+          title: "Aucun produit disponible",
+          description: "Aucun produit configuré pour la personnalisation n'a été trouvé. Les imprimeurs doivent d'abord configurer leurs gabarits.",
+        });
+      }
     } catch (error: any) {
       console.error('Error fetching print products:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de charger les produits."
+        description: "Impossible de charger les produits disponibles."
       });
     }
   };
 
   const handleProductSelect = (productId: string) => {
+    console.log("Selecting product:", productId);
+    
     const product = printProducts.find(p => p.id === productId);
-    setSelectedProduct(product || null);
+    
+    if (!product) {
+      console.error("Product not found:", productId);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Produit non trouvé."
+      });
+      return;
+    }
+
+    if (!product.product_templates) {
+      console.error("Product has no template:", product);
+      toast({
+        variant: "destructive",
+        title: "Gabarit non trouvé",
+        description: "Ce produit n'est pas encore configuré pour la personnalisation. L'imprimeur doit d'abord lui assigner un gabarit valide avec une zone d'impression définie."
+      });
+      return;
+    }
+
+    if (!product.product_templates.design_area) {
+      console.error("Template has no design area:", product.product_templates);
+      toast({
+        variant: "destructive",
+        title: "Zone d'impression manquante",
+        description: "Le gabarit de ce produit n'a pas de zone d'impression définie."
+      });
+      return;
+    }
+
+    console.log("Product selected successfully:", product.name);
+    setSelectedProduct(product);
     setDesignUrl('');
     setDesignPosition(null);
     setShowPositioner(false);
+
+    toast({
+      title: "Produit sélectionné",
+      description: `${product.name} est prêt pour la personnalisation.`
+    });
   };
 
   const handleDesignUpload = (url: string) => {
@@ -168,44 +245,55 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
         <h2 className="text-2xl font-bold">Créer un produit personnalisé</h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <ProductSelector
-            printProducts={printProducts}
-            selectedProduct={selectedProduct}
-            onProductSelect={handleProductSelect}
-          />
-
-          {selectedProduct && selectedProduct.product_templates && (
-            <DesignUploader
-              onDesignUpload={handleDesignUpload}
-              currentDesignUrl={designUrl}
-            />
-          )}
-
-          {selectedProduct && selectedProduct.product_templates && (
-            <ProductDetailsForm
-              productData={productData}
-              setProductData={setProductData}
-              finalPrice={calculateFinalPrice()}
-              isLoading={isLoading}
-              canSubmit={!!designPosition}
-              onSubmit={handleSubmit}
-            />
-          )}
+      {printProducts.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500 mb-4">Aucun produit disponible pour la personnalisation.</p>
+          <p className="text-sm text-gray-400">
+            Les imprimeurs doivent d'abord créer des produits avec des gabarits configurés.
+          </p>
         </div>
+      )}
 
-        <div>
-          {showPositioner && selectedProduct && selectedProduct.product_templates && designUrl && (
-            <DesignPositioner
-              templateSvgUrl={selectedProduct.product_templates.svg_file_url}
-              designImageUrl={designUrl}
-              designArea={selectedProduct.product_templates.design_area}
-              onPositionChange={handlePositionChange}
+      {printProducts.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <ProductSelector
+              printProducts={printProducts}
+              selectedProduct={selectedProduct}
+              onProductSelect={handleProductSelect}
             />
-          )}
+
+            {selectedProduct && selectedProduct.product_templates && (
+              <DesignUploader
+                onDesignUpload={handleDesignUpload}
+                currentDesignUrl={designUrl}
+              />
+            )}
+
+            {selectedProduct && selectedProduct.product_templates && (
+              <ProductDetailsForm
+                productData={productData}
+                setProductData={setProductData}
+                finalPrice={calculateFinalPrice()}
+                isLoading={isLoading}
+                canSubmit={!!designPosition}
+                onSubmit={handleSubmit}
+              />
+            )}
+          </div>
+
+          <div>
+            {showPositioner && selectedProduct && selectedProduct.product_templates && designUrl && (
+              <DesignPositioner
+                templateSvgUrl={selectedProduct.product_templates.svg_file_url}
+                designImageUrl={designUrl}
+                designArea={selectedProduct.product_templates.design_area}
+                onPositionChange={handlePositionChange}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
