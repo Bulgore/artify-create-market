@@ -24,19 +24,35 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 
 const Studio = () => {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, userRole, isAdmin, signOut, loading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if not logged in
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       navigate("/auth");
-    } else if (isAdmin()) {
-      // Redirect admin to admin page
+    }
+  }, [user, loading, navigate]);
+
+  // Redirect admin to admin page
+  useEffect(() => {
+    if (!loading && user && isAdmin()) {
       navigate("/admin");
     }
-  }, [user, navigate, isAdmin]);
+  }, [user, userRole, loading, isAdmin, navigate]);
   
+  // Show loading while auth is initializing
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return null; // Don't render anything while redirecting
   }
@@ -51,8 +67,12 @@ const Studio = () => {
     { name: "Paramètres", icon: Settings },
   ];
 
-  const userRole = user.user_metadata.role;
-  const isCreator = userRole === "creator";
+  // Use userRole from context (from database) instead of user_metadata
+  const isCreator = userRole === 'créateur';
+  const isPrinter = userRole === 'imprimeur';
+
+  // Debug log to help track the issue
+  console.log("Studio - userRole:", userRole, "user_metadata.role:", user.user_metadata?.role);
 
   return (
     <div className="h-screen w-full bg-slate-100">
@@ -62,7 +82,7 @@ const Studio = () => {
             <SidebarHeader className="bg-[#333945] text-white p-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-orange-400">
-                  {isCreator ? "STUDIO CRÉATEUR" : "STUDIO IMPRIMEUR"}
+                  {isCreator ? "STUDIO CRÉATEUR" : isPrinter ? "STUDIO IMPRIMEUR" : "STUDIO"}
                 </h2>
               </div>
               <div className="mt-4 relative">
@@ -102,7 +122,7 @@ const Studio = () => {
           <div className="flex-1 overflow-auto">
             <header className="bg-white p-4 flex items-center justify-between border-b">
               <h1 className="text-xl font-semibold">
-                {isCreator ? "Studio de Création" : "Dashboard Imprimeur"}
+                {isCreator ? "Studio de Création" : isPrinter ? "Dashboard Imprimeur" : "Studio"}
               </h1>
               <div className="flex items-center gap-2">
                 <span className="text-orange-500">
@@ -122,8 +142,13 @@ const Studio = () => {
             >
               {isCreator ? (
                 <CreatorStudio />
-              ) : (
+              ) : isPrinter ? (
                 <PrinterStudio />
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">Rôle d'utilisateur non reconnu: {userRole}</p>
+                  <p className="text-sm text-gray-400 mt-2">Veuillez contacter l'administrateur.</p>
+                </div>
               )}
             </motion.div>
           </div>
