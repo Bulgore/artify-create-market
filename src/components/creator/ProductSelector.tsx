@@ -1,10 +1,11 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Package, AlertTriangle, CheckCircle, Info, Settings, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PrintProduct {
   id: string;
@@ -25,16 +26,52 @@ interface PrintProduct {
 }
 
 interface ProductSelectorProps {
-  printProducts: PrintProduct[];
-  selectedProduct: PrintProduct | null;
-  onProductSelect: (productId: string) => void;
+  onProductSelect: (product: PrintProduct | null) => void;
 }
 
 const ProductSelector: React.FC<ProductSelectorProps> = ({
-  printProducts,
-  selectedProduct,
   onProductSelect
 }) => {
+  const [printProducts, setPrintProducts] = useState<PrintProduct[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<PrintProduct | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch print products with templates
+  useEffect(() => {
+    const fetchPrintProducts = async () => {
+      try {
+        console.log('🔍 Fetching print products with templates...');
+        
+        const { data: products, error } = await supabase
+          .from('print_products')
+          .select(`
+            *,
+            product_templates (
+              id,
+              name,
+              svg_file_url,
+              mockup_image_url,
+              design_area
+            )
+          `)
+          .eq('is_active', true);
+
+        if (error) {
+          console.error('❌ Error fetching print products:', error);
+          return;
+        }
+
+        console.log('✅ Print products fetched:', products);
+        setPrintProducts(products || []);
+      } catch (error) {
+        console.error('❌ Unexpected error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPrintProducts();
+  }, []);
   
   // Debug logging côté créateur
   useEffect(() => {
@@ -75,6 +112,33 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     }
     return { type: 'success', message: 'Gabarit configuré' };
   };
+
+  const handleProductSelect = (productId: string) => {
+    const product = printProducts.find(p => p.id === productId) || null;
+    setSelectedProduct(product);
+    onProductSelect(product);
+    
+    console.log('🎯 Product selected:', product);
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            1. Choisir un produit de base
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
+            <p className="text-gray-600">Chargement des produits...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (printProducts.length === 0) {
     return (
@@ -147,7 +211,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Produit d'impression</Label>
-            <Select onValueChange={onProductSelect}>
+            <Select onValueChange={handleProductSelect}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un produit..." />
               </SelectTrigger>

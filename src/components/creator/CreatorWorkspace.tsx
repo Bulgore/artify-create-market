@@ -4,7 +4,7 @@ import { SimpleDesignUploader } from './design-uploader/SimpleDesignUploader';
 import { DesignPreview } from './design-uploader/DesignPreview';
 import { MockupPreview } from './design-uploader/MockupPreview';
 import DesignPreviewSection from './DesignPreviewSection';
-import { ProductSelector } from './ProductSelector';
+import ProductSelector from './ProductSelector';
 import { useDesignManagement } from '@/hooks/useDesignManagement';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Palette, Package, Settings } from 'lucide-react';
