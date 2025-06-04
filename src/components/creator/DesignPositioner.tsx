@@ -35,10 +35,27 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
   onPositionChange,
   initialPosition
 }) => {
+  console.log('DesignPositioner props:', {
+    templateSvgUrl,
+    designImageUrl,
+    designArea,
+    initialPosition
+  });
+
+  // S'assurer que designArea a des valeurs valides
+  const safeDesignArea = {
+    x: Number(designArea?.x) || 50,
+    y: Number(designArea?.y) || 50,
+    width: Number(designArea?.width) || 200,
+    height: Number(designArea?.height) || 200
+  };
+
+  console.log('Safe design area:', safeDesignArea);
+
   const [position, setPosition] = useState<DesignPosition>(
     initialPosition || {
-      x: designArea.x + designArea.width / 2 - 50,
-      y: designArea.y + designArea.height / 2 - 50,
+      x: safeDesignArea.x + safeDesignArea.width / 2 - 50,
+      y: safeDesignArea.y + safeDesignArea.height / 2 - 50,
       width: 100,
       height: 100,
       rotation: 0
@@ -49,17 +66,29 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
 
+  console.log('Current position:', position);
+
   const updatePosition = useCallback((newPosition: DesignPosition) => {
+    // S'assurer que toutes les valeurs sont des nombres valides
+    const validPosition = {
+      x: Number(newPosition.x) || 0,
+      y: Number(newPosition.y) || 0,
+      width: Number(newPosition.width) || 100,
+      height: Number(newPosition.height) || 100,
+      rotation: Number(newPosition.rotation) || 0
+    };
+
     // Contraindre la position dans la zone imprimable
     const constrainedPosition = {
-      ...newPosition,
-      x: Math.max(designArea.x, Math.min(designArea.x + designArea.width - newPosition.width, newPosition.x)),
-      y: Math.max(designArea.y, Math.min(designArea.y + designArea.height - newPosition.height, newPosition.y))
+      ...validPosition,
+      x: Math.max(safeDesignArea.x, Math.min(safeDesignArea.x + safeDesignArea.width - validPosition.width, validPosition.x)),
+      y: Math.max(safeDesignArea.y, Math.min(safeDesignArea.y + safeDesignArea.height - validPosition.height, validPosition.y))
     };
     
+    console.log('Updating position:', constrainedPosition);
     setPosition(constrainedPosition);
     onPositionChange(constrainedPosition);
-  }, [designArea, onPositionChange]);
+  }, [safeDesignArea, onPositionChange]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -92,30 +121,60 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
     setIsDragging(false);
   };
 
-  const handleSizeChange = (dimension: 'width' | 'height', value: number) => {
+  const handleSizeChange = (dimension: 'width' | 'height', value: number[]) => {
+    const newValue = value[0];
     updatePosition({
       ...position,
-      [dimension]: value
+      [dimension]: newValue
     });
   };
 
-  const handleRotationChange = (rotation: number) => {
+  const handleRotationChange = (rotation: number[]) => {
     updatePosition({
       ...position,
-      rotation
+      rotation: rotation[0]
     });
+  };
+
+  const handleInputChange = (field: keyof DesignPosition, value: string) => {
+    const numValue = Number(value);
+    if (!isNaN(numValue)) {
+      updatePosition({
+        ...position,
+        [field]: numValue
+      });
+    }
   };
 
   const resetPosition = () => {
     const resetPos = {
-      x: designArea.x + designArea.width / 2 - 50,
-      y: designArea.y + designArea.height / 2 - 50,
+      x: safeDesignArea.x + safeDesignArea.width / 2 - 50,
+      y: safeDesignArea.y + safeDesignArea.height / 2 - 50,
       width: 100,
       height: 100,
       rotation: 0
     };
     updatePosition(resetPos);
   };
+
+  // Vérifier que le design image URL est valide
+  if (!designImageUrl) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Move className="h-5 w-5" />
+            Positionnement du design
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-gray-500">Aucun design sélectionné</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -137,21 +196,23 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
               onMouseLeave={handleMouseUp}
             >
               {/* Template SVG en arrière-plan */}
-              <image
-                href={templateSvgUrl}
-                x="0"
-                y="0"
-                width="400"
-                height="400"
-                opacity="0.3"
-              />
+              {templateSvgUrl && (
+                <image
+                  href={templateSvgUrl}
+                  x="0"
+                  y="0"
+                  width="400"
+                  height="400"
+                  opacity="0.3"
+                />
+              )}
               
               {/* Zone imprimable */}
               <rect
-                x={designArea.x}
-                y={designArea.y}
-                width={designArea.width}
-                height={designArea.height}
+                x={safeDesignArea.x}
+                y={safeDesignArea.y}
+                width={safeDesignArea.width}
+                height={safeDesignArea.height}
                 fill="none"
                 stroke="#33C3F0"
                 strokeWidth="2"
@@ -193,7 +254,7 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
               <Input
                 type="number"
                 value={Math.round(position.x)}
-                onChange={(e) => updatePosition({ ...position, x: Number(e.target.value) })}
+                onChange={(e) => handleInputChange('x', e.target.value)}
               />
             </div>
             
@@ -202,7 +263,7 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
               <Input
                 type="number"
                 value={Math.round(position.y)}
-                onChange={(e) => updatePosition({ ...position, y: Number(e.target.value) })}
+                onChange={(e) => handleInputChange('y', e.target.value)}
               />
             </div>
             
@@ -210,9 +271,9 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
               <Label>Largeur</Label>
               <Slider
                 value={[position.width]}
-                onValueChange={([value]) => handleSizeChange('width', value)}
+                onValueChange={(value) => handleSizeChange('width', value)}
                 min={20}
-                max={200}
+                max={300}
                 step={1}
                 className="w-full"
               />
@@ -223,9 +284,9 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
               <Label>Hauteur</Label>
               <Slider
                 value={[position.height]}
-                onValueChange={([value]) => handleSizeChange('height', value)}
+                onValueChange={(value) => handleSizeChange('height', value)}
                 min={20}
-                max={200}
+                max={300}
                 step={1}
                 className="w-full"
               />
@@ -236,7 +297,7 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
               <Label>Rotation</Label>
               <Slider
                 value={[position.rotation]}
-                onValueChange={([value]) => handleRotationChange(value)}
+                onValueChange={handleRotationChange}
                 min={-180}
                 max={180}
                 step={1}
