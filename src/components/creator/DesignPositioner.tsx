@@ -35,29 +35,29 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
   onPositionChange,
   initialPosition
 }) => {
-  console.log('DesignPositioner props:', {
-    templateSvgUrl,
-    designImageUrl,
+  console.log('DesignPositioner received props:', {
+    templateSvgUrl: templateSvgUrl?.substring(0, 50) + '...',
+    designImageUrl: designImageUrl?.substring(0, 50) + '...',
     designArea,
     initialPosition
   });
 
-  // Ensure designArea has valid values with fallbacks
-  const safeDesignArea = {
-    x: Number(designArea?.x) || 50,
-    y: Number(designArea?.y) || 50,
-    width: Number(designArea?.width) || 200,
-    height: Number(designArea?.height) || 200
+  // Validate and ensure designArea has proper numeric values
+  const validDesignArea = {
+    x: isNaN(Number(designArea?.x)) ? 50 : Number(designArea.x),
+    y: isNaN(Number(designArea?.y)) ? 50 : Number(designArea.y),
+    width: isNaN(Number(designArea?.width)) || Number(designArea.width) <= 0 ? 200 : Number(designArea.width),
+    height: isNaN(Number(designArea?.height)) || Number(designArea.height) <= 0 ? 200 : Number(designArea.height)
   };
 
-  console.log('Safe design area:', safeDesignArea);
+  console.log('Validated design area:', validDesignArea);
 
   const [position, setPosition] = useState<DesignPosition>(
     initialPosition || {
-      x: safeDesignArea.x + 20,
-      y: safeDesignArea.y + 20,
-      width: Math.min(100, safeDesignArea.width - 40),
-      height: Math.min(100, safeDesignArea.height - 40),
+      x: validDesignArea.x + 20,
+      y: validDesignArea.y + 20,
+      width: Math.min(100, validDesignArea.width - 40),
+      height: Math.min(100, validDesignArea.height - 40),
       rotation: 0
     }
   );
@@ -66,72 +66,108 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
   const [templateLoaded, setTemplateLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [templateError, setTemplateError] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  console.log('Current position:', position);
-
-  // Load images and handle errors
+  // Preload design image
   useEffect(() => {
-    if (designImageUrl) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        console.log('Design image loaded successfully');
-        setImageLoaded(true);
-      };
-      img.onerror = (error) => {
-        console.error('Error loading design image:', error);
-        setImageLoaded(false);
-      };
-      img.src = designImageUrl;
+    if (!designImageUrl) {
+      console.log('No design image URL provided');
+      setImageLoaded(false);
+      setImageError(false);
+      return;
     }
+
+    console.log('Loading design image:', designImageUrl);
+    setImageLoaded(false);
+    setImageError(false);
+    
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      console.log('✅ Design image loaded successfully:', {
+        src: designImageUrl,
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight
+      });
+      setImageLoaded(true);
+      setImageError(false);
+    };
+    
+    img.onerror = (error) => {
+      console.error('❌ Design image failed to load:', error, designImageUrl);
+      setImageLoaded(false);
+      setImageError(true);
+    };
+    
+    img.src = designImageUrl;
   }, [designImageUrl]);
 
+  // Preload template
   useEffect(() => {
-    if (templateSvgUrl) {
-      // For SVG, we'll handle it differently since it's base64
-      if (templateSvgUrl.startsWith('data:image/svg+xml')) {
-        console.log('Template SVG loaded (base64)');
+    if (!templateSvgUrl) {
+      console.log('No template URL provided');
+      setTemplateLoaded(false);
+      setTemplateError(false);
+      return;
+    }
+
+    console.log('Loading template:', templateSvgUrl);
+    setTemplateLoaded(false);
+    setTemplateError(false);
+    
+    // Handle base64 SVG differently
+    if (templateSvgUrl.startsWith('data:image/svg+xml')) {
+      console.log('✅ Template is base64 SVG, marking as loaded');
+      setTemplateLoaded(true);
+      setTemplateError(false);
+    } else {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        console.log('✅ Template image loaded successfully');
         setTemplateLoaded(true);
-      } else {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          console.log('Template image loaded successfully');
-          setTemplateLoaded(true);
-        };
-        img.onerror = (error) => {
-          console.error('Error loading template image:', error);
-          setTemplateLoaded(false);
-        };
-        img.src = templateSvgUrl;
-      }
+        setTemplateError(false);
+      };
+      
+      img.onerror = (error) => {
+        console.error('❌ Template failed to load:', error, templateSvgUrl);
+        setTemplateLoaded(false);
+        setTemplateError(true);
+      };
+      
+      img.src = templateSvgUrl;
     }
   }, [templateSvgUrl]);
 
   const updatePosition = useCallback((newPosition: DesignPosition) => {
-    // Ensure all values are valid numbers
-    const validPosition = {
-      x: Number(newPosition.x) || 0,
-      y: Number(newPosition.y) || 0,
-      width: Math.max(20, Number(newPosition.width) || 20),
-      height: Math.max(20, Number(newPosition.height) || 20),
-      rotation: Number(newPosition.rotation) || 0
+    // Ensure all values are valid numbers with proper fallbacks
+    const safePosition = {
+      x: isNaN(Number(newPosition.x)) ? validDesignArea.x + 20 : Number(newPosition.x),
+      y: isNaN(Number(newPosition.y)) ? validDesignArea.y + 20 : Number(newPosition.y),
+      width: isNaN(Number(newPosition.width)) || Number(newPosition.width) < 20 ? 100 : Number(newPosition.width),
+      height: isNaN(Number(newPosition.height)) || Number(newPosition.height) < 20 ? 100 : Number(newPosition.height),
+      rotation: isNaN(Number(newPosition.rotation)) ? 0 : Number(newPosition.rotation)
     };
 
     // Constrain position within design area
     const constrainedPosition = {
-      ...validPosition,
-      x: Math.max(safeDesignArea.x, Math.min(safeDesignArea.x + safeDesignArea.width - validPosition.width, validPosition.x)),
-      y: Math.max(safeDesignArea.y, Math.min(safeDesignArea.y + safeDesignArea.height - validPosition.height, validPosition.y))
+      ...safePosition,
+      x: Math.max(validDesignArea.x, Math.min(validDesignArea.x + validDesignArea.width - safePosition.width, safePosition.x)),
+      y: Math.max(validDesignArea.y, Math.min(validDesignArea.y + validDesignArea.height - safePosition.height, safePosition.y))
     };
     
-    console.log('Updating position:', constrainedPosition);
+    console.log('Updating position to:', constrainedPosition);
     setPosition(constrainedPosition);
     onPositionChange(constrainedPosition);
-  }, [safeDesignArea, onPositionChange]);
+  }, [validDesignArea, onPositionChange]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (!imageLoaded) return;
+    
     e.preventDefault();
     setIsDragging(true);
     const rect = svgRef.current?.getBoundingClientRect();
@@ -146,7 +182,7 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
+    if (!isDragging || !imageLoaded) return;
     
     const rect = svgRef.current?.getBoundingClientRect();
     if (rect) {
@@ -194,10 +230,10 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
 
   const resetPosition = () => {
     const resetPos = {
-      x: safeDesignArea.x + 20,
-      y: safeDesignArea.y + 20,
-      width: Math.min(100, safeDesignArea.width - 40),
-      height: Math.min(100, safeDesignArea.height - 40),
+      x: validDesignArea.x + 20,
+      y: validDesignArea.y + 20,
+      width: Math.min(100, validDesignArea.width - 40),
+      height: Math.min(100, validDesignArea.height - 40),
       rotation: 0
     };
     updatePosition(resetPos);
@@ -242,8 +278,8 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
               onMouseLeave={handleMouseUp}
               style={{ maxHeight: '400px' }}
             >
-              {/* Template SVG background */}
-              {templateSvgUrl && templateLoaded && (
+              {/* Template background */}
+              {templateSvgUrl && templateLoaded && !templateError && (
                 <image
                   href={templateSvgUrl}
                   x="0"
@@ -255,20 +291,44 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
                 />
               )}
               
+              {/* Fallback if template fails to load */}
+              {(!templateLoaded || templateError) && (
+                <rect
+                  x="0"
+                  y="0"
+                  width="400"
+                  height="400"
+                  fill="#f0f0f0"
+                  stroke="#ddd"
+                  strokeWidth="1"
+                />
+              )}
+              
               {/* Design area boundaries */}
               <rect
-                x={safeDesignArea.x}
-                y={safeDesignArea.y}
-                width={safeDesignArea.width}
-                height={safeDesignArea.height}
+                x={validDesignArea.x}
+                y={validDesignArea.y}
+                width={validDesignArea.width}
+                height={validDesignArea.height}
                 fill="rgba(51, 195, 240, 0.1)"
                 stroke="#33C3F0"
                 strokeWidth="2"
                 strokeDasharray="5,5"
               />
               
+              {/* Design area label */}
+              <text
+                x={validDesignArea.x + 5}
+                y={validDesignArea.y + 15}
+                fontSize="12"
+                fill="#33C3F0"
+                fontWeight="bold"
+              >
+                Zone d'impression
+              </text>
+              
               {/* User design image */}
-              {imageLoaded && (
+              {imageLoaded && !imageError && (
                 <g
                   transform={`translate(${position.x + position.width/2}, ${position.y + position.height/2}) rotate(${position.rotation}) translate(${-position.width/2}, ${-position.height/2})`}
                 >
@@ -299,15 +359,17 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
                   <circle
                     cx={position.width}
                     cy={position.height}
-                    r="4"
+                    r="6"
                     fill="#FF6B35"
+                    stroke="white"
+                    strokeWidth="2"
                     className="cursor-se-resize"
                   />
                 </g>
               )}
               
-              {/* Loading indicator for design image */}
-              {!imageLoaded && (
+              {/* Loading/Error states */}
+              {!imageLoaded && !imageError && (
                 <text
                   x="200"
                   y="200"
@@ -317,6 +379,30 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
                 >
                   Chargement du design...
                 </text>
+              )}
+              
+              {imageError && (
+                <g>
+                  <rect
+                    x={validDesignArea.x}
+                    y={validDesignArea.y}
+                    width={validDesignArea.width}
+                    height={validDesignArea.height}
+                    fill="#fee2e2"
+                    stroke="#ef4444"
+                    strokeWidth="2"
+                  />
+                  <text
+                    x={validDesignArea.x + validDesignArea.width/2}
+                    y={validDesignArea.y + validDesignArea.height/2}
+                    textAnchor="middle"
+                    fill="#ef4444"
+                    fontSize="14"
+                    fontWeight="bold"
+                  >
+                    Erreur de chargement
+                  </text>
+                </g>
               )}
             </svg>
           </div>
@@ -328,6 +414,7 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
                 type="number"
                 value={Math.round(position.x)}
                 onChange={(e) => handleInputChange('x', e.target.value)}
+                disabled={!imageLoaded}
               />
             </div>
             
@@ -337,6 +424,7 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
                 type="number"
                 value={Math.round(position.y)}
                 onChange={(e) => handleInputChange('y', e.target.value)}
+                disabled={!imageLoaded}
               />
             </div>
             
@@ -346,9 +434,10 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
                 value={[position.width]}
                 onValueChange={(value) => handleSizeChange('width', value)}
                 min={20}
-                max={Math.min(300, safeDesignArea.width)}
+                max={Math.min(300, validDesignArea.width)}
                 step={1}
                 className="w-full"
+                disabled={!imageLoaded}
               />
               <div className="text-sm text-gray-500">{Math.round(position.width)}px</div>
             </div>
@@ -359,9 +448,10 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
                 value={[position.height]}
                 onValueChange={(value) => handleSizeChange('height', value)}
                 min={20}
-                max={Math.min(300, safeDesignArea.height)}
+                max={Math.min(300, validDesignArea.height)}
                 step={1}
                 className="w-full"
+                disabled={!imageLoaded}
               />
               <div className="text-sm text-gray-500">{Math.round(position.height)}px</div>
             </div>
@@ -375,24 +465,37 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
                 max={180}
                 step={1}
                 className="w-full"
+                disabled={!imageLoaded}
               />
               <div className="text-sm text-gray-500">{position.rotation}°</div>
             </div>
           </div>
           
           <div className="flex gap-2 mt-4">
-            <Button onClick={resetPosition} variant="outline" size="sm">
+            <Button 
+              onClick={resetPosition} 
+              variant="outline" 
+              size="sm"
+              disabled={!imageLoaded}
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               Réinitialiser
             </Button>
           </div>
           
-          {/* Debug info */}
-          <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
-            <p>Debug: Image chargée: {imageLoaded ? 'Oui' : 'Non'}</p>
-            <p>Template chargé: {templateLoaded ? 'Oui' : 'Non'}</p>
-            <p>URL design: {designImageUrl ? 'Présente' : 'Manquante'}</p>
-            <p>Zone design: {safeDesignArea.width}x{safeDesignArea.height}</p>
+          {/* Status info */}
+          <div className="mt-4 p-3 bg-gray-100 rounded text-sm space-y-1">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${imageLoaded ? 'bg-green-500' : imageError ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
+              <span>Design: {imageLoaded ? 'Chargé' : imageError ? 'Erreur' : 'Chargement...'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${templateLoaded ? 'bg-green-500' : templateError ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
+              <span>Template: {templateLoaded ? 'Chargé' : templateError ? 'Erreur' : 'Chargement...'}</span>
+            </div>
+            <div className="text-xs text-gray-600">
+              Zone d'impression: {validDesignArea.width}×{validDesignArea.height}px
+            </div>
           </div>
         </CardContent>
       </Card>
