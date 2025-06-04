@@ -52,6 +52,9 @@ export const useEditProduct = (product: PrintProduct | null) => {
 
   useEffect(() => {
     if (product) {
+      console.log('Setting form data for product:', product);
+      console.log('Product template_id:', product.template_id);
+      
       setFormData({
         name: product.name,
         description: product.description || '',
@@ -61,13 +64,14 @@ export const useEditProduct = (product: PrintProduct | null) => {
         available_sizes: product.available_sizes,
         available_colors: product.available_colors,
         is_active: product.is_active,
-        template_id: product.template_id || null
+        template_id: product.template_id
       });
     }
   }, [product]);
 
   const fetchTemplates = async () => {
     try {
+      console.log('Fetching templates for product editing...');
       const { data, error } = await supabase
         .from('product_templates')
         .select('id, name, type')
@@ -75,6 +79,8 @@ export const useEditProduct = (product: PrintProduct | null) => {
         .order('name');
 
       if (error) throw error;
+      
+      console.log('Templates fetched:', data?.length || 0);
       setTemplates(data || []);
     } catch (error: any) {
       console.error('Error fetching templates:', error);
@@ -110,23 +116,35 @@ export const useEditProduct = (product: PrintProduct | null) => {
     setIsLoading(true);
 
     try {
+      console.log('Updating product with data:', formData);
+      console.log('Template ID being saved:', formData.template_id);
+
+      const updateData = {
+        name: formData.name.trim(),
+        description: formData.description?.trim() || null,
+        base_price: formData.base_price,
+        material: formData.material.trim(),
+        stock_quantity: formData.stock_quantity,
+        available_sizes: formData.available_sizes,
+        available_colors: formData.available_colors,
+        is_active: formData.is_active,
+        template_id: formData.template_id === 'none' ? null : formData.template_id
+      };
+
+      console.log('Final update data:', updateData);
+
       const { error } = await supabase
         .from('print_products')
-        .update({
-          name: formData.name.trim(),
-          description: formData.description?.trim() || null,
-          base_price: formData.base_price,
-          material: formData.material.trim(),
-          stock_quantity: formData.stock_quantity,
-          available_sizes: formData.available_sizes,
-          available_colors: formData.available_colors,
-          is_active: formData.is_active,
-          template_id: formData.template_id || null
-        })
+        .update(updateData)
         .eq('id', product.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
 
+      console.log('Product updated successfully');
+      
       toast({
         title: "Produit mis à jour",
         description: "Le produit a été mis à jour avec succès."
@@ -138,7 +156,7 @@ export const useEditProduct = (product: PrintProduct | null) => {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de mettre à jour le produit."
+        description: `Impossible de mettre à jour le produit: ${error.message || 'Erreur inconnue'}`
       });
       return false;
     } finally {

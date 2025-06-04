@@ -7,7 +7,7 @@ import { ProductTemplate, TemplateFormData } from '@/types/templates';
 
 export const useTemplateOperations = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchTemplates = async () => {
@@ -113,48 +113,93 @@ export const useTemplateOperations = () => {
     }
   };
 
-  const deleteTemplate = async (templateId: string) => {
+  const deleteTemplate = async (templateId: string, forceDelete: boolean = false) => {
     try {
-      console.log(`Attempting to delete template: ${templateId}`);
+      console.log(`Attempting to delete template: ${templateId}, force: ${forceDelete}`);
       
-      // Vérifier s'il y a des produits qui utilisent ce gabarit dans print_products
-      const { data: printProductsUsingTemplate, error: checkPrintError } = await supabase
-        .from('print_products')
-        .select('id, name')
-        .eq('template_id', templateId);
+      if (!forceDelete) {
+        // Vérifier toutes les tables qui pourraient référencer ce gabarit
+        const referenceTables = [
+          { table: 'print_products', column: 'template_id' },
+          { table: 'tshirt_templates', column: 'template_id' }
+        ];
 
-      if (checkPrintError) {
-        console.error('Error checking template usage in print_products:', checkPrintError);
-        throw checkPrintError;
+        const allReferences: Array<{table: string, products: any[]}> = [];
+
+        for (const ref of referenceTables) {
+          console.log(`Checking ${ref.table} for template usage...`);
+          
+          const { data, error } = await supabase
+            .from(ref.table)
+            .select('id, name')
+            .eq(ref.column, templateId);
+
+          if (error) {
+            console.error(`Error checking ${ref.table}:`, error);
+            throw error;
+          }
+
+          if (data && data.length > 0) {
+            console.log(`Found ${data.length} references in ${ref.table}:`, data);
+            allReferences.push({ table: ref.table, products: data });
+          }
+        }
+
+        if (allReferences.length > 0) {
+          const referencesText = allReferences.map(ref => 
+            `${ref.table}: ${ref.products.map(p => p.name || p.id).join(', ')}`
+          ).join('\n');
+          
+          console.log('Template is referenced by:', referencesText);
+          
+          // Si c'est un super admin, proposer la suppression forcée
+          if (isSuperAdmin()) {
+            const forceConfirm = confirm(
+              `Ce gabarit est utilisé par :\n${referencesText}\n\n` +
+              `En tant que super administrateur, voulez-vous forcer la suppression ?\n` +
+              `ATTENTION: Cela supprimera aussi toutes les références dans les autres tables.`
+            );
+            
+            if (forceConfirm) {
+              return await deleteTemplate(templateId, true);
+            }
+            return false;
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Impossible de supprimer",
+              description: `Ce gabarit est utilisé par :\n${referencesText}\nVeuillez d'abord supprimer ces références.`
+            });
+            return false;
+          }
+        }
       }
 
-      // Vérifier s'il y a des produits qui utilisent ce gabarit dans tshirt_templates
-      const { data: tshirtTemplatesUsingTemplate, error: checkTshirtError } = await supabase
-        .from('tshirt_templates')
-        .select('id, name')
-        .eq('template_id', templateId);
+      // Suppression (normale ou forcée)
+      if (forceDelete && isSuperAdmin()) {
+        console.log('Force deleting template and all references...');
+        
+        // Supprimer d'abord toutes les références
+        const { error: printProductsError } = await supabase
+          .from('print_products')
+          .update({ template_id: null })
+          .eq('template_id', templateId);
 
-      if (checkTshirtError) {
-        console.error('Error checking template usage in tshirt_templates:', checkTshirtError);
-        throw checkTshirtError;
+        if (printProductsError) {
+          console.error('Error removing print_products references:', printProductsError);
+        }
+
+        const { error: tshirtTemplatesError } = await supabase
+          .from('tshirt_templates')
+          .update({ template_id: null })
+          .eq('template_id', templateId);
+
+        if (tshirtTemplatesError) {
+          console.error('Error removing tshirt_templates references:', tshirtTemplatesError);
+        }
       }
 
-      // Combiner les vérifications
-      const allProductsUsing = [
-        ...(printProductsUsingTemplate || []),
-        ...(tshirtTemplatesUsingTemplate || [])
-      ];
-
-      if (allProductsUsing.length > 0) {
-        const productNames = allProductsUsing.map(p => p.name).join(', ');
-        toast({
-          variant: "destructive",
-          title: "Impossible de supprimer",
-          description: `Ce gabarit est utilisé par ces produits : ${productNames}. Veuillez d'abord les modifier pour retirer le gabarit.`
-        });
-        return false;
-      }
-
+      // Supprimer le gabarit
       const { error } = await supabase
         .from('product_templates')
         .delete()
@@ -169,7 +214,9 @@ export const useTemplateOperations = () => {
       
       toast({
         title: "Gabarit supprimé",
-        description: "Le gabarit a été supprimé avec succès."
+        description: forceDelete 
+          ? "Le gabarit et toutes ses références ont été supprimés avec succès."
+          : "Le gabarit a été supprimé avec succès."
       });
       
       return true;

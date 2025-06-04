@@ -33,6 +33,13 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({
   templates,
   onFormDataChange
 }) => {
+  const handleTemplateChange = (value: string) => {
+    console.log('Template selection changed to:', value);
+    const newTemplateId = value === 'none' ? null : value;
+    console.log('Setting template_id to:', newTemplateId);
+    onFormDataChange({ template_id: newTemplateId });
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
@@ -61,7 +68,7 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({
         <Label htmlFor="template">Gabarit *</Label>
         <Select 
           value={formData.template_id || 'none'} 
-          onValueChange={(value) => onFormDataChange({ template_id: value === 'none' ? null : value })}
+          onValueChange={handleTemplateChange}
         >
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner un gabarit" />
@@ -78,6 +85,11 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({
         <p className="text-sm text-gray-500">
           Le gabarit est requis pour que les créateurs puissent utiliser ce produit.
         </p>
+        {formData.template_id && (
+          <p className="text-sm text-green-600">
+            ✓ Gabarit sélectionné : {templates.find(t => t.id === formData.template_id)?.name}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
