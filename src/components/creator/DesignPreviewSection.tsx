@@ -38,7 +38,6 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
   console.log('showPositioner:', showPositioner);
   console.log('selectedProduct:', selectedProduct);
   console.log('designUrl:', designUrl);
-  console.log('product_templates:', selectedProduct?.product_templates);
 
   if (!showPositioner || !selectedProduct || !selectedProduct.product_templates) {
     console.log('DesignPreviewSection: Conditions not met', {
@@ -49,7 +48,7 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
     return null;
   }
 
-  // Parse and validate design_area with comprehensive error handling
+  // Parse design_area with better error handling
   let designArea;
   const rawDesignArea = selectedProduct.product_templates.design_area;
   
@@ -57,14 +56,17 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
 
   try {
     if (typeof rawDesignArea === 'string') {
-      // Try to parse the JSON string
+      // Parse JSON string and validate
       const parsed = JSON.parse(rawDesignArea);
-      designArea = parsed;
-      console.log('Parsed from string:', designArea);
+      if (parsed && typeof parsed === 'object') {
+        designArea = parsed;
+        console.log('Successfully parsed design_area from string:', designArea);
+      } else {
+        throw new Error('Parsed design_area is not an object');
+      }
     } else if (typeof rawDesignArea === 'object' && rawDesignArea !== null) {
-      // Already an object
       designArea = rawDesignArea;
-      console.log('Used as object:', designArea);
+      console.log('Using design_area as object:', designArea);
     } else {
       throw new Error('Invalid design_area format: ' + typeof rawDesignArea);
     }
@@ -74,17 +76,17 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
     designArea = { x: 50, y: 50, width: 200, height: 200 };
   }
 
-  // Validate and ensure all required numeric properties exist
+  // Validate numeric properties with safe defaults
   const validatedDesignArea = {
-    x: (typeof designArea?.x === 'number' && !isNaN(designArea.x)) ? designArea.x : 50,
-    y: (typeof designArea?.y === 'number' && !isNaN(designArea.y)) ? designArea.y : 50,
-    width: (typeof designArea?.width === 'number' && !isNaN(designArea.width) && designArea.width > 0) ? designArea.width : 200,
-    height: (typeof designArea?.height === 'number' && !isNaN(designArea.height) && designArea.height > 0) ? designArea.height : 200
+    x: Number.isFinite(designArea?.x) ? designArea.x : 50,
+    y: Number.isFinite(designArea?.y) ? designArea.y : 50,
+    width: Number.isFinite(designArea?.width) && designArea.width > 0 ? designArea.width : 200,
+    height: Number.isFinite(designArea?.height) && designArea.height > 0 ? designArea.height : 200
   };
 
   console.log('Final validated design area:', validatedDesignArea);
 
-  // Validate template URLs
+  // Validate URLs
   const templateSvgUrl = selectedProduct.product_templates.svg_file_url || '';
   const mockupImageUrl = selectedProduct.product_templates.mockup_image_url || '';
 
@@ -103,13 +105,21 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
     );
   }
 
-  console.log('Design URL:', designUrl?.substring(0, 50) + '...');
+  // Clean and validate design URL
+  let cleanDesignUrl = designUrl.trim();
+  
+  // Si l'URL ne contient pas le domaine complet, on l'ajoute
+  if (cleanDesignUrl.startsWith('/storage/v1/object/')) {
+    cleanDesignUrl = `https://riumhqlxdmsxwsjstqgl.supabase.co${cleanDesignUrl}`;
+  }
+
+  console.log('Clean design URL:', cleanDesignUrl);
 
   return (
     <div>
       <DesignPositioner
         templateSvgUrl={templateSvgUrl}
-        designImageUrl={designUrl}
+        designImageUrl={cleanDesignUrl}
         designArea={validatedDesignArea}
         onPositionChange={onPositionChange}
       />
