@@ -1,5 +1,4 @@
-
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 
 interface DesignPosition {
   x: number;
