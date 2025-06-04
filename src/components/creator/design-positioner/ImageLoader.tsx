@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ImageLoaderProps {
   imageUrl: string;
@@ -20,58 +19,30 @@ export const ImageLoader: React.FC<ImageLoaderProps> = ({ imageUrl, onLoad, onEr
         return '';
       }
       
-      // Si c'est déjà une URL publique, signée ou data URL, on la retourne
-      if (url.includes('/storage/v1/object/public/') || url.includes('sign') || url.startsWith('data:')) {
-        console.log('✅ URL is already public/signed/data, using as is');
+      // Si c'est déjà une URL publique complète, on la retourne
+      if (url.includes('riumhqlxdmsxwsjstqgl.supabase.co') && url.includes('/storage/v1/object/public/')) {
+        console.log('✅ URL is already public, using as is');
         return url;
       }
 
-      // Si l'URL contient le domaine Supabase, on l'utilise directement
-      if (url.includes('riumhqlxdmsxwsjstqgl.supabase.co')) {
-        console.log('✅ URL contains Supabase domain, using as is');
+      // Si c'est une URL signée ou data URL, on la retourne
+      if (url.includes('sign') || url.startsWith('data:')) {
+        console.log('✅ URL is signed/data, using as is');
         return url;
       }
 
       // Si c'est un chemin relatif qui commence par /storage/
-      if (url.startsWith('/storage/v1/object/')) {
+      if (url.startsWith('/storage/v1/object/public/')) {
         const fullUrl = `https://riumhqlxdmsxwsjstqgl.supabase.co${url}`;
         console.log('🔧 Converting relative path to full URL:', fullUrl);
         return fullUrl;
       }
 
-      // Essayer de créer une URL signée si nécessaire
-      const urlParts = url.split('/storage/v1/object/');
-      if (urlParts.length >= 2) {
-        const pathPart = urlParts[1];
-        
-        if (pathPart.startsWith('public/')) {
-          console.log('✅ Using public URL as is');
-          return url;
-        }
-
-        // Pour les buckets privés, créer une URL signée
-        const bucketAndPath = pathPart.split('/');
-        const bucket = bucketAndPath[0];
-        const filePath = bucketAndPath.slice(1).join('/');
-
-        console.log('🔑 Creating signed URL for bucket:', bucket, 'path:', filePath);
-
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .createSignedUrl(filePath, 3600);
-
-        if (error) {
-          console.error('❌ Error creating signed URL:', error);
-          // Fallback vers URL publique
-          const { data: publicData } = supabase.storage
-            .from(bucket)
-            .getPublicUrl(filePath);
-          console.log('🔄 Fallback to public URL:', publicData.publicUrl);
-          return publicData.publicUrl;
-        }
-
-        console.log('✅ Created signed URL successfully');
-        return data.signedUrl;
+      // Si l'URL semble être un fichier direct sans domaine
+      if (url.includes('designs/') && !url.includes('http')) {
+        const fullUrl = `https://riumhqlxdmsxwsjstqgl.supabase.co/storage/v1/object/public/${url}`;
+        console.log('🔧 Building full public URL:', fullUrl);
+        return fullUrl;
       }
 
       console.log('🔄 Using original URL as fallback');

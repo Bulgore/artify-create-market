@@ -1,5 +1,5 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 
 interface DesignPosition {
   x: number;
@@ -28,23 +28,26 @@ export const useDesignPositioner = ({
   onPositionChange
 }: UseDesignPositionerProps) => {
   // Valider et nettoyer designArea avec des valeurs par défaut sûres
-  const validDesignArea = {
-    x: (typeof designArea?.x === 'number' && !isNaN(designArea.x)) ? designArea.x : 50,
-    y: (typeof designArea?.y === 'number' && !isNaN(designArea.y)) ? designArea.y : 50,
-    width: (typeof designArea?.width === 'number' && !isNaN(designArea.width) && designArea.width > 0) ? designArea.width : 200,
-    height: (typeof designArea?.height === 'number' && !isNaN(designArea.height) && designArea.height > 0) ? designArea.height : 200
-  };
-
-  console.log('🎯 ValidDesignArea:', validDesignArea);
+  const validDesignArea = useMemo(() => {
+    const safeArea = {
+      x: (typeof designArea?.x === 'number' && !isNaN(designArea.x)) ? designArea.x : 50,
+      y: (typeof designArea?.y === 'number' && !isNaN(designArea.y)) ? designArea.y : 50,
+      width: (typeof designArea?.width === 'number' && !isNaN(designArea.width) && designArea.width > 0) ? designArea.width : 200,
+      height: (typeof designArea?.height === 'number' && !isNaN(designArea.height) && designArea.height > 0) ? designArea.height : 200
+    };
+    
+    console.log('🎯 ValidDesignArea computed:', safeArea);
+    return safeArea;
+  }, [designArea]);
 
   // Position initiale du design avec des valeurs par défaut sûres
-  const defaultPosition: DesignPosition = {
+  const defaultPosition = useMemo((): DesignPosition => ({
     x: validDesignArea.x + 10,
     y: validDesignArea.y + 10,
     width: Math.min(80, validDesignArea.width - 20),
     height: Math.min(80, validDesignArea.height - 20),
     rotation: 0
-  };
+  }), [validDesignArea]);
 
   const [position, setPosition] = useState<DesignPosition>(
     initialPosition || defaultPosition
