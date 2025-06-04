@@ -51,25 +51,30 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
     return null;
   }
 
-  // Parser le design_area s'il est en string
+  // Parse design_area safely with better error handling
   let designArea;
   try {
-    designArea = typeof selectedProduct.product_templates.design_area === 'string' 
-      ? JSON.parse(selectedProduct.product_templates.design_area)
-      : selectedProduct.product_templates.design_area;
+    if (typeof selectedProduct.product_templates.design_area === 'string') {
+      designArea = JSON.parse(selectedProduct.product_templates.design_area);
+    } else if (typeof selectedProduct.product_templates.design_area === 'object' && selectedProduct.product_templates.design_area !== null) {
+      designArea = selectedProduct.product_templates.design_area;
+    } else {
+      throw new Error('Invalid design_area format');
+    }
   } catch (error) {
-    console.error('Error parsing design_area:', error);
+    console.error('Error parsing design_area:', error, 'Raw value:', selectedProduct.product_templates.design_area);
+    // Fallback to reasonable defaults
     designArea = { x: 50, y: 50, width: 200, height: 200 };
   }
 
   console.log('Parsed design area:', designArea);
 
-  // S'assurer que le design area a des valeurs valides
+  // Ensure design area has valid numeric values with fallbacks
   const safeDesignArea = {
-    x: Number(designArea?.x) || 50,
-    y: Number(designArea?.y) || 50,
-    width: Number(designArea?.width) || 200,
-    height: Number(designArea?.height) || 200
+    x: typeof designArea?.x === 'number' && !isNaN(designArea.x) ? designArea.x : 50,
+    y: typeof designArea?.y === 'number' && !isNaN(designArea.y) ? designArea.y : 50,
+    width: typeof designArea?.width === 'number' && !isNaN(designArea.width) && designArea.width > 0 ? designArea.width : 200,
+    height: typeof designArea?.height === 'number' && !isNaN(designArea.height) && designArea.height > 0 ? designArea.height : 200
   };
 
   console.log('Safe design area:', safeDesignArea);
