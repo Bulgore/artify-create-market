@@ -117,19 +117,36 @@ export const useTemplateOperations = () => {
     try {
       console.log(`Attempting to delete template: ${templateId}`);
       
-      // D'abord, vérifier s'il y a des produits qui utilisent ce gabarit
-      const { data: productsUsingTemplate, error: checkError } = await supabase
+      // Vérifier s'il y a des produits qui utilisent ce gabarit dans print_products
+      const { data: printProductsUsingTemplate, error: checkPrintError } = await supabase
         .from('print_products')
         .select('id, name')
         .eq('template_id', templateId);
 
-      if (checkError) {
-        console.error('Error checking template usage:', checkError);
-        throw checkError;
+      if (checkPrintError) {
+        console.error('Error checking template usage in print_products:', checkPrintError);
+        throw checkPrintError;
       }
 
-      if (productsUsingTemplate && productsUsingTemplate.length > 0) {
-        const productNames = productsUsingTemplate.map(p => p.name).join(', ');
+      // Vérifier s'il y a des produits qui utilisent ce gabarit dans tshirt_templates
+      const { data: tshirtTemplatesUsingTemplate, error: checkTshirtError } = await supabase
+        .from('tshirt_templates')
+        .select('id, name')
+        .eq('template_id', templateId);
+
+      if (checkTshirtError) {
+        console.error('Error checking template usage in tshirt_templates:', checkTshirtError);
+        throw checkTshirtError;
+      }
+
+      // Combiner les vérifications
+      const allProductsUsing = [
+        ...(printProductsUsingTemplate || []),
+        ...(tshirtTemplatesUsingTemplate || [])
+      ];
+
+      if (allProductsUsing.length > 0) {
+        const productNames = allProductsUsing.map(p => p.name).join(', ');
         toast({
           variant: "destructive",
           title: "Impossible de supprimer",

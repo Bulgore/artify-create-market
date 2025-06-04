@@ -17,13 +17,22 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
   onEdit,
   onDelete
 }) => {
-  const handleDelete = async () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!confirm(`Êtes-vous sûr de vouloir supprimer le gabarit "${template.name}" ? Cette action est irréversible.`)) {
       return;
     }
 
     console.log(`Attempting to delete template: ${template.id}`);
     onDelete(template.id);
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit(template);
   };
 
   return (
@@ -64,7 +73,8 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onEdit(template)}
+            onClick={handleEdit}
+            type="button"
           >
             <Edit className="h-3 w-3" />
           </Button>
@@ -73,6 +83,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
             size="sm"
             className="text-red-500 hover:text-red-700"
             onClick={handleDelete}
+            type="button"
           >
             <Trash className="h-3 w-3" />
           </Button>

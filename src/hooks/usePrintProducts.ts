@@ -15,11 +15,12 @@ export const usePrintProducts = () => {
     try {
       console.log("Fetching print products with templates...");
       
+      // Utiliser la bonne jointure avec la colonne template_id
       const { data, error } = await supabase
         .from('print_products')
         .select(`
           *,
-          product_templates (
+          product_templates!print_products_template_id_fkey (
             id,
             name,
             svg_file_url,
