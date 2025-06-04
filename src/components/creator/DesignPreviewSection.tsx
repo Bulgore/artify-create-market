@@ -40,12 +40,11 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
   console.log('designUrl:', designUrl);
   console.log('product_templates:', selectedProduct?.product_templates);
 
-  if (!showPositioner || !selectedProduct || !selectedProduct.product_templates || !designUrl) {
+  if (!showPositioner || !selectedProduct || !selectedProduct.product_templates) {
     console.log('DesignPreviewSection: Conditions not met', {
       showPositioner,
       hasSelectedProduct: !!selectedProduct,
-      hasProductTemplates: !!selectedProduct?.product_templates,
-      hasDesignUrl: !!designUrl
+      hasProductTemplates: !!selectedProduct?.product_templates
     });
     return null;
   }
@@ -58,9 +57,12 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
 
   try {
     if (typeof rawDesignArea === 'string') {
-      designArea = JSON.parse(rawDesignArea);
+      // Try to parse the JSON string
+      const parsed = JSON.parse(rawDesignArea);
+      designArea = parsed;
       console.log('Parsed from string:', designArea);
     } else if (typeof rawDesignArea === 'object' && rawDesignArea !== null) {
+      // Already an object
       designArea = rawDesignArea;
       console.log('Used as object:', designArea);
     } else {
@@ -72,7 +74,7 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
     designArea = { x: 50, y: 50, width: 200, height: 200 };
   }
 
-  // Validate numeric properties and apply fallbacks
+  // Validate and ensure all required numeric properties exist
   const validatedDesignArea = {
     x: (typeof designArea?.x === 'number' && !isNaN(designArea.x)) ? designArea.x : 50,
     y: (typeof designArea?.y === 'number' && !isNaN(designArea.y)) ? designArea.y : 50,
@@ -83,22 +85,30 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
   console.log('Final validated design area:', validatedDesignArea);
 
   // Validate template URLs
-  const templateSvgUrl = selectedProduct.product_templates.svg_file_url;
-  const mockupImageUrl = selectedProduct.product_templates.mockup_image_url;
+  const templateSvgUrl = selectedProduct.product_templates.svg_file_url || '';
+  const mockupImageUrl = selectedProduct.product_templates.mockup_image_url || '';
 
   console.log('Template URLs:', {
     templateSvgUrl: templateSvgUrl?.substring(0, 50) + '...',
     mockupImageUrl: mockupImageUrl?.substring(0, 50) + '...'
   });
 
-  if (!templateSvgUrl) {
-    console.warn('No template SVG URL found');
+  // Validate design URL
+  if (!designUrl) {
+    console.log('No design URL provided');
+    return (
+      <div className="p-4 text-center text-gray-500">
+        <p>Uploadez un design pour voir l'aperçu de positionnement</p>
+      </div>
+    );
   }
+
+  console.log('Design URL:', designUrl?.substring(0, 50) + '...');
 
   return (
     <div>
       <DesignPositioner
-        templateSvgUrl={templateSvgUrl || ''}
+        templateSvgUrl={templateSvgUrl}
         designImageUrl={designUrl}
         designArea={validatedDesignArea}
         onPositionChange={onPositionChange}
