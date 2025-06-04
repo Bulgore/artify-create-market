@@ -32,7 +32,7 @@ interface ProductData {
 interface ProductCreationFormProps {
   printProducts: PrintProduct[];
   selectedProduct: PrintProduct | null;
-  onProductSelect: (productId: string) => void;
+  onProductSelect: (product: PrintProduct | null) => void;
   designUrl: string;
   onDesignUpload: (url: string) => void;
   productData: ProductData;
@@ -59,8 +59,6 @@ const ProductCreationForm: React.FC<ProductCreationFormProps> = ({
   return (
     <div className="space-y-6">
       <ProductSelector
-        printProducts={printProducts}
-        selectedProduct={selectedProduct}
         onProductSelect={onProductSelect}
       />
 

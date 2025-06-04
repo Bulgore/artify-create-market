@@ -29,9 +29,8 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     margin_percentage: 20
   });
 
-  const handleProductSelect = (productId: string) => {
-    const product = printProducts.find(p => p.id === productId);
-    setSelectedProduct(product || null);
+  const handleProductSelect = (product: PrintProduct | null) => {
+    setSelectedProduct(product);
     console.log('🎯 Product selected:', product?.name, product?.product_templates?.design_area);
   };
 
@@ -87,8 +86,6 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   return (
     <div className="space-y-6">
       <ProductSelector
-        printProducts={printProducts}
-        selectedProduct={selectedProduct}
         onProductSelect={handleProductSelect}
       />
 

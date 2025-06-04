@@ -53,6 +53,14 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
     position
   });
 
+  // Vérifier si le design dépasse de la zone d'impression
+  const isDesignOutOfBounds = designUrl && imageLoaded && (
+    position.x < designArea.x ||
+    position.y < designArea.y ||
+    position.x + position.width > designArea.x + designArea.width ||
+    position.y + position.height > designArea.y + designArea.height
+  );
+
   return (
     <div className="space-y-4">
       {/* Titre et description */}
@@ -60,6 +68,19 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
         <h3 className="text-lg font-semibold text-gray-800 mb-2">Éditeur de positionnement</h3>
         <p className="text-sm text-gray-600">Positionnez votre design sur le produit en le glissant dans la zone d'impression</p>
       </div>
+
+      {/* Alerte si design hors zone */}
+      {isDesignOutOfBounds && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-red-700">
+            <span className="text-lg">⚠️</span>
+            <div>
+              <p className="font-medium">Design hors de la zone d'impression</p>
+              <p className="text-sm">Veuillez repositionner votre design dans la zone bleue délimitée.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Zone d'édition principale */}
       <div className="border-2 border-gray-300 rounded-xl p-6 bg-white shadow-lg">
@@ -87,12 +108,12 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
               y="0"
               width="400"
               height="400"
-              opacity="0.4"
+              opacity="0.7"
               preserveAspectRatio="xMidYMid meet"
             />
           )}
           
-          {/* Fallback si pas de template */}
+          {/* Fallback si pas de template - Affichage du tote bag par défaut */}
           {(!templateLoaded || templateError) && (
             <>
               <rect
@@ -105,15 +126,23 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
                 strokeWidth="2"
                 rx="8"
               />
+              {/* Simulation du contour d'un tote bag */}
+              <path
+                d="M100 80 L100 120 L80 140 L80 360 L320 360 L320 140 L300 120 L300 80 M120 80 L120 60 L280 60 L280 80"
+                fill="none"
+                stroke="#d1d5db"
+                strokeWidth="3"
+                strokeDasharray="5,5"
+              />
               <text
                 x="200"
-                y="200"
+                y="220"
                 textAnchor="middle"
                 fill="#6c757d"
-                fontSize="16"
+                fontSize="14"
                 fontWeight="medium"
               >
-                Produit (template manquant)
+                🛍️ Tote bag (template manquant)
               </text>
             </>
           )}
@@ -131,6 +160,7 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
               strokeWidth="3"
               strokeDasharray="10,5"
               rx="6"
+              className={isDesignOutOfBounds ? "animate-pulse" : ""}
             />
             
             {/* Bordure intérieure pour plus de définition */}
@@ -204,14 +234,14 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
                 style={{ pointerEvents: 'all' }}
               />
               
-              {/* Bordure de sélection avec animation subtile */}
+              {/* Bordure de sélection avec animation subtile et couleur selon la position */}
               <rect
                 x="0"
                 y="0"
                 width={position.width}
                 height={position.height}
                 fill="none"
-                stroke="#F59E0B"
+                stroke={isDesignOutOfBounds ? "#EF4444" : "#F59E0B"}
                 strokeWidth="2"
                 strokeDasharray="6,3"
                 className="pointer-events-none animate-pulse"
@@ -224,15 +254,69 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
                 [0, position.height], [position.width, position.height]
               ].map(([x, y], index) => (
                 <g key={index}>
-                  <circle cx={x} cy={y} r="6" fill="white" stroke="#F59E0B" strokeWidth="2" className="pointer-events-none" />
-                  <circle cx={x} cy={y} r="3" fill="#F59E0B" className="pointer-events-none" />
+                  <circle 
+                    cx={x} 
+                    cy={y} 
+                    r="6" 
+                    fill="white" 
+                    stroke={isDesignOutOfBounds ? "#EF4444" : "#F59E0B"} 
+                    strokeWidth="2" 
+                    className="pointer-events-none" 
+                  />
+                  <circle 
+                    cx={x} 
+                    cy={y} 
+                    r="3" 
+                    fill={isDesignOutOfBounds ? "#EF4444" : "#F59E0B"} 
+                    className="pointer-events-none" 
+                  />
                 </g>
               ))}
               
               {/* Indicateur de rotation au centre avec icône */}
               <g>
-                <circle cx={position.width/2} cy={position.height/2} r="8" fill="white" fillOpacity="0.9" stroke="#F59E0B" strokeWidth="2" className="pointer-events-none" />
-                <text x={position.width/2} y={position.height/2 + 3} textAnchor="middle" fontSize="10" fill="#F59E0B" className="pointer-events-none">⟲</text>
+                <circle 
+                  cx={position.width/2} 
+                  cy={position.height/2} 
+                  r="8" 
+                  fill="white" 
+                  fillOpacity="0.9" 
+                  stroke={isDesignOutOfBounds ? "#EF4444" : "#F59E0B"} 
+                  strokeWidth="2" 
+                  className="pointer-events-none" 
+                />
+                <text 
+                  x={position.width/2} 
+                  y={position.height/2 + 3} 
+                  textAnchor="middle" 
+                  fontSize="10" 
+                  fill={isDesignOutOfBounds ? "#EF4444" : "#F59E0B"} 
+                  className="pointer-events-none"
+                >
+                  ⟲
+                </text>
+              </g>
+
+              {/* Affichage des dimensions réelles */}
+              <g>
+                <rect
+                  x={position.width + 10}
+                  y="-5"
+                  width="60"
+                  height="20"
+                  fill="rgba(0,0,0,0.8)"
+                  rx="4"
+                />
+                <text
+                  x={position.width + 40}
+                  y="8"
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="white"
+                  fontWeight="bold"
+                >
+                  {Math.round(position.width)}×{Math.round(position.height)}px
+                </text>
               </g>
             </g>
           )}
@@ -354,6 +438,10 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${imageLoaded ? 'bg-green-500' : designUrl ? 'bg-yellow-500' : 'bg-gray-400'}`}></div>
             <span className="text-gray-600">Design {imageLoaded ? 'prêt' : designUrl ? 'chargement...' : 'en attente'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isDesignOutOfBounds ? 'bg-red-500' : imageLoaded ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+            <span className="text-gray-600">Position {isDesignOutOfBounds ? 'incorrecte' : imageLoaded ? 'valide' : 'en attente'}</span>
           </div>
         </div>
       </div>
