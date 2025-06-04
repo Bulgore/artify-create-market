@@ -25,13 +25,41 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
     }
 
     try {
+      console.log(`Attempting to delete template: ${template.id}`);
+      
+      // D'abord, vérifier s'il y a des produits qui utilisent ce gabarit
+      const { data: productsUsingTemplate, error: checkError } = await supabase
+        .from('print_products')
+        .select('id, name')
+        .eq('template_id', template.id);
+
+      if (checkError) {
+        console.error('Error checking template usage:', checkError);
+        throw checkError;
+      }
+
+      if (productsUsingTemplate && productsUsingTemplate.length > 0) {
+        const productNames = productsUsingTemplate.map(p => p.name).join(', ');
+        toast({
+          variant: "destructive",
+          title: "Impossible de supprimer",
+          description: `Ce gabarit est utilisé par ces produits : ${productNames}. Veuillez d'abord les modifier pour retirer le gabarit.`
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('product_templates')
         .delete()
         .eq('id', template.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting template:', error);
+        throw error;
+      }
 
+      console.log(`Template ${template.id} deleted successfully`);
+      
       toast({
         title: "Gabarit supprimé",
         description: `Le gabarit "${template.name}" a été supprimé avec succès.`
@@ -43,7 +71,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de supprimer le gabarit."
+        description: `Impossible de supprimer le gabarit : ${error.message || 'Erreur inconnue'}`
       });
     }
   };

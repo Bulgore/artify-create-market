@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,7 +64,8 @@ export const useCustomProductCreator = () => {
             mockup_area
           )
         `)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .not('template_id', 'is', null);
 
       if (error) {
         console.error("Error fetching print products:", error);
@@ -75,42 +75,49 @@ export const useCustomProductCreator = () => {
       console.log("Raw data from database:", data);
 
       const allProducts = data || [];
-      const productsWithTemplates = allProducts.filter(product => product.template_id && product.product_templates);
-      const productsWithoutTemplates = allProducts.filter(product => !product.template_id || !product.product_templates);
-
-      console.log(`Total products found: ${allProducts.length}`);
-      console.log(`Products with templates: ${productsWithTemplates.length}`);
-      console.log(`Products without templates: ${productsWithoutTemplates.length}`);
-
-      if (productsWithoutTemplates.length > 0) {
-        console.log("Products missing templates:", productsWithoutTemplates.map(p => p.name));
-      }
-
-      const validProducts = productsWithTemplates.filter(product => {
-        const hasDesignArea = product.product_templates?.design_area;
+      
+      // Filtrer pour s'assurer que les produits ont bien un template et une design_area
+      const validProducts = allProducts.filter(product => {
+        console.log(`Checking product ${product.name}:`, {
+          template_id: product.template_id,
+          has_template_data: !!product.product_templates,
+          has_design_area: !!product.product_templates?.design_area
+        });
         
-        if (!hasDesignArea) {
-          console.log(`Product ${product.name} has no design_area in template`);
+        // Vérifier que le produit a un template_id ET des données de template
+        if (!product.template_id || !product.product_templates) {
+          console.log(`Product ${product.name} filtered out: missing template_id or template data`);
           return false;
         }
         
+        // Vérifier que le template a une zone de design
+        if (!product.product_templates.design_area) {
+          console.log(`Product ${product.name} filtered out: missing design_area`);
+          return false;
+        }
+        
+        console.log(`Product ${product.name} is valid for customization`);
         return true;
       });
 
+      console.log(`Total products found: ${allProducts.length}`);
       console.log(`Valid products for customization: ${validProducts.length}`);
       
       setPrintProducts(validProducts);
       
       if (validProducts.length === 0 && allProducts.length > 0) {
+        console.log("Products found but none are valid:", allProducts);
         toast({
           title: "Configuration requise",
-          description: `${allProducts.length} produit(s) trouvé(s) mais aucun n'est configuré pour la personnalisation. L'imprimeur doit assigner des gabarits à ses produits.`,
+          description: `${allProducts.length} produit(s) trouvé(s) mais la configuration n'est pas complète. Vérifiez que les gabarits ont des zones d'impression définies.`,
         });
       } else if (allProducts.length === 0) {
         toast({
           title: "Aucun produit disponible",
-          description: "Aucun produit d'impression actif trouvé. Les imprimeurs doivent d'abord créer des produits.",
+          description: "Aucun produit d'impression actif trouvé avec un gabarit assigné.",
         });
+      } else {
+        console.log(`${validProducts.length} produits disponibles pour la personnalisation`);
       }
     } catch (error: any) {
       console.error('Error fetching print products:', error);

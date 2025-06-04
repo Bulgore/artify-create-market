@@ -67,22 +67,22 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
               </div>
             </div>
             <div className="space-y-2">
-              <h3 className="font-medium text-gray-900">Aucun produit disponible</h3>
+              <h3 className="font-medium text-gray-900">Aucun produit disponible pour la personnalisation</h3>
               <p className="text-sm text-gray-600 max-w-md mx-auto">
-                Pour pouvoir créer des produits personnalisés, les imprimeurs doivent d'abord :
+                Les produits doivent être configurés par les imprimeurs avec des gabarits ayant des zones d'impression définies.
               </p>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left max-w-md mx-auto">
-              <h4 className="font-medium text-blue-900 mb-2">Instructions pour l'imprimeur :</h4>
+              <h4 className="font-medium text-blue-900 mb-2">Configuration requise par l'imprimeur :</h4>
               <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                <li>Créer des gabarits (templates) dans l'admin</li>
-                <li>Assigner ces gabarits à vos produits d'impression</li>
-                <li>Définir les zones d'impression sur chaque gabarit</li>
-                <li>Activer vos produits pour la personnalisation</li>
+                <li>Créer des gabarits avec des zones d'impression définies</li>
+                <li>Assigner ces gabarits à ses produits d'impression</li>
+                <li>Activer les produits pour la personnalisation</li>
+                <li>S'assurer que les zones d'impression sont bien définies sur chaque gabarit</li>
               </ol>
             </div>
             <p className="text-xs text-gray-500 max-w-md mx-auto">
-              Une fois ces étapes complétées par l'imprimeur, vous pourrez sélectionner ses produits ici pour créer vos designs personnalisés.
+              Une fois ces étapes complétées, vous pourrez sélectionner les produits ici pour créer vos designs personnalisés.
             </p>
           </div>
         </CardContent>
