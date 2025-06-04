@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +13,8 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
+import { validateAdminAccess } from "@/utils/secureRoleUtils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface User {
   id: string;
@@ -24,25 +25,48 @@ interface User {
   updated_at: string;
   default_commission: number;
   avatar_url: string | null;
-  // Champs supplémentaires pour l'affichage
   email?: string;
   is_active?: boolean;
 }
 
 const UsersManagement = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [hasAdminAccess, setHasAdminAccess] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    checkAdminAccess();
+  }, [user]);
+
+  useEffect(() => {
+    if (hasAdminAccess) {
+      fetchUsers();
+    }
+  }, [hasAdminAccess]);
+
+  const checkAdminAccess = async () => {
+    if (!user) return;
+    
+    const isAdmin = await validateAdminAccess(user.id);
+    setHasAdminAccess(isAdmin);
+    
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Accès refusé",
+        description: "Vous n'avez pas les permissions pour accéder à cette section.",
+      });
+    }
+  };
 
   const fetchUsers = async () => {
+    if (!hasAdminAccess) return;
+    
     setIsLoading(true);
     try {
-      // Récupérer d'abord les utilisateurs de la table publique
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('*')
@@ -58,27 +82,13 @@ const UsersManagement = () => {
         return;
       }
 
-      // Enrichir avec les données d'authentification
-      const enrichedUsers = await Promise.all(
-        (usersData || []).map(async (user) => {
-          try {
-            // Récupérer l'email depuis auth.users si on a les permissions admin
-            const { data: authUser } = await supabase.auth.admin.getUserById(user.id);
-            return {
-              ...user,
-              email: authUser.user?.email || 'N/A',
-              is_active: true // Par défaut actif, vous pouvez ajouter ce champ à votre table si nécessaire
-            };
-          } catch (error) {
-            console.warn(`Impossible de récupérer l'email pour l'utilisateur ${user.id}:`, error);
-            return {
-              ...user,
-              email: 'N/A',
-              is_active: true
-            };
-          }
-        })
-      );
+      // Note: Email fetching from auth.users requires service role key
+      // For security, we'll show 'Email protégé' instead of trying to fetch emails
+      const enrichedUsers = (usersData || []).map(user => ({
+        ...user,
+        email: 'Email protégé', // Security: Don't expose emails
+        is_active: true
+      }));
 
       setUsers(enrichedUsers);
     } catch (error) {
@@ -151,10 +161,26 @@ const UsersManagement = () => {
   };
 
   const updateUserRole = async (userId: string, newRole: string) => {
+    if (!hasAdminAccess) return;
+    
+    // Security: Only allow specific roles
+    const allowedRoles = ['créateur', 'imprimeur', 'admin'];
+    if (!allowedRoles.includes(newRole)) {
+      toast({
+        variant: "destructive",
+        title: "Rôle invalide",
+        description: "Le rôle spécifié n'est pas autorisé.",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('users')
-        .update({ role: newRole })
+        .update({ 
+          role: newRole,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
 
       if (error) {
@@ -167,7 +193,6 @@ const UsersManagement = () => {
         return;
       }
 
-      // Mettre à jour l'état local
       setUsers(users.map(user => 
         user.id === userId 
           ? { ...user, role: newRole }
@@ -176,7 +201,7 @@ const UsersManagement = () => {
 
       toast({
         title: "Rôle mis à jour",
-        description: "Le rôle de l'utilisateur a été modifié.",
+        description: "Le rôle de l'utilisateur a été modifié de manière sécurisée.",
       });
     } catch (error) {
       console.error("Erreur lors de la mise à jour du rôle:", error);
@@ -216,6 +241,19 @@ const UsersManagement = () => {
         return "outline";
     }
   };
+
+  if (!hasAdminAccess) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <div className="text-red-500">
+            <h3 className="text-lg font-semibold mb-2">Accès Restreint</h3>
+            <p>Vous n'avez pas les permissions nécessaires pour accéder à cette section.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

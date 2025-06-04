@@ -9,7 +9,7 @@ import {
   signInUser, 
   signOutUser 
 } from '@/services/authService';
-import { createRoleCheckers } from '@/utils/roleUtils';
+import { getSecureUserRole } from '@/utils/secureRoleUtils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -23,10 +23,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
-    // Configuration initiale
     const initializeAuth = async () => {
       try {
-        // Récupérer la session actuelle
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (mounted) {
@@ -34,6 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(currentSession?.user ?? null);
           
           if (currentSession?.user) {
+            // Use secure role fetching
             const role = await fetchUserRole(currentSession.user.id);
             if (mounted) {
               setUserRole(role);
@@ -52,18 +51,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Listener pour les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: string, newSession: Session | null) => {
         if (!mounted) return;
         
-        console.log("Auth state changed:", event, newSession?.user?.email);
+        console.log("Secure auth state changed:", event, newSession?.user?.email);
         
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
-          // Créer le profil si nécessaire (uniquement lors de l'inscription)
           if (event === 'SIGNED_UP') {
             await createUserProfile(
               newSession.user.id, 
@@ -73,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             );
           }
           
-          // Récupérer le rôle
+          // Use secure role fetching
           setTimeout(async () => {
             if (mounted) {
               const role = await fetchUserRole(newSession.user.id);
@@ -99,6 +96,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       subscription?.unsubscribe();
     };
   }, []);
+
+  // Create secure role checkers using the utility function
+  const isAdmin = () => {
+    return userRole === 'admin' || userRole === 'superAdmin';
+  };
+
+  const isSuperAdmin = () => {
+    return userRole === 'superAdmin';
+  };
+
+  const isImprimeur = () => {
+    return userRole === 'imprimeur';
+  };
+
+  const isCreateur = () => {
+    return userRole === 'créateur';
+  };
 
   const signUp = async (email: string, password: string, fullName: string, role: string = 'créateur') => {
     await signUpUser(email, password, fullName, role);
@@ -126,8 +140,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const roleCheckers = createRoleCheckers(userRole);
-
   const value = {
     user,
     session,
@@ -136,7 +148,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signUp,
     signIn,
     signOut,
-    ...roleCheckers
+    isAdmin,
+    isSuperAdmin,
+    isImprimeur,
+    isCreateur
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

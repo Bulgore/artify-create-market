@@ -1,25 +1,17 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { validateEmail, sanitizeText } from '@/utils/inputValidation';
 
 export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('role, is_super_admin')
-      .eq('id', userId)
-      .single();
+    const { data, error } = await supabase.rpc('get_user_role', { user_id: userId });
     
     if (error) {
       console.error('Error fetching user role:', error);
       return null;
     }
     
-    if (data?.is_super_admin) {
-      return 'superAdmin';
-    }
-    
-    return data?.role || null;
+    return data as string || null;
   } catch (error) {
     console.error('Error fetching user role:', error);
     return null;
@@ -33,24 +25,36 @@ export const createUserProfile = async (
   role: string
 ): Promise<void> => {
   try {
-    const isSuperAdmin = email === 'creatahiti@gmail.com';
+    // Validate and sanitize inputs
+    if (!validateEmail(email)) {
+      throw new Error('Email invalide');
+    }
+    
+    const sanitizedName = sanitizeText(fullName);
+    const validRoles = ['créateur', 'imprimeur'];
+    
+    if (!validRoles.includes(role)) {
+      role = 'créateur'; // Default to creator for security
+    }
     
     const { error } = await supabase
       .from('users')
       .upsert({
         id: userId,
-        full_name: fullName,
-        role: isSuperAdmin ? 'superAdmin' : role,
-        is_super_admin: isSuperAdmin,
+        full_name: sanitizedName,
+        role: role,
+        is_super_admin: false, // Never set this to true via code
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
 
     if (error) {
       console.error('Error creating user profile:', error);
+      throw error;
     }
   } catch (error) {
     console.error('Error creating user profile:', error);
+    throw error;
   }
 };
 

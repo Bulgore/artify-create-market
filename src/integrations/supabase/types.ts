@@ -711,6 +711,10 @@ export type Database = {
           platform_earnings: number
         }[]
       }
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: string
+      }
     }
     Enums: {
       user_role: "superAdmin" | "admin" | "imprimeur" | "créateur"
