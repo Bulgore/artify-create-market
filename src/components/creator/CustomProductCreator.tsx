@@ -4,7 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SimplifiedProductCreation } from './SimplifiedProductCreation';
 import { useCustomProductCreator } from '@/hooks/useCustomProductCreator';
 
-const CustomProductCreator: React.FC = () => {
+interface CustomProductCreatorProps {
+  onBack?: () => void;
+}
+
+const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) => {
   const {
     printProducts,
     isLoading,

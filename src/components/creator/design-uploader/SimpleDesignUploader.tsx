@@ -61,7 +61,7 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
       console.log('✅ Upload successful, URL:', publicUrl);
 
       // Tester que l'URL fonctionne
-      const testImg = new Image();
+      const testImg = document.createElement('img');
       testImg.onload = () => {
         console.log('✅ Image accessible:', publicUrl);
         onDesignUpload(publicUrl);

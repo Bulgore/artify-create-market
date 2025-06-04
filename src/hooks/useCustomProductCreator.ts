@@ -31,6 +31,34 @@ export const useCustomProductCreator = () => {
     return selectedProduct.base_price + marginAmount;
   };
 
+  const handleProductCreate = async (productData: any) => {
+    console.log('🚀 Creating product with data:', productData);
+    
+    const success = await submitProduct(
+      selectedProduct, 
+      productData.design_data.imageUrl, 
+      productData.design_data.position, 
+      {
+        name: productData.name,
+        description: productData.description,
+        margin_percentage: productData.creator_margin_percentage
+      }
+    );
+    
+    if (success) {
+      // Reset form after successful submission
+      setSelectedProduct(null);
+      resetDesign();
+      setProductData({
+        name: '',
+        description: '',
+        margin_percentage: 20
+      });
+    }
+    
+    return success;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -69,6 +97,7 @@ export const useCustomProductCreator = () => {
     handleDesignUpload,
     handlePositionChange,
     calculateFinalPrice,
-    handleSubmit
+    handleSubmit,
+    handleProductCreate
   };
 };
