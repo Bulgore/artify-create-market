@@ -60,14 +60,14 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({
       <div className="space-y-2">
         <Label htmlFor="template">Gabarit *</Label>
         <Select 
-          value={formData.template_id || ''} 
-          onValueChange={(value) => onFormDataChange({ template_id: value || null })}
+          value={formData.template_id || 'none'} 
+          onValueChange={(value) => onFormDataChange({ template_id: value === 'none' ? null : value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner un gabarit" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Aucun gabarit</SelectItem>
+            <SelectItem value="none">Aucun gabarit</SelectItem>
             {templates.map((template) => (
               <SelectItem key={template.id} value={template.id}>
                 {template.name} ({template.type})
