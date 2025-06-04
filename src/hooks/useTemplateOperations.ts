@@ -118,31 +118,36 @@ export const useTemplateOperations = () => {
       console.log(`Attempting to delete template: ${templateId}, force: ${forceDelete}`);
       
       if (!forceDelete) {
-        // Vérifier toutes les tables qui pourraient référencer ce gabarit
-        const referenceTables = [
-          { table: 'print_products', column: 'template_id' },
-          { table: 'tshirt_templates', column: 'template_id' }
-        ];
+        // Vérifier les références dans print_products
+        console.log('Checking print_products for template usage...');
+        const { data: printProducts, error: printProductsError } = await supabase
+          .from('print_products')
+          .select('id, name')
+          .eq('template_id', templateId);
 
-        const allReferences: Array<{table: string, products: any[]}> = [];
+        if (printProductsError) {
+          console.error('Error checking print_products:', printProductsError);
+          throw printProductsError;
+        }
 
-        for (const ref of referenceTables) {
-          console.log(`Checking ${ref.table} for template usage...`);
-          
-          const { data, error } = await supabase
-            .from(ref.table)
-            .select('id, name')
-            .eq(ref.column, templateId);
+        // Vérifier les références dans tshirt_templates
+        console.log('Checking tshirt_templates for template usage...');
+        const { data: tshirtTemplates, error: tshirtError } = await supabase
+          .from('tshirt_templates')
+          .select('id, name')
+          .eq('template_id', templateId);
 
-          if (error) {
-            console.error(`Error checking ${ref.table}:`, error);
-            throw error;
-          }
+        if (tshirtError) {
+          console.error('Error checking tshirt_templates:', tshirtError);
+          throw tshirtError;
+        }
 
-          if (data && data.length > 0) {
-            console.log(`Found ${data.length} references in ${ref.table}:`, data);
-            allReferences.push({ table: ref.table, products: data });
-          }
+        const allReferences = [];
+        if (printProducts && printProducts.length > 0) {
+          allReferences.push({ table: 'print_products', products: printProducts });
+        }
+        if (tshirtTemplates && tshirtTemplates.length > 0) {
+          allReferences.push({ table: 'tshirt_templates', products: tshirtTemplates });
         }
 
         if (allReferences.length > 0) {
@@ -179,7 +184,7 @@ export const useTemplateOperations = () => {
       if (forceDelete && isSuperAdmin()) {
         console.log('Force deleting template and all references...');
         
-        // Supprimer d'abord toutes les références
+        // Supprimer d'abord toutes les références dans print_products
         const { error: printProductsError } = await supabase
           .from('print_products')
           .update({ template_id: null })
@@ -189,6 +194,7 @@ export const useTemplateOperations = () => {
           console.error('Error removing print_products references:', printProductsError);
         }
 
+        // Supprimer les références dans tshirt_templates
         const { error: tshirtTemplatesError } = await supabase
           .from('tshirt_templates')
           .update({ template_id: null })
