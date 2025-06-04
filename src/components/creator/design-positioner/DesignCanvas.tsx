@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 interface DesignPosition {
   x: number;
@@ -30,7 +30,7 @@ interface DesignCanvasProps {
   onMouseUp: () => void;
 }
 
-export const DesignCanvas: React.FC<DesignCanvasProps> = ({
+export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
   templateUrl,
   designUrl,
   designArea,
@@ -42,10 +42,11 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
   onMouseDown,
   onMouseMove,
   onMouseUp
-}) => {
+}, ref) => {
   return (
     <div className="border rounded-lg p-4 bg-gray-50">
       <svg
+        ref={ref}
         viewBox="0 0 400 400"
         className="w-full h-96 border rounded cursor-crosshair"
         onMouseMove={onMouseMove}
@@ -200,4 +201,6 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
       </svg>
     </div>
   );
-};
+});
+
+DesignCanvas.displayName = 'DesignCanvas';

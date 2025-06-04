@@ -68,6 +68,9 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
   const [templateLoaded, setTemplateLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [templateError, setTemplateError] = useState(false);
+  
+  // Separate refs for container div and SVG element
+  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Template loading
@@ -238,8 +241,9 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div ref={svgRef}>
+          <div ref={containerRef}>
             <DesignCanvas
+              ref={svgRef}
               templateUrl={templateSvgUrl}
               designUrl={designImageUrl}
               designArea={validDesignArea}
