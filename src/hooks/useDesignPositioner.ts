@@ -40,14 +40,20 @@ export const useDesignPositioner = ({
     return safeArea;
   }, [designArea]);
 
-  // Position initiale du design avec des valeurs par défaut sûres
-  const defaultPosition = useMemo((): DesignPosition => ({
-    x: validDesignArea.x + 10,
-    y: validDesignArea.y + 10,
-    width: Math.min(80, validDesignArea.width - 20),
-    height: Math.min(80, validDesignArea.height - 20),
-    rotation: 0
-  }), [validDesignArea]);
+  // Position initiale du design BASÉE SUR LES COORDONNÉES DU DESIGN_AREA
+  const defaultPosition = useMemo((): DesignPosition => {
+    // Utiliser les coordonnées exactes du design_area comme position initiale
+    const designWidth = Math.min(validDesignArea.width * 0.6, 120); // 60% de la largeur disponible, max 120px
+    const designHeight = Math.min(validDesignArea.height * 0.6, 120); // 60% de la hauteur disponible, max 120px
+    
+    return {
+      x: validDesignArea.x + (validDesignArea.width - designWidth) / 2, // Centré dans la zone
+      y: validDesignArea.y + (validDesignArea.height - designHeight) / 2, // Centré dans la zone
+      width: designWidth,
+      height: designHeight,
+      rotation: 0
+    };
+  }, [validDesignArea]);
 
   const [position, setPosition] = useState<DesignPosition>(
     initialPosition || defaultPosition
@@ -60,6 +66,7 @@ export const useDesignPositioner = ({
   const svgRef = useRef<SVGSVGElement>(null);
 
   console.log('🎯 Current position:', position);
+  console.log('🎯 Design area:', validDesignArea);
 
   const updatePosition = useCallback((newPosition: DesignPosition) => {
     // Valider toutes les propriétés de la nouvelle position
@@ -87,6 +94,13 @@ export const useDesignPositioner = ({
     console.log('🔄 Resetting position to:', defaultPosition);
     updatePosition(defaultPosition);
   }, [updatePosition, defaultPosition]);
+
+  // Réinitialiser la position quand designArea change
+  useEffect(() => {
+    console.log('🔄 Design area changed, resetting position');
+    setPosition(defaultPosition);
+    onPositionChange(defaultPosition);
+  }, [validDesignArea.x, validDesignArea.y, validDesignArea.width, validDesignArea.height]);
 
   return {
     position,
