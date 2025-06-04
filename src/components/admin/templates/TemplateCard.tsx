@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash, FileImage, MapPin, Palette } from "lucide-react";
 import { ProductTemplate } from "@/types/templates";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TemplateCardProps {
   template: ProductTemplate;
@@ -17,6 +19,35 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
   onEdit,
   onDelete
 }) => {
+  const handleDelete = async () => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le gabarit "${template.name}" ? Cette action est irréversible.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('product_templates')
+        .delete()
+        .eq('id', template.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Gabarit supprimé",
+        description: `Le gabarit "${template.name}" a été supprimé avec succès.`
+      });
+
+      onDelete(template.id);
+    } catch (error: any) {
+      console.error('Error deleting template:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer le gabarit."
+      });
+    }
+  };
+
   return (
     <Card className="group hover:shadow-md transition-shadow">
       <CardContent className="p-4">
@@ -63,7 +94,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
             variant="outline"
             size="sm"
             className="text-red-500 hover:text-red-700"
-            onClick={() => onDelete(template.id)}
+            onClick={handleDelete}
           >
             <Trash className="h-3 w-3" />
           </Button>

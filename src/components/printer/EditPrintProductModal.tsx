@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Save, X } from 'lucide-react';
@@ -27,6 +28,13 @@ interface PrintProduct {
   available_sizes: string[];
   available_colors: string[];
   is_active: boolean;
+  template_id: string | null;
+}
+
+interface ProductTemplate {
+  id: string;
+  name: string;
+  type: string;
 }
 
 interface EditPrintProductModalProps {
@@ -50,12 +58,20 @@ const EditPrintProductModal: React.FC<EditPrintProductModalProps> = ({
     stock_quantity: 0,
     available_sizes: [] as string[],
     available_colors: [] as string[],
-    is_active: true
+    is_active: true,
+    template_id: '' as string | null
   });
+  const [templates, setTemplates] = useState<ProductTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
   const availableColors = ['white', 'black', 'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'gray'];
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchTemplates();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (product) {
@@ -67,10 +83,31 @@ const EditPrintProductModal: React.FC<EditPrintProductModalProps> = ({
         stock_quantity: product.stock_quantity,
         available_sizes: product.available_sizes,
         available_colors: product.available_colors,
-        is_active: product.is_active
+        is_active: product.is_active,
+        template_id: product.template_id || null
       });
     }
   }, [product]);
+
+  const fetchTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('product_templates')
+        .select('id, name, type')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setTemplates(data || []);
+    } catch (error: any) {
+      console.error('Error fetching templates:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger les gabarits."
+      });
+    }
+  };
 
   const handleSizeToggle = (size: string) => {
     setFormData(prev => ({
@@ -126,7 +163,8 @@ const EditPrintProductModal: React.FC<EditPrintProductModalProps> = ({
           stock_quantity: formData.stock_quantity,
           available_sizes: formData.available_sizes,
           available_colors: formData.available_colors,
-          is_active: formData.is_active
+          is_active: formData.is_active,
+          template_id: formData.template_id || null
         })
         .eq('id', product.id);
 
@@ -181,6 +219,29 @@ const EditPrintProductModal: React.FC<EditPrintProductModalProps> = ({
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="template">Gabarit *</Label>
+            <Select 
+              value={formData.template_id || ''} 
+              onValueChange={(value) => setFormData({ ...formData, template_id: value || null })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un gabarit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Aucun gabarit</SelectItem>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name} ({template.type})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-500">
+              Le gabarit est requis pour que les créateurs puissent utiliser ce produit.
+            </p>
           </div>
 
           <div className="space-y-2">

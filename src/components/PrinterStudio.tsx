@@ -95,6 +95,8 @@ const PrinterStudio: React.FC = () => {
             <strong>Attention :</strong> {productsWithoutTemplate.length} produit{productsWithoutTemplate.length > 1 ? 's' : ''} 
             {productsWithoutTemplate.length > 1 ? ' ne sont' : ' n\'est'} pas encore configuré{productsWithoutTemplate.length > 1 ? 's' : ''} 
             pour la personnalisation. Les créateurs ne pourront pas les utiliser tant qu'un gabarit ne leur aura pas été assigné.
+            <br />
+            <em>Utilisez le bouton "Modifier" sur vos produits pour leur assigner un gabarit.</em>
           </AlertDescription>
         </Alert>
       )}

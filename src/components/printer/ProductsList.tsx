@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import EditPrintProductModal from "./EditPrintProductModal";
 
 interface PrintProduct {
@@ -17,6 +18,7 @@ interface PrintProduct {
   available_sizes: string[];
   available_colors: string[];
   is_active: boolean;
+  template_id: string | null;
 }
 
 interface ProductsListProps {
@@ -34,6 +36,7 @@ const ProductsList: React.FC<ProductsListProps> = ({
 }) => {
   const [editingProduct, setEditingProduct] = useState<PrintProduct | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
 
   const handleEditProduct = (product: PrintProduct) => {
     console.log("Edit product:", product.id);
@@ -44,6 +47,39 @@ const ProductsList: React.FC<ProductsListProps> = ({
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setEditingProduct(null);
+  };
+
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le produit "${productName}" ? Cette action est irréversible.`)) {
+      return;
+    }
+
+    setDeletingProductId(productId);
+
+    try {
+      const { error } = await supabase
+        .from('print_products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Produit supprimé",
+        description: `Le produit "${productName}" a été supprimé avec succès.`
+      });
+
+      onRefreshProducts();
+    } catch (error: any) {
+      console.error('Error deleting product:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer le produit."
+      });
+    } finally {
+      setDeletingProductId(null);
+    }
   };
 
   const handleAddProductClick = () => {
@@ -76,9 +112,20 @@ const ProductsList: React.FC<ProductsListProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-medium">{product.name}</h3>
-                  <Badge variant={product.is_active ? "default" : "secondary"}>
-                    {product.is_active ? "Actif" : "Inactif"}
-                  </Badge>
+                  <div className="flex gap-2">
+                    <Badge variant={product.is_active ? "default" : "secondary"}>
+                      {product.is_active ? "Actif" : "Inactif"}
+                    </Badge>
+                    {product.template_id ? (
+                      <Badge variant="outline" className="text-green-600">
+                        Gabarit OK
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive">
+                        Pas de gabarit
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{product.material}</p>
                 <p className="text-sm text-gray-600 mb-2">Stock: {product.stock_quantity}</p>
@@ -98,14 +145,10 @@ const ProductsList: React.FC<ProductsListProps> = ({
                   <Button 
                     variant="destructive" 
                     size="sm"
-                    onClick={() => {
-                      toast({
-                        title: "Fonctionnalité à venir",
-                        description: "La suppression de produits sera bientôt disponible."
-                      });
-                    }}
+                    disabled={deletingProductId === product.id}
+                    onClick={() => handleDeleteProduct(product.id, product.name)}
                   >
-                    Supprimer
+                    {deletingProductId === product.id ? "Suppression..." : "Supprimer"}
                   </Button>
                 </div>
               </CardContent>
