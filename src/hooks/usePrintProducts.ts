@@ -13,131 +13,135 @@ export const usePrintProducts = () => {
 
   const fetchPrintProducts = async () => {
     try {
-      console.log("Fetching print products with templates...");
+      console.log("=== DEBUT FETCH PRINT PRODUCTS ===");
       
-      // Récupérer tous les produits actifs d'abord
+      // D'abord, récupérer tous les produits actifs
       const { data: allProducts, error: productsError } = await supabase
         .from('print_products')
-        .select(`
-          *,
-          product_templates!print_products_template_id_fkey (
-            id,
-            name,
-            svg_file_url,
-            mockup_image_url,
-            design_area,
-            mockup_area
-          )
-        `)
+        .select('*')
         .eq('is_active', true);
 
       if (productsError) {
-        console.error("Error fetching print products:", productsError);
+        console.error("❌ Error fetching print products:", productsError);
         throw productsError;
       }
 
-      console.log("Raw data from database:", allProducts?.length || 0, "products found");
-      console.log("Products data:", allProducts);
+      console.log("📦 Raw products from database:", allProducts?.length || 0);
+      console.log("📦 Products data:", allProducts);
 
       if (!allProducts || allProducts.length === 0) {
-        console.log("No products found in database");
+        console.log("⚠️ No active products found");
         setPrintProducts([]);
         toast({
-          title: "Aucun produit disponible",
-          description: "Aucun produit d'impression actif trouvé.",
+          title: "Aucun produit d'impression actif",
+          description: "Aucun produit actif trouvé dans la base de données.",
         });
         return;
       }
 
-      // Analyser chaque produit pour la compatibilité
-      const productAnalysis = allProducts.map(product => {
-        const analysis = {
-          id: product.id,
-          name: product.name,
-          hasTemplateId: !!product.template_id,
-          hasTemplateData: !!product.product_templates,
-          hasDesignArea: false,
-          designAreaValid: false,
-          isValid: false
-        };
-
-        if (product.product_templates && product.product_templates.design_area) {
-          analysis.hasDesignArea = true;
-          
-          try {
-            const designArea = typeof product.product_templates.design_area === 'string' 
-              ? JSON.parse(product.product_templates.design_area) 
-              : product.product_templates.design_area;
-              
-            if (designArea && designArea.width > 0 && designArea.height > 0) {
-              analysis.designAreaValid = true;
-              analysis.isValid = true;
-            }
-          } catch (e) {
-            console.error(`Error parsing design_area for product ${product.name}:`, e);
-          }
+      // Ensuite, récupérer les gabarits pour chaque produit qui en a un
+      const productsWithTemplates = [];
+      
+      for (const product of allProducts) {
+        console.log(`\n🔍 Analyzing product: ${product.name}`);
+        console.log(`   - ID: ${product.id}`);
+        console.log(`   - template_id: ${product.template_id}`);
+        console.log(`   - is_active: ${product.is_active}`);
+        
+        if (!product.template_id) {
+          console.log(`   ❌ No template_id - SKIPPING`);
+          continue;
         }
 
-        console.log(`Product ${product.name} analysis:`, analysis);
-        return { product, analysis };
-      });
+        // Récupérer le gabarit associé
+        const { data: template, error: templateError } = await supabase
+          .from('product_templates')
+          .select('*')
+          .eq('id', product.template_id)
+          .eq('is_active', true)
+          .single();
 
-      // Filtrer les produits valides
-      const validProducts = productAnalysis
-        .filter(({ analysis }) => analysis.isValid)
-        .map(({ product }) => product);
+        if (templateError) {
+          console.error(`   ❌ Template fetch error for ${product.name}:`, templateError);
+          continue;
+        }
 
-      console.log(`Products analysis: ${allProducts.length} total, ${validProducts.length} valid`);
+        if (!template) {
+          console.log(`   ❌ No active template found - SKIPPING`);
+          continue;
+        }
 
-      // Afficher les détails des produits non valides
-      const invalidProducts = productAnalysis.filter(({ analysis }) => !analysis.isValid);
-      if (invalidProducts.length > 0) {
-        console.log("Invalid products details:");
-        invalidProducts.forEach(({ product, analysis }) => {
-          console.log(`- ${product.name}:`, {
-            template_id: product.template_id,
-            has_template_data: analysis.hasTemplateData,
-            has_design_area: analysis.hasDesignArea,
-            design_area_valid: analysis.designAreaValid,
-            template_data: product.product_templates
-          });
-        });
+        console.log(`   ✅ Template found: ${template.name}`);
+        console.log(`   📐 Template design_area:`, template.design_area);
+
+        // Vérifier la zone d'impression
+        let designArea = null;
+        try {
+          designArea = typeof template.design_area === 'string' 
+            ? JSON.parse(template.design_area) 
+            : template.design_area;
+        } catch (e) {
+          console.error(`   ❌ Invalid design_area JSON for ${product.name}:`, e);
+          continue;
+        }
+
+        if (!designArea || !designArea.width || !designArea.height || designArea.width <= 0 || designArea.height <= 0) {
+          console.log(`   ❌ Invalid design area dimensions - SKIPPING`);
+          console.log(`   📐 Design area:`, designArea);
+          continue;
+        }
+
+        console.log(`   ✅ Valid design area: ${designArea.width}x${designArea.height}`);
+
+        // Construire l'objet produit avec template
+        const productWithTemplate = {
+          ...product,
+          product_templates: template
+        };
+
+        productsWithTemplates.push(productWithTemplate);
+        console.log(`   ✅ Product ${product.name} VALIDATED and ADDED`);
       }
 
-      setPrintProducts(validProducts);
-      
-      if (validProducts.length === 0 && allProducts.length > 0) {
-        const issues = invalidProducts.map(({ product, analysis }) => {
-          if (!analysis.hasTemplateId) return `${product.name}: aucun gabarit assigné`;
-          if (!analysis.hasTemplateData) return `${product.name}: données de gabarit manquantes`;
-          if (!analysis.hasDesignArea) return `${product.name}: zone d'impression non définie`;
-          if (!analysis.designAreaValid) return `${product.name}: zone d'impression invalide`;
-          return `${product.name}: problème inconnu`;
-        }).join('\n');
+      console.log(`\n📊 SUMMARY:`);
+      console.log(`   Total products in DB: ${allProducts.length}`);
+      console.log(`   Valid products for customization: ${productsWithTemplates.length}`);
+
+      setPrintProducts(productsWithTemplates);
+
+      if (productsWithTemplates.length === 0) {
+        console.log("⚠️ No valid products found after validation");
+        
+        // Diagnostic détaillé
+        const diagnostics = allProducts.map(product => {
+          const issues = [];
+          if (!product.template_id) issues.push("No template assigned");
+          if (!product.is_active) issues.push("Product not active");
+          return `${product.name}: ${issues.length > 0 ? issues.join(', ') : 'Unknown issue'}`;
+        });
 
         toast({
-          title: "Configuration incomplète",
-          description: `${allProducts.length} produit(s) trouvé(s) mais aucun n'est configuré correctement :\n${issues}`,
-        });
-      } else if (allProducts.length === 0) {
-        toast({
-          title: "Aucun produit disponible",
-          description: "Aucun produit d'impression actif trouvé.",
+          title: "Aucun produit configuré",
+          description: `${allProducts.length} produit(s) trouvé(s) mais aucun n'est correctement configuré pour la personnalisation.\n\nProblèmes détectés:\n${diagnostics.join('\n')}`,
         });
       } else {
-        console.log(`${validProducts.length} produits disponibles pour la personnalisation`);
+        console.log(`✅ ${productsWithTemplates.length} produits disponibles pour la personnalisation`);
         toast({
           title: "Produits chargés",
-          description: `${validProducts.length} produit(s) disponible(s) pour la personnalisation.`,
+          description: `${productsWithTemplates.length} produit(s) disponible(s) pour la personnalisation.`,
         });
       }
+
+      console.log("=== FIN FETCH PRINT PRODUCTS ===\n");
+      
     } catch (error: any) {
-      console.error('Error fetching print products:', error);
+      console.error('❌ CRITICAL ERROR in fetchPrintProducts:', error);
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les produits disponibles."
+        title: "Erreur critique",
+        description: `Impossible de charger les produits: ${error.message}`
       });
+      setPrintProducts([]);
     }
   };
 

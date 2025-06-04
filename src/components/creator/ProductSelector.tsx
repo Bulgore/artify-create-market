@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, AlertTriangle, CheckCircle, Info, Settings } from 'lucide-react';
+import { Package, AlertTriangle, CheckCircle, Info, Settings, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PrintProduct {
   id: string;
@@ -34,6 +35,31 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   selectedProduct,
   onProductSelect
 }) => {
+  
+  // Debug logging côté créateur
+  useEffect(() => {
+    console.log('\n=== PRODUCT SELECTOR DEBUG ===');
+    console.log('Number of products received:', printProducts.length);
+    console.log('Products data:', printProducts);
+    
+    if (printProducts.length > 0) {
+      printProducts.forEach((product, index) => {
+        console.log(`\nProduct ${index + 1}: ${product.name}`);
+        console.log('  - ID:', product.id);
+        console.log('  - Template ID:', product.template_id);
+        console.log('  - Has template data:', !!product.product_templates);
+        console.log('  - Template data:', product.product_templates);
+        
+        if (product.product_templates) {
+          console.log('  - Design area:', product.product_templates.design_area);
+        }
+      });
+    } else {
+      console.log('❌ No products available for customization');
+    }
+    console.log('=== END PRODUCT SELECTOR DEBUG ===\n');
+  }, [printProducts]);
+
   const getProductStatus = (product: PrintProduct) => {
     if (!product.template_id) {
       return { type: 'error', message: 'Aucun gabarit assigné' };
@@ -72,6 +98,25 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                 Les produits doivent être configurés par les imprimeurs avec des gabarits ayant des zones d'impression définies.
               </p>
             </div>
+            
+            {/* Section de débogage */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left max-w-md mx-auto">
+              <h4 className="font-medium text-yellow-900 mb-2">🔍 Debug Info:</h4>
+              <div className="text-sm text-yellow-800 space-y-1">
+                <p>• Nombre de produits reçus: {printProducts.length}</p>
+                <p>• Vérifiez la console pour plus de détails</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.location.reload()}
+                  className="mt-2"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Recharger
+                </Button>
+              </div>
+            </div>
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left max-w-md mx-auto">
               <h4 className="font-medium text-blue-900 mb-2">Configuration requise par l'imprimeur :</h4>
               <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
@@ -95,7 +140,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5" />
-          1. Choisir un produit de base
+          1. Choisir un produit de base ({printProducts.length} disponible{printProducts.length > 1 ? 's' : ''})
         </CardTitle>
       </CardHeader>
       <CardContent>

@@ -115,32 +115,42 @@ export const useTemplateOperations = () => {
 
   const deleteTemplate = async (templateId: string, forceDelete: boolean = false) => {
     try {
-      console.log(`Attempting to delete template: ${templateId}, force: ${forceDelete}`);
+      console.log(`\n=== DEBUT SUPPRESSION TEMPLATE ===`);
+      console.log(`Template ID: ${templateId}`);
+      console.log(`Force delete: ${forceDelete}`);
+      console.log(`User is super admin: ${isSuperAdmin()}`);
+      console.log(`User ID: ${user?.id}`);
       
       if (!forceDelete) {
+        console.log(`🔍 Checking template references...`);
+        
         // Vérifier les références dans print_products
-        console.log('Checking print_products for template usage...');
+        console.log('Checking print_products...');
         const { data: printProducts, error: printProductsError } = await supabase
           .from('print_products')
-          .select('id, name')
+          .select('id, name, template_id')
           .eq('template_id', templateId);
 
         if (printProductsError) {
-          console.error('Error checking print_products:', printProductsError);
+          console.error('❌ Error checking print_products:', printProductsError);
           throw printProductsError;
         }
 
+        console.log(`Found ${printProducts?.length || 0} references in print_products:`, printProducts);
+
         // Vérifier les références dans tshirt_templates
-        console.log('Checking tshirt_templates for template usage...');
+        console.log('Checking tshirt_templates...');
         const { data: tshirtTemplates, error: tshirtError } = await supabase
           .from('tshirt_templates')
-          .select('id, name')
+          .select('id, name, template_id')
           .eq('template_id', templateId);
 
         if (tshirtError) {
-          console.error('Error checking tshirt_templates:', tshirtError);
+          console.error('❌ Error checking tshirt_templates:', tshirtError);
           throw tshirtError;
         }
+
+        console.log(`Found ${tshirtTemplates?.length || 0} references in tshirt_templates:`, tshirtTemplates);
 
         const allReferences = [];
         if (printProducts && printProducts.length > 0) {
@@ -152,71 +162,92 @@ export const useTemplateOperations = () => {
 
         if (allReferences.length > 0) {
           const referencesText = allReferences.map(ref => 
-            `${ref.table}: ${ref.products.map(p => p.name || p.id).join(', ')}`
+            `${ref.table}: ${ref.products.map(p => `${p.name || p.id} (ID: ${p.id})`).join(', ')}`
           ).join('\n');
           
-          console.log('Template is referenced by:', referencesText);
+          console.log('⚠️ Template has references:', referencesText);
           
           // Si c'est un super admin, proposer la suppression forcée
           if (isSuperAdmin()) {
+            console.log('🔧 User is super admin - offering force delete option');
             const forceConfirm = confirm(
-              `Ce gabarit est utilisé par :\n${referencesText}\n\n` +
-              `En tant que super administrateur, voulez-vous forcer la suppression ?\n` +
-              `ATTENTION: Cela supprimera aussi toutes les références dans les autres tables.`
+              `⚠️ Ce gabarit est utilisé par :\n${referencesText}\n\n` +
+              `En tant que super administrateur, voulez-vous FORCER la suppression ?\n\n` +
+              `⚠️ ATTENTION: Cette action :\n` +
+              `• Supprimera le gabarit définitivement\n` +
+              `• Retirera toutes les références dans les produits\n` +
+              `• Ne peut pas être annulée\n\n` +
+              `Continuer ?`
             );
             
             if (forceConfirm) {
+              console.log('✅ Super admin confirmed force delete');
               return await deleteTemplate(templateId, true);
+            } else {
+              console.log('❌ Super admin cancelled force delete');
+              return false;
             }
-            return false;
           } else {
+            console.log('❌ User is not super admin - blocking delete');
             toast({
               variant: "destructive",
               title: "Impossible de supprimer",
-              description: `Ce gabarit est utilisé par :\n${referencesText}\nVeuillez d'abord supprimer ces références.`
+              description: `Ce gabarit est utilisé par :\n${referencesText}\n\nVeuillez d'abord supprimer ces références ou contactez un administrateur.`
             });
             return false;
           }
+        } else {
+          console.log('✅ No references found - proceeding with normal delete');
         }
       }
 
       // Suppression (normale ou forcée)
       if (forceDelete && isSuperAdmin()) {
-        console.log('Force deleting template and all references...');
+        console.log('🔧 Executing FORCE DELETE as super admin...');
         
         // Supprimer d'abord toutes les références dans print_products
+        console.log('Removing references from print_products...');
         const { error: printProductsError } = await supabase
           .from('print_products')
           .update({ template_id: null })
           .eq('template_id', templateId);
 
         if (printProductsError) {
-          console.error('Error removing print_products references:', printProductsError);
+          console.error('❌ Error removing print_products references:', printProductsError);
+          // Continue malgré l'erreur pour essayer de nettoyer
+        } else {
+          console.log('✅ print_products references removed');
         }
 
         // Supprimer les références dans tshirt_templates
+        console.log('Removing references from tshirt_templates...');
         const { error: tshirtTemplatesError } = await supabase
           .from('tshirt_templates')
           .update({ template_id: null })
           .eq('template_id', templateId);
 
         if (tshirtTemplatesError) {
-          console.error('Error removing tshirt_templates references:', tshirtTemplatesError);
+          console.error('❌ Error removing tshirt_templates references:', tshirtTemplatesError);
+          // Continue malgré l'erreur pour essayer de supprimer le template
+        } else {
+          console.log('✅ tshirt_templates references removed');
         }
       }
 
       // Supprimer le gabarit
+      console.log('🗑️ Deleting template...');
       const { error } = await supabase
         .from('product_templates')
         .delete()
         .eq('id', templateId);
 
       if (error) {
-        console.error('Error deleting template:', error);
+        console.error('❌ Error deleting template:', error);
         throw error;
       }
 
-      console.log(`Template ${templateId} deleted successfully`);
+      console.log(`✅ Template ${templateId} deleted successfully`);
+      console.log(`=== FIN SUPPRESSION TEMPLATE ===\n`);
       
       toast({
         title: "Gabarit supprimé",
@@ -227,10 +258,10 @@ export const useTemplateOperations = () => {
       
       return true;
     } catch (error: any) {
-      console.error('Error deleting template:', error);
+      console.error('❌ CRITICAL ERROR in deleteTemplate:', error);
       toast({
         variant: "destructive",
-        title: "Erreur",
+        title: "Erreur de suppression",
         description: `Impossible de supprimer le gabarit : ${error.message || 'Erreur inconnue'}`
       });
       return false;
