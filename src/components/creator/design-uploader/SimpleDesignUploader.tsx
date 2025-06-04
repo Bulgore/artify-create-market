@@ -22,6 +22,63 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
     fileInputRef.current?.click();
   };
 
+  const generateSignedUrl = async (filePath: string): Promise<string | null> => {
+    try {
+      console.log('🔗 Generating signed URL for path:', filePath);
+      
+      const { data, error } = await supabase.storage
+        .from('designs')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) {
+        console.error('❌ Error generating signed URL:', error);
+        return null;
+      }
+
+      console.log('✅ Signed URL generated:', data.signedUrl);
+      return data.signedUrl;
+    } catch (error) {
+      console.error('❌ Exception generating signed URL:', error);
+      return null;
+    }
+  };
+
+  const verifyImageAccess = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      console.log('🔍 Testing image access for URL:', url);
+      
+      const testImg = document.createElement('img');
+      testImg.crossOrigin = 'anonymous';
+      
+      testImg.onload = () => {
+        console.log('✅ Image accessible:', {
+          url,
+          naturalWidth: testImg.naturalWidth,
+          naturalHeight: testImg.naturalHeight
+        });
+        resolve(true);
+      };
+      
+      testImg.onerror = (error) => {
+        console.error('❌ Image not accessible:', {
+          url,
+          error: error
+        });
+        resolve(false);
+      };
+      
+      // Test avec timeout
+      setTimeout(() => {
+        if (!testImg.complete) {
+          console.error('⏰ Image load timeout for:', url);
+          resolve(false);
+        }
+      }, 5000);
+      
+      testImg.src = url;
+    });
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
@@ -42,53 +99,51 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
       const filePath = `${user.id}/${fileName}`;
 
-      console.log('📤 Uploading file:', fileName);
+      console.log('=== DESIGN UPLOAD DEBUG ===');
+      console.log('📤 Uploading to bucket: designs');
+      console.log('📂 File path:', filePath);
+      console.log('📄 File name:', fileName);
+      console.log('👤 User ID:', user.id);
 
+      // Upload vers le bucket designs
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('designs')
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
         throw uploadError;
       }
 
-      // Générer l'URL publique immédiatement
-      const { data: urlData } = supabase.storage
-        .from('designs')
-        .getPublicUrl(filePath);
+      console.log('✅ Upload successful:', uploadData);
 
-      const publicUrl = urlData.publicUrl;
-      console.log('✅ Upload successful, URL:', publicUrl);
-
-      // Tester que l'URL fonctionne
-      const testImg = document.createElement('img');
-      testImg.onload = () => {
-        console.log('✅ Image accessible:', publicUrl);
-        onDesignUpload(publicUrl);
-        toast({
-          title: "Design uploadé",
-          description: "Votre design a été ajouté avec succès."
-        });
-      };
+      // Générer une URL signée pour l'accès
+      const signedUrl = await generateSignedUrl(filePath);
       
-      testImg.onerror = () => {
-        console.error('❌ Image non accessible:', publicUrl);
+      if (!signedUrl) {
+        throw new Error('Impossible de générer une URL signée');
+      }
+
+      // Vérifier que l'image est accessible
+      const isAccessible = await verifyImageAccess(signedUrl);
+      
+      if (!isAccessible) {
+        console.error('❌ Image uploaded but not accessible via signed URL');
         toast({
           variant: "destructive",
           title: "Erreur d'accès",
-          description: "Le fichier a été uploadé mais n'est pas accessible."
+          description: "Le fichier a été uploadé mais n'est pas accessible. Vérifiez les permissions du bucket."
         });
-      };
-      
-      testImg.src = publicUrl;
+        return;
+      }
 
-      // Sauvegarder en DB
+      // Sauvegarder en DB avec l'URL signée
       const { error: dbError } = await supabase
         .from('media_files')
         .insert({
           user_id: user.id,
           filename: file.name,
-          file_url: publicUrl,
+          file_url: signedUrl,
           file_type: file.type,
           file_size: file.size
         });
@@ -96,6 +151,20 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
       if (dbError) {
         console.error('⚠️ DB save error:', dbError);
       }
+
+      console.log('=== UPLOAD SUMMARY ===');
+      console.log('📦 Bucket name: designs');
+      console.log('📂 Complete file path:', filePath);
+      console.log('🔗 Generated signed URL:', signedUrl);
+      console.log('✅ Image accessibility: verified');
+      console.log('=== END DEBUG ===');
+
+      onDesignUpload(signedUrl);
+
+      toast({
+        title: "Design uploadé",
+        description: "Votre design a été ajouté avec succès."
+      });
 
     } catch (error: any) {
       console.error('❌ Upload error:', error);
