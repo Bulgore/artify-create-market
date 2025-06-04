@@ -36,7 +36,7 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
 }) => {
   console.log('=== DesignPreviewSection Debug ===');
   console.log('showPositioner:', showPositioner);
-  console.log('selectedProduct:', selectedProduct);
+  console.log('selectedProduct:', selectedProduct?.name);
   console.log('designUrl:', designUrl);
 
   if (!showPositioner || !selectedProduct || !selectedProduct.product_templates) {
@@ -48,7 +48,7 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
     return null;
   }
 
-  // Parse design_area with better error handling
+  // Parse design_area avec une gestion d'erreur robuste
   let designArea;
   const rawDesignArea = selectedProduct.product_templates.design_area;
   
@@ -56,37 +56,38 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
 
   try {
     if (typeof rawDesignArea === 'string') {
-      // Parse JSON string and validate
+      // Parse JSON string
       const parsed = JSON.parse(rawDesignArea);
       if (parsed && typeof parsed === 'object') {
         designArea = parsed;
-        console.log('Successfully parsed design_area from string:', designArea);
+        console.log('✅ Successfully parsed design_area from string:', designArea);
       } else {
-        throw new Error('Parsed design_area is not an object');
+        throw new Error('Parsed design_area is not a valid object');
       }
     } else if (typeof rawDesignArea === 'object' && rawDesignArea !== null) {
       designArea = rawDesignArea;
-      console.log('Using design_area as object:', designArea);
+      console.log('✅ Using design_area as object:', designArea);
     } else {
       throw new Error('Invalid design_area format: ' + typeof rawDesignArea);
     }
+
+    // Validation des propriétés numériques requises
+    const requiredProps = ['x', 'y', 'width', 'height'];
+    for (const prop of requiredProps) {
+      if (typeof designArea[prop] !== 'number' || isNaN(designArea[prop])) {
+        throw new Error(`Invalid ${prop} value: ${designArea[prop]}`);
+      }
+    }
+
+    console.log('✅ Design area validation passed:', designArea);
+
   } catch (error) {
-    console.error('Error parsing design_area:', error);
-    console.log('Using fallback design area');
+    console.error('❌ Error parsing design_area:', error);
+    console.log('🔄 Using fallback design area');
     designArea = { x: 50, y: 50, width: 200, height: 200 };
   }
 
-  // Validate numeric properties with safe defaults
-  const validatedDesignArea = {
-    x: Number.isFinite(designArea?.x) ? designArea.x : 50,
-    y: Number.isFinite(designArea?.y) ? designArea.y : 50,
-    width: Number.isFinite(designArea?.width) && designArea.width > 0 ? designArea.width : 200,
-    height: Number.isFinite(designArea?.height) && designArea.height > 0 ? designArea.height : 200
-  };
-
-  console.log('Final validated design area:', validatedDesignArea);
-
-  // Validate URLs
+  // Valider et nettoyer les URLs du template
   const templateSvgUrl = selectedProduct.product_templates.svg_file_url || '';
   const mockupImageUrl = selectedProduct.product_templates.mockup_image_url || '';
 
@@ -95,9 +96,9 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
     mockupImageUrl: mockupImageUrl?.substring(0, 50) + '...'
   });
 
-  // Validate design URL
-  if (!designUrl) {
-    console.log('No design URL provided');
+  // Valider et nettoyer l'URL du design
+  if (!designUrl || designUrl.trim() === '') {
+    console.log('❌ No design URL provided');
     return (
       <div className="p-4 text-center text-gray-500">
         <p>Uploadez un design pour voir l'aperçu de positionnement</p>
@@ -105,22 +106,22 @@ const DesignPreviewSection: React.FC<DesignPreviewSectionProps> = ({
     );
   }
 
-  // Clean and validate design URL
   let cleanDesignUrl = designUrl.trim();
   
-  // Si l'URL ne contient pas le domaine complet, on l'ajoute
+  // Assurer que l'URL est complète
   if (cleanDesignUrl.startsWith('/storage/v1/object/')) {
     cleanDesignUrl = `https://riumhqlxdmsxwsjstqgl.supabase.co${cleanDesignUrl}`;
   }
 
-  console.log('Clean design URL:', cleanDesignUrl);
+  console.log('✅ Final design URL:', cleanDesignUrl);
+  console.log('✅ Final design area:', designArea);
 
   return (
     <div>
       <DesignPositioner
         templateSvgUrl={templateSvgUrl}
         designImageUrl={cleanDesignUrl}
-        designArea={validatedDesignArea}
+        designArea={designArea}
         onPositionChange={onPositionChange}
       />
     </div>

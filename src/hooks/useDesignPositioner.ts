@@ -1,5 +1,5 @@
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 interface DesignPosition {
   x: number;
@@ -27,7 +27,7 @@ export const useDesignPositioner = ({
   initialPosition,
   onPositionChange
 }: UseDesignPositionerProps) => {
-  // Validate and ensure designArea has proper numeric values
+  // Valider et nettoyer designArea avec des valeurs par défaut sûres
   const validDesignArea = {
     x: (typeof designArea?.x === 'number' && !isNaN(designArea.x)) ? designArea.x : 50,
     y: (typeof designArea?.y === 'number' && !isNaN(designArea.y)) ? designArea.y : 50,
@@ -35,14 +35,19 @@ export const useDesignPositioner = ({
     height: (typeof designArea?.height === 'number' && !isNaN(designArea.height) && designArea.height > 0) ? designArea.height : 200
   };
 
+  console.log('🎯 ValidDesignArea:', validDesignArea);
+
+  // Position initiale du design avec des valeurs par défaut sûres
+  const defaultPosition: DesignPosition = {
+    x: validDesignArea.x + 10,
+    y: validDesignArea.y + 10,
+    width: Math.min(80, validDesignArea.width - 20),
+    height: Math.min(80, validDesignArea.height - 20),
+    rotation: 0
+  };
+
   const [position, setPosition] = useState<DesignPosition>(
-    initialPosition || {
-      x: validDesignArea.x + 10,
-      y: validDesignArea.y + 10,
-      width: Math.min(80, validDesignArea.width - 20),
-      height: Math.min(80, validDesignArea.height - 20),
-      rotation: 0
-    }
+    initialPosition || defaultPosition
   );
 
   const [isDragging, setIsDragging] = useState(false);
@@ -51,37 +56,34 @@ export const useDesignPositioner = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  console.log('🎯 Current position:', position);
+
   const updatePosition = useCallback((newPosition: DesignPosition) => {
+    // Valider toutes les propriétés de la nouvelle position
     const safePosition = {
-      x: (typeof newPosition.x === 'number' && !isNaN(newPosition.x)) ? newPosition.x : validDesignArea.x + 10,
-      y: (typeof newPosition.y === 'number' && !isNaN(newPosition.y)) ? newPosition.y : validDesignArea.y + 10,
-      width: (typeof newPosition.width === 'number' && !isNaN(newPosition.width) && newPosition.width >= 10) ? newPosition.width : 80,
-      height: (typeof newPosition.height === 'number' && !isNaN(newPosition.height) && newPosition.height >= 10) ? newPosition.height : 80,
+      x: (typeof newPosition.x === 'number' && !isNaN(newPosition.x)) ? newPosition.x : defaultPosition.x,
+      y: (typeof newPosition.y === 'number' && !isNaN(newPosition.y)) ? newPosition.y : defaultPosition.y,
+      width: (typeof newPosition.width === 'number' && !isNaN(newPosition.width) && newPosition.width >= 10) ? newPosition.width : defaultPosition.width,
+      height: (typeof newPosition.height === 'number' && !isNaN(newPosition.height) && newPosition.height >= 10) ? newPosition.height : defaultPosition.height,
       rotation: (typeof newPosition.rotation === 'number' && !isNaN(newPosition.rotation)) ? newPosition.rotation : 0
     };
 
-    // Constrain position within design area
+    // Contraindre la position dans la zone d'impression
     const constrainedPosition = {
       ...safePosition,
       x: Math.max(validDesignArea.x, Math.min(validDesignArea.x + validDesignArea.width - safePosition.width, safePosition.x)),
       y: Math.max(validDesignArea.y, Math.min(validDesignArea.y + validDesignArea.height - safePosition.height, safePosition.y))
     };
     
-    console.log('Updating position to:', constrainedPosition);
+    console.log('🔄 Updating position from:', position, 'to:', constrainedPosition);
     setPosition(constrainedPosition);
     onPositionChange(constrainedPosition);
-  }, [validDesignArea, onPositionChange]);
+  }, [validDesignArea, onPositionChange, position, defaultPosition]);
 
-  const resetPosition = () => {
-    const resetPos = {
-      x: validDesignArea.x + 10,
-      y: validDesignArea.y + 10,
-      width: Math.min(80, validDesignArea.width - 20),
-      height: Math.min(80, validDesignArea.height - 20),
-      rotation: 0
-    };
-    updatePosition(resetPos);
-  };
+  const resetPosition = useCallback(() => {
+    console.log('🔄 Resetting position to:', defaultPosition);
+    updatePosition(defaultPosition);
+  }, [updatePosition, defaultPosition]);
 
   return {
     position,

@@ -38,7 +38,7 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
   onPositionChange,
   initialPosition
 }) => {
-  console.log('DesignPositioner received props:', {
+  console.log('🎯 DesignPositioner received props:', {
     templateSvgUrl: templateSvgUrl?.substring(0, 50) + '...',
     designImageUrl: designImageUrl?.substring(0, 50) + '...',
     designArea,
@@ -87,6 +87,16 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
     imageLoaded
   });
 
+  const handleImageLoad = (loaded: boolean) => {
+    console.log('📸 Image load status changed:', loaded);
+    setImageLoaded(loaded);
+  };
+
+  const handleImageError = (error: boolean) => {
+    console.log('❌ Image error status changed:', error);
+    setImageError(error);
+  };
+
   if (!designImageUrl) {
     return (
       <Card>
@@ -108,11 +118,11 @@ const DesignPositioner: React.FC<DesignPositionerProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Image loaders */}
+      {/* Image loader - toujours actif si on a une URL */}
       <ImageLoader 
         imageUrl={designImageUrl} 
-        onLoad={setImageLoaded} 
-        onError={setImageError} 
+        onLoad={handleImageLoad} 
+        onError={handleImageError} 
       />
       
       <Card>

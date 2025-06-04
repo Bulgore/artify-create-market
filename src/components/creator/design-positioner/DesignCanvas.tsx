@@ -43,6 +43,16 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
   onMouseMove,
   onMouseUp
 }, ref) => {
+  console.log('🎨 DesignCanvas render:', {
+    designUrl: designUrl?.substring(0, 50) + '...',
+    imageLoaded,
+    imageError,
+    templateLoaded,
+    templateError,
+    designArea,
+    position
+  });
+
   return (
     <div className="border rounded-lg p-4 bg-gray-50">
       <svg
@@ -80,7 +90,7 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
           />
         )}
         
-        {/* Design area boundaries */}
+        {/* Design area boundaries - TOUJOURS visible */}
         <rect
           x={designArea.x}
           y={designArea.y}
@@ -145,13 +155,14 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
         {!imageLoaded && !imageError && designUrl && (
           <g>
             <rect
-              x={designArea.x}
-              y={designArea.y}
-              width={designArea.width}
-              height={designArea.height}
+              x={designArea.x + 10}
+              y={designArea.y + 10}
+              width={Math.max(100, designArea.width - 20)}
+              height={Math.max(40, designArea.height - 20)}
               fill="#f8f9fa"
               stroke="#dee2e6"
               strokeWidth="1"
+              rx="4"
             />
             <text
               x={designArea.x + designArea.width/2}
@@ -166,23 +177,24 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
         )}
         
         {/* Error state */}
-        {imageError && (
+        {imageError && designUrl && (
           <g>
             <rect
-              x={designArea.x}
-              y={designArea.y}
-              width={designArea.width}
-              height={designArea.height}
+              x={designArea.x + 10}
+              y={designArea.y + 10}
+              width={Math.max(150, designArea.width - 20)}
+              height={Math.max(60, designArea.height - 20)}
               fill="#fee2e2"
               stroke="#ef4444"
               strokeWidth="2"
+              rx="4"
             />
             <text
               x={designArea.x + designArea.width/2}
               y={designArea.y + designArea.height/2 - 10}
               textAnchor="middle"
               fill="#ef4444"
-              fontSize="14"
+              fontSize="12"
               fontWeight="bold"
             >
               Erreur de chargement
@@ -192,9 +204,35 @@ export const DesignCanvas = forwardRef<SVGSVGElement, DesignCanvasProps>(({
               y={designArea.y + designArea.height/2 + 10}
               textAnchor="middle"
               fill="#ef4444"
-              fontSize="12"
+              fontSize="10"
             >
               Vérifiez l'URL de l'image
+            </text>
+          </g>
+        )}
+
+        {/* Placeholder when no design */}
+        {!designUrl && (
+          <g>
+            <rect
+              x={designArea.x + 10}
+              y={designArea.y + 10}
+              width={Math.max(120, designArea.width - 20)}
+              height={Math.max(40, designArea.height - 20)}
+              fill="#f0f0f0"
+              stroke="#ccc"
+              strokeWidth="1"
+              strokeDasharray="5,5"
+              rx="4"
+            />
+            <text
+              x={designArea.x + designArea.width/2}
+              y={designArea.y + designArea.height/2}
+              textAnchor="middle"
+              fill="#999"
+              fontSize="12"
+            >
+              Uploadez votre design
             </text>
           </g>
         )}
