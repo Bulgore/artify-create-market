@@ -45,18 +45,34 @@ export const usePrintProducts = () => {
         console.log(`Checking product ${product.name}:`, {
           template_id: product.template_id,
           has_template_data: !!product.product_templates,
+          template_data: product.product_templates,
           has_design_area: !!product.product_templates?.design_area
         });
         
         // Vérifier que le produit a un template_id ET des données de template
-        if (!product.template_id || !product.product_templates) {
-          console.log(`Product ${product.name} filtered out: missing template_id or template data`);
+        if (!product.template_id) {
+          console.log(`Product ${product.name} filtered out: missing template_id`);
+          return false;
+        }
+
+        if (!product.product_templates) {
+          console.log(`Product ${product.name} filtered out: template data not found in join`);
           return false;
         }
         
         // Vérifier que le template a une zone de design
         if (!product.product_templates.design_area) {
-          console.log(`Product ${product.name} filtered out: missing design_area`);
+          console.log(`Product ${product.name} filtered out: missing design_area in template`);
+          return false;
+        }
+        
+        // Vérifier que design_area n'est pas vide
+        const designArea = typeof product.product_templates.design_area === 'string' 
+          ? JSON.parse(product.product_templates.design_area) 
+          : product.product_templates.design_area;
+          
+        if (!designArea || !designArea.width || !designArea.height) {
+          console.log(`Product ${product.name} filtered out: invalid design_area dimensions`, designArea);
           return false;
         }
         
@@ -72,8 +88,8 @@ export const usePrintProducts = () => {
       if (validProducts.length === 0 && allProducts.length > 0) {
         console.log("Products found but none are valid:", allProducts);
         toast({
-          title: "Configuration requise",
-          description: `${allProducts.length} produit(s) trouvé(s) mais la configuration n'est pas complète. Vérifiez que les gabarits ont des zones d'impression définies.`,
+          title: "Configuration incomplète",
+          description: `${allProducts.length} produit(s) trouvé(s) mais la configuration des gabarits n'est pas complète. Vérifiez que les gabarits ont des zones d'impression définies.`,
         });
       } else if (allProducts.length === 0) {
         toast({
@@ -82,6 +98,10 @@ export const usePrintProducts = () => {
         });
       } else {
         console.log(`${validProducts.length} produits disponibles pour la personnalisation`);
+        toast({
+          title: "Produits chargés",
+          description: `${validProducts.length} produit(s) disponible(s) pour la personnalisation.`,
+        });
       }
     } catch (error: any) {
       console.error('Error fetching print products:', error);

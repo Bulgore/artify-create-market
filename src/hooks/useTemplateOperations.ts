@@ -115,16 +115,44 @@ export const useTemplateOperations = () => {
 
   const deleteTemplate = async (templateId: string) => {
     try {
+      console.log(`Attempting to delete template: ${templateId}`);
+      
+      // D'abord, vérifier s'il y a des produits qui utilisent ce gabarit
+      const { data: productsUsingTemplate, error: checkError } = await supabase
+        .from('print_products')
+        .select('id, name')
+        .eq('template_id', templateId);
+
+      if (checkError) {
+        console.error('Error checking template usage:', checkError);
+        throw checkError;
+      }
+
+      if (productsUsingTemplate && productsUsingTemplate.length > 0) {
+        const productNames = productsUsingTemplate.map(p => p.name).join(', ');
+        toast({
+          variant: "destructive",
+          title: "Impossible de supprimer",
+          description: `Ce gabarit est utilisé par ces produits : ${productNames}. Veuillez d'abord les modifier pour retirer le gabarit.`
+        });
+        return false;
+      }
+
       const { error } = await supabase
         .from('product_templates')
         .delete()
         .eq('id', templateId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting template:', error);
+        throw error;
+      }
+
+      console.log(`Template ${templateId} deleted successfully`);
       
       toast({
         title: "Gabarit supprimé",
-        description: "Le gabarit a été supprimé avec succès.",
+        description: "Le gabarit a été supprimé avec succès."
       });
       
       return true;
@@ -133,7 +161,7 @@ export const useTemplateOperations = () => {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de supprimer le gabarit.",
+        description: `Impossible de supprimer le gabarit : ${error.message || 'Erreur inconnue'}`
       });
       return false;
     }

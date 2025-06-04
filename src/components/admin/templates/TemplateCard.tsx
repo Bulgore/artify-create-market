@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash, FileImage, MapPin, Palette } from "lucide-react";
 import { ProductTemplate } from "@/types/templates";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface TemplateCardProps {
   template: ProductTemplate;
@@ -24,56 +22,8 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
       return;
     }
 
-    try {
-      console.log(`Attempting to delete template: ${template.id}`);
-      
-      // D'abord, vérifier s'il y a des produits qui utilisent ce gabarit
-      const { data: productsUsingTemplate, error: checkError } = await supabase
-        .from('print_products')
-        .select('id, name')
-        .eq('template_id', template.id);
-
-      if (checkError) {
-        console.error('Error checking template usage:', checkError);
-        throw checkError;
-      }
-
-      if (productsUsingTemplate && productsUsingTemplate.length > 0) {
-        const productNames = productsUsingTemplate.map(p => p.name).join(', ');
-        toast({
-          variant: "destructive",
-          title: "Impossible de supprimer",
-          description: `Ce gabarit est utilisé par ces produits : ${productNames}. Veuillez d'abord les modifier pour retirer le gabarit.`
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('product_templates')
-        .delete()
-        .eq('id', template.id);
-
-      if (error) {
-        console.error('Error deleting template:', error);
-        throw error;
-      }
-
-      console.log(`Template ${template.id} deleted successfully`);
-      
-      toast({
-        title: "Gabarit supprimé",
-        description: `Le gabarit "${template.name}" a été supprimé avec succès.`
-      });
-
-      onDelete(template.id);
-    } catch (error: any) {
-      console.error('Error deleting template:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: `Impossible de supprimer le gabarit : ${error.message || 'Erreur inconnue'}`
-      });
-    }
+    console.log(`Attempting to delete template: ${template.id}`);
+    onDelete(template.id);
   };
 
   return (
