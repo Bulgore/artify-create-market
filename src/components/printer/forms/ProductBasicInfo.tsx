@@ -12,18 +12,20 @@ interface ProductTemplate {
   type: string;
 }
 
+interface ProductFormData {
+  name: string;
+  description: string;
+  base_price: number;
+  material: string;
+  stock_quantity: number;
+  is_active: boolean;
+  template_id: string | null;
+}
+
 interface ProductBasicInfoProps {
-  formData: {
-    name: string;
-    description: string;
-    base_price: number;
-    material: string;
-    stock_quantity: number;
-    is_active: boolean;
-    template_id: string | null;
-  };
+  formData: ProductFormData;
   templates: ProductTemplate[];
-  onFormDataChange: (updates: Partial<typeof formData>) => void;
+  onFormDataChange: (updates: Partial<ProductFormData>) => void;
 }
 
 const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({
