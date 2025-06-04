@@ -15,6 +15,31 @@ export const usePrintProducts = () => {
     try {
       console.log("=== DEBUT FETCH PRINT PRODUCTS ===");
       
+      // Vérifier d'abord l'authentification
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("❌ Auth error:", authError);
+        toast({
+          variant: "destructive",
+          title: "Erreur d'authentification",
+          description: "Veuillez vous reconnecter.",
+        });
+        return;
+      }
+
+      if (!user) {
+        console.log("❌ No authenticated user");
+        toast({
+          variant: "destructive",
+          title: "Non authentifié",
+          description: "Veuillez vous connecter pour accéder aux produits.",
+        });
+        return;
+      }
+
+      console.log("✅ User authenticated:", user.email);
+      
       // D'abord, récupérer tous les produits actifs
       const { data: allProducts, error: productsError } = await supabase
         .from('print_products')
@@ -23,6 +48,21 @@ export const usePrintProducts = () => {
 
       if (productsError) {
         console.error("❌ Error fetching print products:", productsError);
+        
+        // Diagnostiquer le type d'erreur
+        if (productsError.code === 'PGRST116' || productsError.message?.includes('permission denied')) {
+          toast({
+            variant: "destructive",
+            title: "Erreur de permission",
+            description: "Vous n'avez pas les droits pour accéder aux produits d'impression. Vérifiez votre rôle utilisateur.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Erreur de base de données",
+            description: `Impossible de charger les produits: ${productsError.message}`,
+          });
+        }
         throw productsError;
       }
 
@@ -63,6 +103,11 @@ export const usePrintProducts = () => {
 
         if (templateError) {
           console.error(`   ❌ Template fetch error for ${product.name}:`, templateError);
+          
+          // Diagnostiquer si c'est un problème de permission
+          if (templateError.code === 'PGRST116' || templateError.message?.includes('permission denied')) {
+            console.error(`   ❌ Permission denied for template ${product.template_id}`);
+          }
           continue;
         }
 
@@ -136,10 +181,21 @@ export const usePrintProducts = () => {
       
     } catch (error: any) {
       console.error('❌ CRITICAL ERROR in fetchPrintProducts:', error);
+      
+      // Message d'erreur plus informatif selon le type d'erreur
+      let errorMessage = "Erreur inconnue";
+      if (error.code === 'PGRST116') {
+        errorMessage = "Permissions insuffisantes. Vérifiez votre rôle utilisateur.";
+      } else if (error.message?.includes('JWT')) {
+        errorMessage = "Session expirée. Veuillez vous reconnecter.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: "destructive",
         title: "Erreur critique",
-        description: `Impossible de charger les produits: ${error.message}`
+        description: `Impossible de charger les produits: ${errorMessage}`
       });
       setPrintProducts([]);
     }
