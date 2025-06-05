@@ -1,10 +1,17 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Database, Code, Settings, Bug, Workflow, AlertTriangle } from 'lucide-react';
+import { Copy, Download, Database, Code, Settings, Bug, Workflow, AlertTriangle, Table, FileText, CheckSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Table as UITable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const TechnicalDocumentation = () => {
   const { toast } = useToast();
@@ -39,7 +46,7 @@ const TechnicalDocumentation = () => {
   };
 
   const generateMarkdownDoc = () => {
-    return `# Podsleek - Documentation Technique
+    return `# Podsleek - Documentation Technique Complète
 
 ## 1. Présentation Générale
 
@@ -87,202 +94,410 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=[PRIVATE_KEY]
 \`\`\`
 
-## 4. Structure Base de Données
+## 4. Schéma Relationnel de la Base de Données
 
-### Tables Principales
-
-#### users
-- **id**: uuid (PK, référence auth.users)
-- **full_name**: text
-- **role**: text ('créateur', 'imprimeur', 'admin', 'superAdmin')
-- **is_super_admin**: boolean
-- **avatar_url**: text
-- **default_commission**: numeric (15.00)
-- **created_at**: timestamp
-- **updated_at**: timestamp
-
-#### product_templates
-- **id**: uuid (PK)
-- **name**: text (nom du gabarit)
-- **type**: text (type de produit)
-- **design_area**: jsonb (zone d'impression)
-- **mockup_area**: jsonb (zone du mockup)
-- **svg_file_url**: text (fichier SVG)
-- **mockup_image_url**: text (image mockup)
-- **available_positions**: text[] (positions disponibles)
-- **available_colors**: text[] (couleurs disponibles)
-- **technical_instructions**: text
-- **is_active**: boolean
-- **created_by**: uuid (FK users.id)
-
-#### print_products
-- **id**: uuid (PK)
-- **printer_id**: uuid (FK users.id)
-- **template_id**: uuid (FK product_templates.id)
-- **name**: text
-- **description**: text
-- **base_price**: numeric
-- **material**: text
-- **available_sizes**: text[]
-- **available_colors**: text[]
-- **images**: text[]
-- **print_areas**: jsonb
-- **stock_quantity**: integer
-- **is_active**: boolean
-
-#### creator_products
-- **id**: uuid (PK)
-- **creator_id**: uuid (FK users.id)
-- **print_product_id**: uuid (FK print_products.id)
-- **name**: text
-- **description**: text
-- **design_data**: jsonb (données du design)
-- **creator_margin_percentage**: numeric (20)
-- **preview_url**: text
-- **is_published**: boolean
-
-### Vues Calculées
-
-#### product_pricing
-Vue qui calcule automatiquement :
-- Prix de base + marge créateur
-- Commission plateforme
-- Prix final TTC
-
-### Fonctions SQL
-
-#### get_user_role(user_id uuid)
-Fonction sécurisée pour récupérer le rôle d'un utilisateur.
-
-#### calculate_earnings(order_id uuid)
-Calcule la répartition des gains (créateur/imprimeur/plateforme).
-
-### Policies RLS Actives
-
-#### users
-- Aucune policy (table système)
-
-#### product_templates
-- Super admins peuvent tout faire
-- Lecture publique pour les templates actifs
-
-#### print_products
-- Imprimeurs voient/modifient leurs produits
-- Lecture publique pour produits actifs
-
-#### creator_products
-- Créateurs voient/modifient leurs produits
-- Lecture publique pour produits publiés
-
-## 5. Architecture du Code
-
-### Structure des dossiers
-\`\`\`
-src/
-├── components/
-│   ├── admin/           # Interface admin
-│   ├── creator/         # Studio créateur
-│   ├── printer/         # Studio imprimeur
-│   ├── ui/             # Composants UI de base
-│   └── content/        # Gestion de contenu
-├── hooks/              # Hooks personnalisés
-├── services/           # Services API
-├── contexts/           # Contexts React
-├── types/              # Types TypeScript
-├── utils/              # Utilitaires
-├── pages/              # Pages principales
-└── integrations/       # Intégrations externes
+\`\`\`mermaid
+erDiagram
+    users ||--o{ creator_products : "créé par"
+    users ||--o{ print_products : "possédé par"
+    users ||--o{ product_templates : "créé par"
+    users ||--o{ orders : "commandé par"
+    users ||--o{ subscriptions : "souscrit"
+    users ||--o{ media_files : "uploadé par"
+    
+    product_templates ||--o{ print_products : "utilise"
+    print_products ||--o{ creator_products : "basé sur"
+    creator_products ||--o{ orders : "commandé"
+    
+    users {
+        uuid id PK
+        text full_name
+        text role
+        boolean is_super_admin
+        numeric default_commission
+        text avatar_url
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    product_templates {
+        uuid id PK
+        text name
+        text type
+        jsonb design_area
+        jsonb mockup_area
+        text svg_file_url
+        text mockup_image_url
+        text[] available_positions
+        text[] available_colors
+        text technical_instructions
+        boolean is_active
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    print_products {
+        uuid id PK
+        uuid printer_id FK
+        uuid template_id FK
+        text name
+        text description
+        numeric base_price
+        text material
+        text[] available_sizes
+        text[] available_colors
+        text[] images
+        jsonb print_areas
+        integer stock_quantity
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    creator_products {
+        uuid id PK
+        uuid creator_id FK
+        uuid print_product_id FK
+        text name
+        text description
+        jsonb design_data
+        numeric creator_margin_percentage
+        text preview_url
+        boolean is_published
+        timestamp created_at
+        timestamp updated_at
+    }
 \`\`\`
 
-### Hooks principaux
-- **useAuth**: Gestion authentification
-- **useDesignManagement**: Gestion des designs
-- **useDesignPositioner**: Positionnement des designs
-- **useUserRole**: Vérification des rôles
+## 5. Structure Détaillée des Tables
 
-### Services clés
-- **authService**: Authentification
-- **designsService**: Gestion des designs
-- **pricingService**: Calculs de prix
-- **paymentService**: Paiements (Stripe à implémenter)
+### Table: users
+\`\`\`sql
+CREATE TABLE public.users (
+    id UUID PRIMARY KEY REFERENCES auth.users(id),
+    full_name TEXT,
+    role TEXT NOT NULL CHECK (role IN ('créateur', 'imprimeur', 'admin', 'superAdmin')),
+    is_super_admin BOOLEAN DEFAULT false,
+    avatar_url TEXT,
+    default_commission NUMERIC(5,2) DEFAULT 15.00,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 
-## 6. Workflows Principaux
+-- Trigger auto-update
+CREATE TRIGGER update_users_updated_at 
+    BEFORE UPDATE ON users 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+\`\`\`
 
-### Créateur
-1. Inscription/Connexion
-2. Sélection d'un produit (print_product)
-3. Upload d'un design
-4. Positionnement sur la zone d'impression
-5. Configuration du nom/description/marge
-6. Publication du produit
+### Table: product_templates
+\`\`\`sql
+CREATE TABLE public.product_templates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    design_area JSONB NOT NULL, -- {x: number, y: number, width: number, height: number}
+    mockup_area JSONB, -- {x: number, y: number, width: number, height: number}
+    svg_file_url TEXT NOT NULL,
+    mockup_image_url TEXT NOT NULL,
+    available_positions TEXT[] DEFAULT ARRAY['face'],
+    available_colors TEXT[] DEFAULT ARRAY['white'],
+    technical_instructions TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 
-### Imprimeur
-1. Inscription/Connexion
-2. Sélection d'un gabarit (product_template)
-3. Création d'un produit avec prix/matériau
-4. Gestion des commandes reçues
-5. Mise à jour des statuts
+-- Index pour optimiser les requêtes
+CREATE INDEX idx_product_templates_active ON product_templates(is_active);
+CREATE INDEX idx_product_templates_type ON product_templates(type);
+\`\`\`
 
-### Admin
-1. Gestion des utilisateurs et rôles
-2. Création/modification des gabarits
-3. Gestion des contenus et pages
-4. Surveillance des statistiques
+### Table: print_products
+\`\`\`sql
+CREATE TABLE public.print_products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    printer_id UUID NOT NULL REFERENCES users(id),
+    template_id UUID NOT NULL REFERENCES product_templates(id),
+    name TEXT NOT NULL,
+    description TEXT,
+    base_price NUMERIC(10,2) NOT NULL,
+    material TEXT NOT NULL,
+    available_sizes TEXT[] NOT NULL DEFAULT '{}',
+    available_colors TEXT[] NOT NULL DEFAULT '{}',
+    images TEXT[] NOT NULL DEFAULT '{}',
+    print_areas JSONB NOT NULL DEFAULT '{}',
+    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 
-## 7. Points de Vigilance
+-- Index composé pour optimiser les requêtes par imprimeur
+CREATE INDEX idx_print_products_printer_active ON print_products(printer_id, is_active);
+\`\`\`
 
-### Spécificités Lovable
-- Ne jamais modifier package.json directement
-- Utiliser <lov-add-dependency> pour ajouter des packages
-- Les types Supabase sont auto-générés
-- Éviter les modifications manuelles des fichiers d'intégration
+### Table: creator_products
+\`\`\`sql
+CREATE TABLE public.creator_products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    creator_id UUID NOT NULL REFERENCES users(id),
+    print_product_id UUID NOT NULL REFERENCES print_products(id),
+    name TEXT NOT NULL,
+    description TEXT,
+    design_data JSONB NOT NULL DEFAULT '{}', -- {url: string, position: {x, y}, size: {width, height}}
+    creator_margin_percentage NUMERIC(5,2) NOT NULL DEFAULT 20,
+    preview_url TEXT,
+    is_published BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 
-### Éléments critiques
-- Les policies RLS sont essentielles pour la sécurité
-- La fonction get_user_role() évite la récursion RLS
-- Les design_area doivent être cohérents entre templates et produits
-- L'authentification est requise pour toutes les opérations utilisateur
+-- Index pour les requêtes fréquentes
+CREATE INDEX idx_creator_products_creator_published ON creator_products(creator_id, is_published);
+CREATE INDEX idx_creator_products_published ON creator_products(is_published) WHERE is_published = true;
+\`\`\`
 
-### Maintenance
-- Surveiller les logs Supabase pour les erreurs
-- Vérifier régulièrement les policies RLS
-- Maintenir la cohérence des types TypeScript
-- Tester les workflows complets après chaque modification
+## 6. Fonctions SQL Personnalisées
 
-## 8. Commandes de Développement
+### get_user_role(user_id uuid)
+\`\`\`sql
+CREATE OR REPLACE FUNCTION public.get_user_role(user_id uuid)
+RETURNS text
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN (
+    SELECT 
+      CASE 
+        WHEN is_super_admin = true THEN 'superAdmin'
+        ELSE role
+      END
+    FROM public.users 
+    WHERE id = user_id
+  );
+END;
+$$;
+\`\`\`
 
+### calculate_earnings(order_id uuid)
+\`\`\`sql
+CREATE OR REPLACE FUNCTION public.calculate_earnings(order_id uuid)
+RETURNS TABLE(creator_id uuid, printer_id uuid, creator_earnings numeric, printer_earnings numeric, platform_earnings numeric)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    cp.creator_id,
+    pp.printer_id,
+    (o.quantity * cp.creator_margin_percentage / 100 * pp.base_price)::NUMERIC AS creator_earnings,
+    (o.quantity * pp.base_price)::NUMERIC AS printer_earnings,
+    (o.total_price - (o.quantity * pp.base_price) - (o.quantity * cp.creator_margin_percentage / 100 * pp.base_price))::NUMERIC AS platform_earnings
+  FROM 
+    orders o
+  JOIN 
+    creator_products cp ON o.creator_product_id = cp.id
+  JOIN 
+    print_products pp ON cp.print_product_id = pp.id
+  WHERE 
+    o.id = order_id;
+END;
+$$;
+\`\`\`
+
+## 7. Policies Row Level Security (RLS)
+
+### product_templates
+\`\`\`sql
+-- Lecture publique pour templates actifs
+CREATE POLICY "Public can view active templates" 
+ON product_templates FOR SELECT 
+USING (is_active = true);
+
+-- Super admins peuvent tout faire
+CREATE POLICY "Super admins can manage all templates" 
+ON product_templates FOR ALL 
+USING (get_user_role(auth.uid()) = 'superAdmin');
+\`\`\`
+
+### print_products
+\`\`\`sql
+-- Imprimeurs voient leurs produits
+CREATE POLICY "Printers can view their products" 
+ON print_products FOR SELECT 
+USING (printer_id = auth.uid() OR is_active = true);
+
+-- Imprimeurs peuvent modifier leurs produits
+CREATE POLICY "Printers can manage their products" 
+ON print_products FOR ALL 
+USING (printer_id = auth.uid());
+\`\`\`
+
+### creator_products
+\`\`\`sql
+-- Créateurs voient leurs produits
+CREATE POLICY "Creators can view their products" 
+ON creator_products FOR SELECT 
+USING (creator_id = auth.uid() OR is_published = true);
+
+-- Créateurs peuvent gérer leurs produits
+CREATE POLICY "Creators can manage their products" 
+ON creator_products FOR ALL 
+USING (creator_id = auth.uid());
+\`\`\`
+
+## 8. Exemples de Requêtes Courantes
+
+### Récupérer tous les produits publiés avec leurs détails
+\`\`\`sql
+SELECT 
+    cp.id,
+    cp.name AS product_name,
+    cp.description,
+    cp.creator_margin_percentage,
+    cp.design_data,
+    pp.base_price,
+    pp.material,
+    pp.available_sizes,
+    pt.name AS template_name,
+    pt.mockup_image_url,
+    u.full_name AS creator_name
+FROM creator_products cp
+JOIN print_products pp ON cp.print_product_id = pp.id
+JOIN product_templates pt ON pp.template_id = pt.id
+JOIN users u ON cp.creator_id = u.id
+WHERE cp.is_published = true AND pp.is_active = true;
+\`\`\`
+
+### Insérer un nouveau produit créateur
+\`\`\`sql
+INSERT INTO creator_products (
+    creator_id,
+    print_product_id,
+    name,
+    description,
+    design_data,
+    creator_margin_percentage
+) VALUES (
+    auth.uid(),
+    'uuid-du-print-product',
+    'Mon T-shirt Design',
+    'Description du produit',
+    '{"url": "https://...", "position": {"x": 100, "y": 50}, "size": {"width": 200, "height": 150}}',
+    25.00
+);
+\`\`\`
+
+### Mettre à jour les données JSONB de design
+\`\`\`sql
+UPDATE creator_products 
+SET design_data = jsonb_set(
+    design_data, 
+    '{position}', 
+    '{"x": 120, "y": 60}'
+)
+WHERE id = 'product-uuid' AND creator_id = auth.uid();
+\`\`\`
+
+## 9. Checklist de Migration/Audit
+
+### Avant Migration
+- [ ] **Backup complet** : Exporter toutes les tables via Supabase Dashboard
+- [ ] **Test des policies RLS** : Vérifier que \`get_user_role()\` fonctionne
+- [ ] **Validation des JSONB** : S'assurer que design_area et design_data sont valides
+- [ ] **Vérification des contraintes** : Tester les foreign keys et unique constraints
+- [ ] **Export des Edge Functions** : Sauvegarder le code des fonctions personnalisées
+
+### Après Migration
+- [ ] **Test d'authentification** : Vérifier login/logout
+- [ ] **Test des rôles** : Créateur, Imprimeur, Admin fonctionnent
+- [ ] **Test CRUD** : Create/Read/Update/Delete sur chaque table
+- [ ] **Vérification RLS** : Utilisateurs voient uniquement leurs données
+- [ ] **Test Storage** : Upload/download de fichiers
+- [ ] **Performance** : Vérifier les index et temps de réponse
+
+### Points Critiques
+- [ ] **Variables d'environnement** : VITE_SUPABASE_URL et ANON_KEY configurées
+- [ ] **Policies RLS activées** : \`ENABLE ROW LEVEL SECURITY\` sur toutes les tables
+- [ ] **Triggers fonctionnels** : update_updated_at_column actif
+- [ ] **Foreign keys préservées** : Relations intactes entre tables
+- [ ] **Fonction get_user_role()** : Évite la récursion RLS
+
+## 10. Scripts de Déploiement
+
+### Installation locale
 \`\`\`bash
-# Installation locale
+# Clone du projet
+git clone [REPO_URL]
+cd podsleek
+
+# Installation des dépendances
 npm install
 
-# Développement
+# Configuration environnement
+cp .env.example .env
+# Éditer .env avec les vraies clés Supabase
+
+# Lancement dev
 npm run dev
-
-# Build production
-npm run build
-
-# Preview build
-npm run preview
 \`\`\`
 
-## 9. Historique des Corrections
+### Build production
+\`\`\`bash
+# Build optimisé
+npm run build
 
-### Bugs majeurs résolus
-- **Récursion RLS**: Création de fonctions SECURITY DEFINER
-- **Positionnement designs**: Utilisation correcte des design_area
-- **TypeScript**: Ajout imports manquants
-- **Authentification**: Gestion sécurisée des rôles
+# Preview du build
+npm run preview
 
-### Points de migration
-- Base Supabase existante avec données
-- Migrations SQL via interface Supabase
-- Préservation des données utilisateur
+# Deploy (selon plateforme)
+npm run deploy
+\`\`\`
+
+### Export/Import Supabase
+\`\`\`bash
+# Export schema SQL
+supabase db dump --schema-only > schema.sql
+
+# Export données
+supabase db dump --data-only > data.sql
+
+# Import complet
+psql [CONNECTION_STRING] < schema.sql
+psql [CONNECTION_STRING] < data.sql
+\`\`\`
+
+## 11. Points de Vigilance Spécifiques
+
+### Lovable
+- **NE JAMAIS** modifier package.json directement
+- **NE JAMAIS** éditer src/integrations/supabase/types.ts
+- Utiliser uniquement \`<lov-add-dependency>\` pour packages
+- Types Supabase auto-générés à ne pas toucher
+
+### Sécurité
+- Policies RLS critiques pour isolation des données
+- Fonction get_user_role() évite récursion RLS
+- Variables auth.uid() dans toutes les policies utilisateur
+- Validation côté serveur ET client obligatoire
+
+### Performance
+- Index sur (user_id, is_active) pour tables principales
+- JSONB optimisé avec GIN index si volume important
+- Limit/offset pour pagination des listes
+- Cache Tanstack Query configuré correctement
 
 ---
 
-**Dernière mise à jour**: ${new Date().toLocaleDateString('fr-FR')}
-**Version**: 1.0.0
-**Maintenu par**: Équipe Podsleek
+**Dernière mise à jour** : ${new Date().toLocaleDateString('fr-FR')}
+**Version** : 1.1.0
+**Maintenu par** : Équipe Podsleek
+
+Cette documentation doit être mise à jour à chaque modification majeure de la structure de données ou des fonctionnalités critiques.
 `;
   };
 
@@ -298,27 +513,180 @@ npm run preview
     </Button>
   );
 
+  const tablesSchema = [
+    {
+      name: "users",
+      description: "Table principale des utilisateurs avec rôles et permissions",
+      columns: [
+        { name: "id", type: "uuid", constraint: "PK, FK auth.users", description: "Identifiant unique" },
+        { name: "full_name", type: "text", constraint: "nullable", description: "Nom complet utilisateur" },
+        { name: "role", type: "text", constraint: "NOT NULL", description: "Rôle : créateur, imprimeur, admin, superAdmin" },
+        { name: "is_super_admin", type: "boolean", constraint: "DEFAULT false", description: "Flag super administrateur" },
+        { name: "avatar_url", type: "text", constraint: "nullable", description: "URL photo de profil" },
+        { name: "default_commission", type: "numeric(5,2)", constraint: "DEFAULT 15.00", description: "Commission par défaut %" },
+        { name: "created_at", type: "timestamptz", constraint: "DEFAULT now()", description: "Date de création" },
+        { name: "updated_at", type: "timestamptz", constraint: "DEFAULT now()", description: "Dernière modification" }
+      ]
+    },
+    {
+      name: "product_templates",
+      description: "Gabarits de produits créés par les super admins",
+      columns: [
+        { name: "id", type: "uuid", constraint: "PK", description: "Identifiant unique" },
+        { name: "name", type: "text", constraint: "NOT NULL", description: "Nom du gabarit" },
+        { name: "type", type: "text", constraint: "NOT NULL", description: "Type de produit (t-shirt, tote-bag...)" },
+        { name: "design_area", type: "jsonb", constraint: "NOT NULL", description: "Zone d'impression {x,y,width,height}" },
+        { name: "mockup_area", type: "jsonb", constraint: "nullable", description: "Zone du mockup {x,y,width,height}" },
+        { name: "svg_file_url", type: "text", constraint: "NOT NULL", description: "URL du fichier SVG gabarit" },
+        { name: "mockup_image_url", type: "text", constraint: "NOT NULL", description: "URL image de présentation" },
+        { name: "available_positions", type: "text[]", constraint: "DEFAULT ['face']", description: "Positions d'impression disponibles" },
+        { name: "available_colors", type: "text[]", constraint: "DEFAULT ['white']", description: "Couleurs disponibles" },
+        { name: "technical_instructions", type: "text", constraint: "nullable", description: "Instructions techniques impression" },
+        { name: "is_active", type: "boolean", constraint: "DEFAULT true", description: "Statut actif/inactif" },
+        { name: "created_by", type: "uuid", constraint: "FK users(id)", description: "Créateur du gabarit" }
+      ]
+    },
+    {
+      name: "print_products",
+      description: "Produits créés par les imprimeurs basés sur des gabarits",
+      columns: [
+        { name: "id", type: "uuid", constraint: "PK", description: "Identifiant unique" },
+        { name: "printer_id", type: "uuid", constraint: "FK users(id)", description: "Propriétaire imprimeur" },
+        { name: "template_id", type: "uuid", constraint: "FK product_templates(id)", description: "Gabarit utilisé" },
+        { name: "name", type: "text", constraint: "NOT NULL", description: "Nom du produit" },
+        { name: "description", type: "text", constraint: "nullable", description: "Description détaillée" },
+        { name: "base_price", type: "numeric(10,2)", constraint: "NOT NULL", description: "Prix de base imprimeur" },
+        { name: "material", type: "text", constraint: "NOT NULL", description: "Matériau du produit" },
+        { name: "available_sizes", type: "text[]", constraint: "NOT NULL", description: "Tailles disponibles" },
+        { name: "available_colors", type: "text[]", constraint: "NOT NULL", description: "Couleurs disponibles" },
+        { name: "images", type: "text[]", constraint: "NOT NULL", description: "URLs des images produit" },
+        { name: "print_areas", type: "jsonb", constraint: "DEFAULT '{}'", description: "Zones d'impression configurées" },
+        { name: "stock_quantity", type: "integer", constraint: "DEFAULT 0", description: "Quantité en stock" },
+        { name: "is_active", type: "boolean", constraint: "DEFAULT true", description: "Produit actif/inactif" }
+      ]
+    },
+    {
+      name: "creator_products",
+      description: "Produits finaux créés par les créateurs avec leurs designs",
+      columns: [
+        { name: "id", type: "uuid", constraint: "PK", description: "Identifiant unique" },
+        { name: "creator_id", type: "uuid", constraint: "FK users(id)", description: "Créateur du produit" },
+        { name: "print_product_id", type: "uuid", constraint: "FK print_products(id)", description: "Produit de base utilisé" },
+        { name: "name", type: "text", constraint: "NOT NULL", description: "Nom du produit final" },
+        { name: "description", type: "text", constraint: "nullable", description: "Description marketing" },
+        { name: "design_data", type: "jsonb", constraint: "DEFAULT '{}'", description: "Données du design {url,position,size}" },
+        { name: "creator_margin_percentage", type: "numeric(5,2)", constraint: "DEFAULT 20", description: "Marge créateur en %" },
+        { name: "preview_url", type: "text", constraint: "nullable", description: "URL aperçu produit fini" },
+        { name: "is_published", type: "boolean", constraint: "DEFAULT false", description: "Produit publié/brouillon" }
+      ]
+    }
+  ];
+
+  const rlsPolicies = [
+    {
+      table: "product_templates",
+      policies: [
+        {
+          name: "Public can view active templates",
+          type: "SELECT",
+          condition: "is_active = true",
+          description: "Permet la lecture publique des gabarits actifs"
+        },
+        {
+          name: "Super admins can manage all templates",
+          type: "ALL",
+          condition: "get_user_role(auth.uid()) = 'superAdmin'",
+          description: "Super admins ont tous les droits sur les gabarits"
+        }
+      ]
+    },
+    {
+      table: "print_products",
+      policies: [
+        {
+          name: "Printers can view their products",
+          type: "SELECT",
+          condition: "printer_id = auth.uid() OR is_active = true",
+          description: "Imprimeurs voient leurs produits + produits actifs publics"
+        },
+        {
+          name: "Printers can manage their products",
+          type: "ALL",
+          condition: "printer_id = auth.uid()",
+          description: "Imprimeurs peuvent CRUD leurs propres produits"
+        }
+      ]
+    },
+    {
+      table: "creator_products",
+      policies: [
+        {
+          name: "Creators can view their products",
+          type: "SELECT",
+          condition: "creator_id = auth.uid() OR is_published = true",
+          description: "Créateurs voient leurs produits + produits publiés"
+        },
+        {
+          name: "Creators can manage their products",
+          type: "ALL",
+          condition: "creator_id = auth.uid()",
+          description: "Créateurs peuvent CRUD leurs propres produits"
+        }
+      ]
+    }
+  ];
+
+  const migrationChecklist = [
+    { category: "Avant Migration", items: [
+      "Backup complet de toutes les tables via Supabase Dashboard",
+      "Export du schéma SQL complet (structure + données)",
+      "Sauvegarde des Edge Functions personnalisées",
+      "Documentation des variables d'environnement actuelles",
+      "Test de la fonction get_user_role() pour éviter récursion RLS",
+      "Validation de la structure JSONB (design_area, design_data)",
+      "Vérification de l'intégrité des foreign keys"
+    ]},
+    { category: "Pendant Migration", items: [
+      "Maintenir l'ordre de création des tables (dépendances FK)",
+      "Activer RLS sur chaque table APRÈS insertion des données",
+      "Recréer les index et triggers en dernier",
+      "Tester chaque policy RLS individuellement",
+      "Vérifier les permissions des fonctions SECURITY DEFINER"
+    ]},
+    { category: "Après Migration", items: [
+      "Test complet d'authentification (login/logout/rôles)",
+      "Validation CRUD sur chaque table avec différents rôles",
+      "Test des workflows créateur/imprimeur/admin",
+      "Vérification de l'isolation des données par utilisateur",
+      "Performance des requêtes avec EXPLAIN ANALYZE",
+      "Test du storage et upload de fichiers",
+      "Validation de l'export Markdown de la documentation"
+    ]}
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Documentation Technique</h1>
-          <p className="text-gray-600 mt-2">Documentation complète pour la maintenance et migration de Podsleek</p>
+          <h1 className="text-3xl font-bold text-gray-900">Documentation Technique Complète</h1>
+          <p className="text-gray-600 mt-2">Documentation exhaustive pour maintenance, migration et reprise du projet Podsleek</p>
         </div>
         <Button onClick={exportDocumentation} className="flex items-center gap-2">
           <Download className="h-4 w-4" />
-          Exporter en Markdown
+          Exporter Documentation Complète
         </Button>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-10">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
           <TabsTrigger value="structure">Structure</TabsTrigger>
-          <TabsTrigger value="database">Base de données</TabsTrigger>
+          <TabsTrigger value="schema">Schéma BD</TabsTrigger>
+          <TabsTrigger value="tables">Tables Détail</TabsTrigger>
+          <TabsTrigger value="rls">Policies RLS</TabsTrigger>
+          <TabsTrigger value="queries">Requêtes SQL</TabsTrigger>
           <TabsTrigger value="workflows">Workflows</TabsTrigger>
-          <TabsTrigger value="env">Variables</TabsTrigger>
-          <TabsTrigger value="bugs">Bugs & Fixes</TabsTrigger>
+          <TabsTrigger value="migration">Migration</TabsTrigger>
           <TabsTrigger value="deployment">Déploiement</TabsTrigger>
           <TabsTrigger value="vigilance">Vigilance</TabsTrigger>
         </TabsList>
@@ -421,98 +789,340 @@ npm run preview
           </Card>
         </TabsContent>
 
-        <TabsContent value="database" className="space-y-4">
+        <TabsContent value="schema" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Database className="h-5 w-5" />
-                Structure Base de Données
+                Schéma Relationnel de la Base de Données
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-800 mb-2">🔗 Relations Principales</h3>
+                <div className="text-sm text-blue-700 space-y-1">
+                  <div><strong>users</strong> → creator_products (1:n) | imprimeurs → print_products (1:n)</div>
+                  <div><strong>product_templates</strong> → print_products (1:n) | gabarits utilisés par imprimeurs</div>
+                  <div><strong>print_products</strong> → creator_products (1:n) | base pour créations</div>
+                  <div><strong>creator_products</strong> → orders (1:n) | produits finis commandés</div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Diagramme Mermaid</h3>
+                <pre className="bg-gray-50 p-4 rounded-lg text-xs overflow-x-auto">
+{`erDiagram
+    users ||--o{ creator_products : "créé par"
+    users ||--o{ print_products : "possédé par"
+    users ||--o{ product_templates : "créé par"
+    users ||--o{ orders : "commandé par"
+    users ||--o{ subscriptions : "souscrit"
+    
+    product_templates ||--o{ print_products : "utilise"
+    print_products ||--o{ creator_products : "basé sur"
+    creator_products ||--o{ orders : "commandé"
+    
+    users {
+        uuid id PK
+        text full_name
+        text role
+        boolean is_super_admin
+        numeric default_commission
+        text avatar_url
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    product_templates {
+        uuid id PK
+        text name
+        text type
+        jsonb design_area
+        jsonb mockup_area
+        text svg_file_url
+        text mockup_image_url
+        text[] available_positions
+        text[] available_colors
+        text technical_instructions
+        boolean is_active
+        uuid created_by FK
+    }
+    
+    print_products {
+        uuid id PK
+        uuid printer_id FK
+        uuid template_id FK
+        text name
+        numeric base_price
+        text material
+        text[] available_sizes
+        text[] available_colors
+        jsonb print_areas
+        integer stock_quantity
+        boolean is_active
+    }
+    
+    creator_products {
+        uuid id PK
+        uuid creator_id FK
+        uuid print_product_id FK
+        text name
+        jsonb design_data
+        numeric creator_margin_percentage
+        text preview_url
+        boolean is_published
+    }`}
+                </pre>
+                <CopyButton text="Diagramme Mermaid complet..." label="Diagramme ERD" />
+              </div>
+
+              <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2">💡 Utilisation du Diagramme</h4>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• Copiez le code Mermaid dans <a href="https://mermaid.live" className="underline">mermaid.live</a></li>
+                  <li>• Ou intégrez-le dans votre documentation technique</li>
+                  <li>• Export possible en PNG/SVG pour présentations</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tables" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Table className="h-5 w-5" />
+                Structure Détaillée des Tables
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {tablesSchema.map((table) => (
+                  <div key={table.name} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-blue-600">{table.name}</h3>
+                      <CopyButton text={`Table: ${table.name}`} label={`Schema ${table.name}`} />
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">{table.description}</p>
+                    
+                    <UITable>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Colonne</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Contraintes</TableHead>
+                          <TableHead>Description</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {table.columns.map((column) => (
+                          <TableRow key={column.name}>
+                            <TableCell className="font-mono text-sm">{column.name}</TableCell>
+                            <TableCell className="font-mono text-sm text-blue-600">{column.type}</TableCell>
+                            <TableCell className="text-sm">{column.constraint}</TableCell>
+                            <TableCell className="text-sm">{column.description}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </UITable>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="rls" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Policies Row Level Security (RLS)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <h4 className="font-medium text-red-800 mb-2">🔒 Importance Critique des Policies RLS</h4>
+                  <p className="text-sm text-red-700">
+                    Les policies RLS garantissent l'isolation des données entre utilisateurs. 
+                    Leur suppression ou modification accidentelle peut exposer des données privées.
+                  </p>
+                </div>
+
+                {rlsPolicies.map((tablePolicy) => (
+                  <div key={tablePolicy.table} className="border rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-purple-600 mb-3">
+                      Table: {tablePolicy.table}
+                    </h3>
+                    
+                    <div className="space-y-3">
+                      {tablePolicy.policies.map((policy, index) => (
+                        <div key={index} className="bg-gray-50 p-3 rounded">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium">{policy.name}</span>
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                              {policy.type}
+                            </span>
+                          </div>
+                          <div className="text-sm space-y-1">
+                            <div><strong>Condition:</strong> <code className="bg-white px-1">{policy.condition}</code></div>
+                            <div><strong>Description:</strong> {policy.description}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-3">
+                      <CopyButton text={`RLS Policies for ${tablePolicy.table}`} label={`Policies ${tablePolicy.table}`} />
+                    </div>
+                  </div>
+                ))}
+
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h4 className="font-medium text-yellow-800 mb-2">⚠️ Fonction get_user_role() Anti-Récursion</h4>
+                  <p className="text-sm text-yellow-700 mb-2">
+                    Cette fonction SECURITY DEFINER évite les erreurs "infinite recursion detected in policy".
+                  </p>
+                  <pre className="bg-white p-2 rounded text-xs">
+{`CREATE OR REPLACE FUNCTION public.get_user_role(user_id uuid)
+RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN (SELECT CASE WHEN is_super_admin = true THEN 'superAdmin' ELSE role END 
+          FROM public.users WHERE id = user_id);
+END;
+$$;`}
+                  </pre>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="queries" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                Exemples de Requêtes SQL Courantes
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h3 className="font-semibold text-lg mb-3">Tables Principales</h3>
-                
-                <div className="space-y-4">
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium text-blue-600 mb-2">users</h4>
-                    <div className="text-sm space-y-1">
-                      <div><code>id</code> (uuid, PK) - Référence auth.users</div>
-                      <div><code>full_name</code> (text) - Nom complet</div>
-                      <div><code>role</code> (text) - 'créateur', 'imprimeur', 'admin', 'superAdmin'</div>
-                      <div><code>is_super_admin</code> (boolean) - Flag super admin</div>
-                      <div><code>default_commission</code> (numeric) - Commission par défaut (15%)</div>
-                    </div>
-                  </div>
-
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium text-blue-600 mb-2">product_templates</h4>
-                    <div className="text-sm space-y-1">
-                      <div><code>id</code> (uuid, PK)</div>
-                      <div><code>name</code> (text) - Nom du gabarit</div>
-                      <div><code>type</code> (text) - Type de produit</div>
-                      <div><code>design_area</code> (jsonb) - Zone d'impression {`{x, y, width, height}`}</div>
-                      <div><code>mockup_area</code> (jsonb) - Zone du mockup</div>
-                      <div><code>svg_file_url</code> (text) - Fichier SVG du gabarit</div>
-                      <div><code>mockup_image_url</code> (text) - Image de présentation</div>
-                      <div><code>created_by</code> (uuid, FK) - Créateur du gabarit</div>
-                    </div>
-                  </div>
-
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium text-blue-600 mb-2">print_products</h4>
-                    <div className="text-sm space-y-1">
-                      <div><code>id</code> (uuid, PK)</div>
-                      <div><code>printer_id</code> (uuid, FK users.id) - Imprimeur propriétaire</div>
-                      <div><code>template_id</code> (uuid, FK product_templates.id) - Gabarit utilisé</div>
-                      <div><code>base_price</code> (numeric) - Prix de base imprimeur</div>
-                      <div><code>available_sizes</code> (text[]) - Tailles disponibles</div>
-                      <div><code>available_colors</code> (text[]) - Couleurs disponibles</div>
-                      <div><code>print_areas</code> (jsonb) - Zones d'impression</div>
-                    </div>
-                  </div>
-
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium text-blue-600 mb-2">creator_products</h4>
-                    <div className="text-sm space-y-1">
-                      <div><code>id</code> (uuid, PK)</div>
-                      <div><code>creator_id</code> (uuid, FK users.id) - Créateur</div>
-                      <div><code>print_product_id</code> (uuid, FK print_products.id) - Produit de base</div>
-                      <div><code>design_data</code> (jsonb) - Données du design {`{url, position, size}`}</div>
-                      <div><code>creator_margin_percentage</code> (numeric) - Marge créateur (%)</div>
-                      <div><code>is_published</code> (boolean) - Statut publication</div>
-                    </div>
-                  </div>
-                </div>
+                <h3 className="font-semibold text-lg mb-3">SELECT - Récupérer tous les produits publiés</h3>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto">
+{`SELECT 
+    cp.id,
+    cp.name AS product_name,
+    cp.description,
+    cp.creator_margin_percentage,
+    cp.design_data,
+    pp.base_price,
+    pp.material,
+    pp.available_sizes,
+    pt.name AS template_name,
+    pt.mockup_image_url,
+    u.full_name AS creator_name
+FROM creator_products cp
+JOIN print_products pp ON cp.print_product_id = pp.id
+JOIN product_templates pt ON pp.template_id = pt.id
+JOIN users u ON cp.creator_id = u.id
+WHERE cp.is_published = true 
+  AND pp.is_active = true
+ORDER BY cp.created_at DESC;`}
+                </pre>
+                <CopyButton text="SELECT query complète..." label="Query SELECT" />
               </div>
 
               <div>
-                <h3 className="font-semibold text-lg mb-3">Fonctions SQL Personnalisées</h3>
-                <div className="space-y-2">
-                  <div className="bg-gray-50 p-3 rounded">
-                    <code className="text-sm">get_user_role(user_id uuid) → text</code>
-                    <p className="text-xs text-gray-600 mt-1">Fonction sécurisée pour récupérer le rôle utilisateur (évite récursion RLS)</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <code className="text-sm">calculate_earnings(order_id uuid) → table</code>
-                    <p className="text-xs text-gray-600 mt-1">Calcule la répartition des gains entre créateur/imprimeur/plateforme</p>
-                  </div>
-                </div>
+                <h3 className="font-semibold text-lg mb-3">INSERT - Créer un nouveau produit créateur</h3>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto">
+{`INSERT INTO creator_products (
+    creator_id,
+    print_product_id,
+    name,
+    description,
+    design_data,
+    creator_margin_percentage
+) VALUES (
+    auth.uid(), -- ID de l'utilisateur connecté
+    'uuid-du-print-product',
+    'Mon T-shirt Design Unique',
+    'Description marketing du produit',
+    '{"url": "https://storage.supabase.co/design.png", 
+      "position": {"x": 100, "y": 50}, 
+      "size": {"width": 200, "height": 150}}',
+    25.00
+);`}
+                </pre>
+                <CopyButton text="INSERT query..." label="Query INSERT" />
               </div>
 
               <div>
-                <h3 className="font-semibold text-lg mb-3">Policies RLS Critiques</h3>
-                <div className="text-sm space-y-2">
-                  <div className="border-l-4 border-green-500 pl-3">
-                    <strong>product_templates</strong>: Super admins gèrent tout, lecture publique pour templates actifs
-                  </div>
-                  <div className="border-l-4 border-blue-500 pl-3">
-                    <strong>print_products</strong>: Imprimeurs voient leurs produits, lecture publique si actif
-                  </div>
-                  <div className="border-l-4 border-purple-500 pl-3">
-                    <strong>creator_products</strong>: Créateurs gèrent leurs produits, lecture publique si publié
-                  </div>
-                </div>
+                <h3 className="font-semibold text-lg mb-3">UPDATE - Modifier position design (JSONB)</h3>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto">
+{`-- Mettre à jour la position du design
+UPDATE creator_products 
+SET design_data = jsonb_set(
+    design_data, 
+    '{position}', 
+    '{"x": 120, "y": 60}'
+)
+WHERE id = 'product-uuid' 
+  AND creator_id = auth.uid();
+
+-- Mettre à jour la taille du design
+UPDATE creator_products 
+SET design_data = jsonb_set(
+    design_data, 
+    '{size}', 
+    '{"width": 250, "height": 180}'
+)
+WHERE id = 'product-uuid' 
+  AND creator_id = auth.uid();`}
+                </pre>
+                <CopyButton text="UPDATE JSONB query..." label="Query UPDATE JSONB" />
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Requêtes d'Analyse et Statistiques</h3>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto">
+{`-- Produits les plus populaires par créateur
+SELECT 
+    u.full_name,
+    COUNT(cp.id) as total_products,
+    SUM(CASE WHEN cp.is_published THEN 1 ELSE 0 END) as published_products
+FROM users u
+LEFT JOIN creator_products cp ON u.id = cp.creator_id
+WHERE u.role = 'créateur'
+GROUP BY u.id, u.full_name
+ORDER BY published_products DESC;
+
+-- Revenus par imprimeur (simulation)
+SELECT 
+    u.full_name AS printer_name,
+    COUNT(pp.id) as total_products,
+    AVG(pp.base_price) as avg_price,
+    pp.material
+FROM users u
+JOIN print_products pp ON u.id = pp.printer_id
+WHERE u.role = 'imprimeur' AND pp.is_active = true
+GROUP BY u.id, u.full_name, pp.material
+ORDER BY avg_price DESC;`}
+                </pre>
+                <CopyButton text="Analytics queries..." label="Queries Analytics" />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2">💡 Conseils d'Optimisation</h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• Utilisez <code>EXPLAIN ANALYZE</code> pour mesurer les performances</li>
+                  <li>• Créez des index sur les colonnes de filtrage fréquent</li>
+                  <li>• Limitez les résultats avec <code>LIMIT</code> et pagination</li>
+                  <li>• Utilisez les index GIN pour les recherches JSONB complexes</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
@@ -574,69 +1184,60 @@ npm run preview
           </Card>
         </TabsContent>
 
-        <TabsContent value="env" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Variables d'Environnement</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium mb-2">Configuration Supabase</h3>
-                  <pre className="bg-gray-50 p-4 rounded text-sm">
-{`VITE_SUPABASE_URL=https://riumhqlxdmsxwsjstqgl.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`}
-                  </pre>
-                  <CopyButton text="VITE_SUPABASE_URL=https://riumhqlxdmsxwsjstqgl.supabase.co" label="Variables Supabase" />
-                </div>
-                
-                <div className="bg-yellow-50 border border-yellow-200 p-3 rounded">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Note</strong>: Les clés privées ne sont pas exposées ici pour des raisons de sécurité. 
-                    Elles sont stockées dans les secrets Supabase.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="bugs" className="space-y-4">
+        <TabsContent value="migration" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bug className="h-5 w-5" />
-                Historique des Bugs et Correctifs
+                <CheckSquare className="h-5 w-5" />
+                Checklist de Migration et Audit Complet
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="border-l-4 border-red-500 pl-4">
-                  <h4 className="font-medium text-red-600">Récursion RLS (Row Level Security)</h4>
-                  <p className="text-sm text-gray-600 mb-2"><strong>Symptôme</strong>: "infinite recursion detected in policy"</p>
-                  <p className="text-sm text-gray-600 mb-2"><strong>Cause</strong>: Policy RLS référençant sa propre table</p>
-                  <p className="text-sm text-gray-600"><strong>Solution</strong>: Création fonction SECURITY DEFINER get_user_role()</p>
+              <div className="space-y-6">
+                {migrationChecklist.map((section) => (
+                  <div key={section.category} className="border rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-4 text-blue-600">{section.category}</h3>
+                    <div className="space-y-2">
+                      {section.items.map((item, index) => (
+                        <div key={index} className="flex items-start gap-3">
+                          <input type="checkbox" className="mt-1" />
+                          <span className="text-sm">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <h4 className="font-medium text-red-800 mb-2">🚨 Points Critiques Absolus</h4>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    <li>• <strong>Fonction get_user_role()</strong> : Recréer AVANT les policies RLS</li>
+                    <li>• <strong>Variables d'environnement</strong> : VITE_SUPABASE_URL et ANON_KEY</li>
+                    <li>• <strong>Ordre FK</strong> : users → product_templates → print_products → creator_products</li>
+                    <li>• <strong>RLS activation</strong> : ENABLE ROW LEVEL SECURITY sur chaque table</li>
+                    <li>• <strong>auth.uid()</strong> : Présent dans chaque policy utilisateur</li>
+                  </ul>
                 </div>
 
-                <div className="border-l-4 border-orange-500 pl-4">
-                  <h4 className="font-medium text-orange-600">Positionnement initial designs</h4>
-                  <p className="text-sm text-gray-600 mb-2"><strong>Symptôme</strong>: Design centré par défaut, pas selon gabarit</p>
-                  <p className="text-sm text-gray-600 mb-2"><strong>Cause</strong>: Calcul position basé sur canvas, pas design_area</p>
-                  <p className="text-sm text-gray-600"><strong>Solution</strong>: Utilisation coordonnées design_area du gabarit</p>
-                </div>
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-800 mb-2">✅ Scripts de Validation Post-Migration</h4>
+                  <pre className="bg-white p-3 rounded text-xs">
+{`-- Test des policies RLS
+SELECT * FROM creator_products; -- Doit retourner seulement les produits autorisés
 
-                <div className="border-l-4 border-blue-500 pl-4">
-                  <h4 className="font-medium text-blue-600">Imports TypeScript manquants</h4>
-                  <p className="text-sm text-gray-600 mb-2"><strong>Symptôme</strong>: "Cannot find name 'useEffect'"</p>
-                  <p className="text-sm text-gray-600 mb-2"><strong>Cause</strong>: Import React hooks oublié lors refactoring</p>
-                  <p className="text-sm text-gray-600"><strong>Solution</strong>: Ajout import useEffect dans useDesignPositioner</p>
-                </div>
+-- Test de la fonction get_user_role
+SELECT get_user_role(auth.uid()); -- Doit retourner le rôle correct
 
-                <div className="border-l-4 border-green-500 pl-4">
-                  <h4 className="font-medium text-green-600">Gestion rôles utilisateurs</h4>
-                  <p className="text-sm text-gray-600 mb-2"><strong>Symptôme</strong>: Redirections incorrectes selon rôle</p>
-                  <p className="text-sm text-gray-600 mb-2"><strong>Cause</strong>: Vérification rôle côté client non sécurisée</p>
-                  <p className="text-sm text-gray-600"><strong>Solution</strong>: Fonction RPC sécurisée + hooks dédiés</p>
+-- Validation des foreign keys
+SELECT COUNT(*) FROM creator_products cp 
+LEFT JOIN print_products pp ON cp.print_product_id = pp.id 
+WHERE pp.id IS NULL; -- Doit retourner 0
+
+-- Test performance index
+EXPLAIN ANALYZE SELECT * FROM creator_products 
+WHERE creator_id = auth.uid() AND is_published = true;`}
+                  </pre>
+                  <CopyButton text="Scripts de validation..." label="Scripts Validation" />
                 </div>
               </div>
             </CardContent>
@@ -734,7 +1335,7 @@ npm run lint`}
                   <ul className="text-sm text-blue-700 space-y-1">
                     <li>• Surveiller les logs Supabase Edge Functions</li>
                     <li>• Vérifier cohérence design_area entre templates</li>
-                    <li>• Tester workflows complets après modifications</li>
+                    <li>• Tester les workflows complets après modifications</li>
                     <li>• Maintenir documentation à jour</li>
                   </ul>
                 </div>
@@ -757,8 +1358,9 @@ npm run lint`}
       <div className="bg-gray-50 p-4 rounded-lg">
         <p className="text-sm text-gray-600">
           <strong>Dernière mise à jour</strong>: {new Date().toLocaleDateString('fr-FR')} • 
-          <strong> Version</strong>: 1.0.0 • 
-          <strong> Maintenu par</strong>: Équipe Podsleek
+          <strong> Version</strong>: 1.1.0 • 
+          <strong> Maintenu par</strong>: Équipe Podsleek • 
+          <strong> Documentation</strong>: Niveau Production
         </p>
       </div>
     </div>
