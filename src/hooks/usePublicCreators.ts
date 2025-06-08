@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getPublicCreators, PublicCreator } from '@/services/publicProductsService';
 
 export const usePublicCreators = (limit = 12) => {
@@ -7,24 +7,24 @@ export const usePublicCreators = (limit = 12) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchCreators = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getPublicCreators(limit);
-        setCreators(data);
-      } catch (err) {
-        console.error('Error fetching creators:', err);
-        setError('Erreur lors du chargement des créateurs');
-        setCreators([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCreators();
+  const fetchCreators = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getPublicCreators(limit);
+      setCreators(data);
+    } catch (err) {
+      console.error('Error fetching creators:', err);
+      setError('Erreur lors du chargement des créateurs');
+      setCreators([]);
+    } finally {
+      setLoading(false);
+    }
   }, [limit]);
 
-  return { creators, loading, error, refetch: () => fetchCreators() };
+  useEffect(() => {
+    fetchCreators();
+  }, [fetchCreators]);
+
+  return { creators, loading, error, refetch: fetchCreators };
 };

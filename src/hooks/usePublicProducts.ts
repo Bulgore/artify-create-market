@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getPublishedProducts, getProductCategories, PublicCreatorProduct } from '@/services/publicProductsService';
 
 export const usePublicProducts = (category?: string, limit = 12) => {
@@ -7,26 +7,26 @@ export const usePublicProducts = (category?: string, limit = 12) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getPublishedProducts({ category, limit });
-        setProducts(data);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        setError('Erreur lors du chargement des produits');
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getPublishedProducts({ category, limit });
+      setProducts(data);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Erreur lors du chargement des produits');
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
   }, [category, limit]);
 
-  return { products, loading, error, refetch: () => fetchProducts() };
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  return { products, loading, error, refetch: fetchProducts };
 };
 
 export const useProductCategories = () => {
