@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import ReusableBlockRenderer from "@/components/content/ReusableBlockRenderer";
@@ -7,7 +6,9 @@ const Footer = () => {
   return (
     <footer className="bg-gray-900 text-white py-12">
       {/* Blocs réutilisables du footer */}
-      <ReusableBlockRenderer placement="footer" className="container mx-auto px-6 mb-8" />
+      <div className="container mx-auto px-6 mb-8">
+        <ReusableBlockRenderer placement="footer" />
+      </div>
       
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-4 gap-8">

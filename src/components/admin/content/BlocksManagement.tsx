@@ -7,11 +7,14 @@ import { useToast } from '@/hooks/use-toast';
 import { reusableBlocksService } from '@/services/reusableBlocksService';
 import { ReusableBlock } from '@/types/reusableBlocks';
 import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import BlockForm from './BlockForm';
 
 const BlocksManagement = () => {
   const { toast } = useToast();
   const [blocks, setBlocks] = useState<ReusableBlock[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<ReusableBlock | null>(null);
 
   useEffect(() => {
     loadBlocks();
@@ -72,6 +75,27 @@ const BlocksManagement = () => {
     }
   };
 
+  const handleEdit = (block: ReusableBlock) => {
+    setEditingBlock(block);
+    setShowForm(true);
+  };
+
+  const handleCreate = () => {
+    setEditingBlock(null);
+    setShowForm(true);
+  };
+
+  const handleFormSave = () => {
+    setShowForm(false);
+    setEditingBlock(null);
+    loadBlocks();
+  };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setEditingBlock(null);
+  };
+
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
       hero: 'bg-blue-100 text-blue-800',
@@ -94,6 +118,16 @@ const BlocksManagement = () => {
     return colors[placement] || 'bg-gray-100 text-gray-700';
   };
 
+  if (showForm) {
+    return (
+      <BlockForm
+        block={editingBlock || undefined}
+        onSave={handleFormSave}
+        onCancel={handleFormCancel}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <Card>
@@ -114,7 +148,10 @@ const BlocksManagement = () => {
               Créez et gérez des blocs de contenu réutilisables pour votre site
             </p>
           </div>
-          <Button className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
+          <Button 
+            onClick={handleCreate}
+            className="bg-[#33C3F0] hover:bg-[#0FA0CE]"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nouveau Bloc
           </Button>
@@ -124,7 +161,10 @@ const BlocksManagement = () => {
         {blocks.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">Aucun bloc créé pour le moment</p>
-            <Button className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
+            <Button 
+              onClick={handleCreate}
+              className="bg-[#33C3F0] hover:bg-[#0FA0CE]"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Créer votre premier bloc
             </Button>
@@ -172,7 +212,11 @@ const BlocksManagement = () => {
                           <Eye className="h-4 w-4" />
                         )}
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEdit(block)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
