@@ -1,48 +1,35 @@
 
-import React from "react";
-import ArtistCard from "./ArtistCard";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import CreatorsGrid from '@/components/public/CreatorsGrid';
 
 const FeaturedArtists = () => {
-  const artists = [
-    {
-      id: 1,
-      name: "Emma Martin",
-      image: "/placeholder.svg",
-    },
-    {
-      id: 2,
-      name: "Lucas Chevalier",
-      image: "/placeholder.svg",
-    },
-    {
-      id: 3,
-      name: "Maya Laurent",
-      image: "/placeholder.svg",
-    },
-    {
-      id: 4,
-      name: "Thomas Dubois",
-      image: "/placeholder.svg",
-    },
-  ];
-
   return (
-    <div className="py-16 bg-white">
-      <div className="container mx-auto px-6">
-        <h2 className="text-3xl font-bold text-gray-900 mb-10">
-          Découvrir les artistes
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {artists.map((artist) => (
-            <ArtistCard 
-              key={artist.id} 
-              name={artist.name} 
-              image={artist.image} 
-            />
-          ))}
+    <section className="py-20 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Créateurs Mis en Avant
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Rencontrez les artistes qui façonnent l'avenir du design
+          </p>
+        </div>
+        
+        <CreatorsGrid limit={8} />
+        
+        <div className="text-center mt-12">
+          <Button 
+            variant="outline"
+            onClick={() => window.location.href = '/artists'}
+          >
+            Voir tous les créateurs
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       creator_products: {
         Row: {
+          category: string | null
           created_at: string
           creator_id: string
           creator_margin_percentage: number
@@ -21,9 +22,15 @@ export type Database = {
           name: string
           preview_url: string | null
           print_product_id: string
+          seo_description: string | null
+          seo_title: string | null
+          slug: string | null
+          status: string | null
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           creator_id: string
           creator_margin_percentage?: number
@@ -34,9 +41,15 @@ export type Database = {
           name: string
           preview_url?: string | null
           print_product_id: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string | null
+          status?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           creator_id?: string
           creator_margin_percentage?: number
@@ -47,6 +60,11 @@ export type Database = {
           name?: string
           preview_url?: string | null
           print_product_id?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string | null
+          status?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -283,6 +301,7 @@ export type Database = {
           name: string
           print_areas: Json
           printer_id: string
+          status: string | null
           stock_quantity: number
           template_id: string
           updated_at: string
@@ -300,6 +319,7 @@ export type Database = {
           name: string
           print_areas?: Json
           printer_id: string
+          status?: string | null
           stock_quantity?: number
           template_id: string
           updated_at?: string
@@ -317,6 +337,7 @@ export type Database = {
           name?: string
           print_areas?: Json
           printer_id?: string
+          status?: string | null
           stock_quantity?: number
           template_id?: string
           updated_at?: string
@@ -610,33 +631,45 @@ export type Database = {
       users: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string | null
           default_commission: number | null
           full_name: string | null
           id: string
+          is_public_profile: boolean | null
           is_super_admin: boolean | null
           role: string
+          social_links: Json | null
           updated_at: string | null
+          website_url: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           default_commission?: number | null
           full_name?: string | null
           id: string
+          is_public_profile?: boolean | null
           is_super_admin?: boolean | null
           role: string
+          social_links?: Json | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           default_commission?: number | null
           full_name?: string | null
           id?: string
+          is_public_profile?: boolean | null
           is_super_admin?: boolean | null
           role?: string
+          social_links?: Json | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }
