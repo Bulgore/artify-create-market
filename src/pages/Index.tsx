@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import ContentRenderer from "@/components/content/ContentRenderer";
 import ReusableBlockRenderer from "@/components/content/ReusableBlockRenderer";
 import FeaturedArtists from "@/components/FeaturedArtists";
+import FeaturedProducts from "@/components/FeaturedProducts";
 import CallToAction from "@/components/CallToAction";
 import { ContentBlock } from "@/types/content";
 
@@ -52,6 +53,7 @@ const Index = () => {
         
         {/* Contenu existant */}
         <ContentRenderer blocks={blocks} />
+        <FeaturedProducts />
         <FeaturedArtists />
         <CallToAction />
         
