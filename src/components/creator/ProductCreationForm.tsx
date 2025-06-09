@@ -3,25 +3,7 @@ import React from 'react';
 import ProductSelector from './ProductSelector';
 import DesignUploader from './DesignUploader';
 import ProductDetailsForm from './ProductDetailsForm';
-
-interface PrintProduct {
-  id: string;
-  name: string;
-  description: string;
-  base_price: number;
-  material: string;
-  available_sizes: string[];
-  available_colors: string[];
-  template_id: string;
-  product_templates: {
-    id: string;
-    name: string;
-    svg_file_url: string;
-    mockup_image_url: string;
-    design_area: any;
-    mockup_area?: any;
-  } | null;
-}
+import { PrintProduct } from '@/types/customProduct';
 
 interface ProductData {
   name: string;

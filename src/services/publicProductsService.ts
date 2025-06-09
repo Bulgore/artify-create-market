@@ -17,20 +17,18 @@ export interface PublicCreatorProduct {
   creator_margin_percentage: number;
   category: string;
   tags: string[];
-  seo_title: string | null;
-  seo_description: string | null;
   slug: string | null;
   created_at: string;
   creator: {
     id: string;
-    full_name: string | null;
+    full_name?: string | null;
     avatar_url: string | null;
-    bio: string | null;
+    bio?: string | null;
     is_public_profile: boolean;
   };
   print_product: {
     id: string;
-    name: string;
+    name?: string;
     base_price: number;
     images: string[];
     material: string;
@@ -92,8 +90,6 @@ export const getPublishedProducts = async (options?: {
         creator_margin_percentage,
         category,
         tags,
-        seo_title,
-        seo_description,
         slug,
         created_at,
         creator:creator_id (
@@ -151,7 +147,9 @@ export const getPublishedProducts = async (options?: {
           ...mapCreatorWithCompatibility(product.creator),
           id: product.creator.id,
           avatar_url: product.creator.avatar_url,
-          is_public_profile: product.creator.is_public_profile
+          is_public_profile: product.creator.is_public_profile,
+          full_name: product.creator.full_name_fr ?? product.creator.full_name ?? '',
+          bio: product.creator.bio_fr ?? product.creator.bio ?? ''
         };
       }
       
@@ -192,8 +190,6 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
         creator_margin_percentage,
         category,
         tags,
-        seo_title,
-        seo_description,
         slug,
         created_at,
         creator:creator_id (
@@ -221,7 +217,7 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
       `)
       .eq('slug', slug)
       .eq('status', 'published')
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return null;
@@ -235,7 +231,9 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
         ...mapCreatorWithCompatibility(data.creator),
         id: data.creator.id,
         avatar_url: data.creator.avatar_url,
-        is_public_profile: data.creator.is_public_profile
+        is_public_profile: data.creator.is_public_profile,
+        full_name: data.creator.full_name_fr ?? data.creator.full_name ?? '',
+        bio: data.creator.bio_fr ?? data.creator.bio ?? ''
       };
     }
     
@@ -300,7 +298,9 @@ export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> =>
 
         const creatorData = mapCreatorWithCompatibility({
           ...creator,
-          products_count: count || 0
+          products_count: count || 0,
+          full_name: creator.full_name_fr ?? '',
+          bio: creator.bio_fr ?? ''
         });
 
         console.log(`Creator ${creatorData.full_name}: public_profile=${creator.is_public_profile}, products=${count}`);
@@ -341,7 +341,7 @@ export const getCreatorBySlug = async (creatorId: string): Promise<PublicCreator
       .eq('id', creatorId)
       .eq('is_public_profile', true)
       .eq('role', 'créateur')
-      .single();
+      .maybeSingle();
 
     if (error || !creator) {
       return null;
@@ -356,7 +356,9 @@ export const getCreatorBySlug = async (creatorId: string): Promise<PublicCreator
 
     return mapCreatorWithCompatibility({
       ...creator,
-      products_count: count || 0
+      products_count: count || 0,
+      full_name: creator.full_name_fr ?? '',
+      bio: creator.bio_fr ?? ''
     });
   } catch (error) {
     console.error('Error in getCreatorBySlug:', error);

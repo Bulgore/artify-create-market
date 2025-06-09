@@ -1,92 +1,93 @@
 
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
-import { RefreshCw } from "lucide-react";
-import { fetchPageBySlug } from "@/services/pagesService";
-import { PageData } from "@/types/pages";
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { PageData, mapPageWithCompatibility } from '@/types/pages';
+import { fetchPageBySlug } from '@/services/pagesService';
+import { Card, CardContent } from '@/components/ui/card';
 
 const CustomPage = () => {
-  const { pageTitle } = useParams<{ pageTitle: string }>();
-  const [pageContent, setPageContent] = useState<string>("");
-  const [pageData, setPageData] = useState<PageData | null>(null);
+  const { slug } = useParams<{ slug: string }>();
+  const [page, setPage] = useState<PageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPage = async () => {
-      setIsLoading(true);
-      try {
-        if (!pageTitle) {
-          throw new Error("Titre de page non défini");
-        }
-        
-        console.log(`Chargement de la page avec le slug: ${pageTitle}`);
-        
-        const { data, error } = await fetchPageBySlug(pageTitle);
-
-        if (error) {
-          console.error("Erreur Supabase:", error);
-          throw error;
-        }
-
-        if (data) {
-          console.log("Données de page reçues:", data);
-          setPageData(data);
-          setPageContent(data.content);
-        } else {
-          console.log("Page non trouvée avec le slug:", pageTitle);
-          navigate('/404');
-        }
-      } catch (error) {
-        console.error("Erreur lors de la récupération de la page:", error);
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de charger cette page.",
-        });
-        navigate('/404');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (pageTitle) {
-      fetchPage();
+    if (slug) {
+      loadPage(slug);
     }
-  }, [pageTitle, navigate, toast]);
+  }, [slug]);
+
+  const loadPage = async (pageSlug: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await fetchPageBySlug(pageSlug);
+      
+      if (error) {
+        console.error('Error loading page:', error);
+        setError('Impossible de charger la page');
+        return;
+      }
+      
+      if (data) {
+        // Mapper avec compatibilité
+        const mappedPage = mapPageWithCompatibility(data);
+        setPage(mappedPage);
+      } else {
+        setError('Page non trouvée');
+      }
+    } catch (error) {
+      console.error('Error loading page:', error);
+      setError('Erreur lors du chargement de la page');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
-        <Navbar />
-        <div className="container mx-auto px-6 py-12 flex items-center justify-center">
-          <RefreshCw className="h-12 w-12 animate-spin text-gray-400" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
         </div>
-        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !page) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <h1 className="text-2xl font-bold text-gray-800 mb-4">
+              {error || 'Page non trouvée'}
+            </h1>
+            <p className="text-gray-600">
+              La page que vous recherchez n'existe pas ou n'est plus disponible.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="container mx-auto px-6 py-12"
-      >
-        <article className="prose lg:prose-xl mx-auto">
-          {pageData && <h1 className="text-3xl font-bold mb-6">{pageData.title}</h1>}
-          <div dangerouslySetInnerHTML={{ __html: pageContent }} />
-        </article>
-      </motion.div>
-      <Footer />
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardContent className="p-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">
+              {page.title}
+            </h1>
+            <div 
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: page.content || '' }}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

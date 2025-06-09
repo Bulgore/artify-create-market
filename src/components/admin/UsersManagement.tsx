@@ -16,17 +16,18 @@ import {
 import { validateAdminAccess } from "@/utils/secureRoleUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import EditUserModal from "./EditUserModal";
+import { mapUserWithCompatibility } from "@/utils/userMapping";
 
 interface User {
   id: string;
-  full_name: string | null;
+  full_name?: string | null;
   role: string;
   is_super_admin: boolean;
   created_at: string;
   updated_at: string;
   default_commission: number;
   avatar_url: string | null;
-  bio: string | null;
+  bio?: string | null;
   is_public_profile: boolean;
   website_url: string | null;
   social_links: any;
@@ -89,13 +90,17 @@ const UsersManagement = () => {
         return;
       }
 
-      // Note: Email fetching from auth.users requires service role key
-      // For security, we'll show 'Email protégé' instead of trying to fetch emails
-      const enrichedUsers = (usersData || []).map(user => ({
-        ...user,
-        email: 'Email protégé', // Security: Don't expose emails
-        is_active: true
-      }));
+      // Mapper avec compatibilité et ajouter les champs manquants
+      const enrichedUsers = (usersData || []).map(userData => {
+        const mappedUser = mapUserWithCompatibility(userData);
+        return {
+          ...mappedUser,
+          email: 'Email protégé', // Security: Don't expose emails
+          is_active: true,
+          full_name: mappedUser.full_name || '',
+          bio: mappedUser.bio || ''
+        };
+      });
 
       setUsers(enrichedUsers);
     } catch (error) {

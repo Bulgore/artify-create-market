@@ -1,15 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { mapTemplateWithCompatibility } from '@/types/customProduct';
 
 interface ProductTemplate {
   id: string;
-  name: string;
-  technical_instructions?: string | null;
+  name?: string;
+  name_fr: string;
+  name_en?: string | null;
+  name_ty?: string | null;
   type: string;
   mockup_image_url: string;
   design_area: any;
@@ -18,12 +21,15 @@ interface ProductTemplate {
 }
 
 interface TemplateSelectorProps {
+  selectedTemplateId?: string;
   onTemplateSelect: (templateId: string, template: ProductTemplate) => void;
 }
 
-const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect }) => {
+const TemplateSelector: React.FC<TemplateSelectorProps> = ({ 
+  selectedTemplateId, 
+  onTemplateSelect 
+}) => {
   const [templates, setTemplates] = useState<ProductTemplate[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<ProductTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,8 +38,6 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect })
 
   const fetchTemplates = async () => {
     try {
-      setIsLoading(true);
-      
       const { data, error } = await supabase
         .from('product_templates')
         .select('*')
@@ -42,15 +46,16 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect })
 
       if (error) throw error;
 
-      // Mapper avec compatibilité
-      const mappedTemplates = (data || []).map((template: any) => ({
-        ...template,
-        name: template.name_fr ?? template.name ?? '',
-        technical_instructions: template.technical_instructions_fr ?? template.technical_instructions ?? null
-      }));
+      const mappedTemplates = (data || []).map(template => {
+        const mapped = mapTemplateWithCompatibility(template);
+        return {
+          ...mapped,
+          name: template.name_fr || template.name || ''
+        };
+      });
 
       setTemplates(mappedTemplates);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching templates:', error);
       toast({
         variant: "destructive",
@@ -60,11 +65,6 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect })
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleTemplateSelect = (template: ProductTemplate) => {
-    setSelectedTemplate(template);
-    onTemplateSelect(template.id, template);
   };
 
   if (isLoading) {
@@ -85,7 +85,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect })
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Aucun gabarit de produit n'est actuellement disponible. Contactez l'administrateur.
+            Aucun gabarit de produit n'est actuellement disponible.
           </p>
         </CardContent>
       </Card>
@@ -95,7 +95,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect })
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sélectionner un gabarit</CardTitle>
+        <CardTitle>Sélectionner un gabarit de produit</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -103,11 +103,11 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect })
             <div
               key={template.id}
               className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                selectedTemplate?.id === template.id
+                selectedTemplateId === template.id
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-primary/50'
               }`}
-              onClick={() => handleTemplateSelect(template)}
+              onClick={() => onTemplateSelect(template.id, template)}
             >
               <img
                 src={template.mockup_image_url}
@@ -115,13 +115,16 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect })
                 className="w-full h-32 object-cover rounded mb-2"
               />
               <h3 className="font-medium mb-2">{template.name}</h3>
-              <Badge variant="secondary" className="mb-2">{template.type}</Badge>
-              {template.technical_instructions && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {template.technical_instructions}
-                </p>
-              )}
-              {selectedTemplate?.id === template.id && (
+              <div className="flex justify-between items-center mb-2">
+                <Badge variant="secondary">{template.type}</Badge>
+                <Badge variant="outline">
+                  {template.available_positions?.length || 0} position(s)
+                </Badge>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {template.available_colors?.length || 0} couleur(s) disponible(s)
+              </div>
+              {selectedTemplateId === template.id && (
                 <Button size="sm" className="w-full mt-2">
                   Sélectionné
                 </Button>
