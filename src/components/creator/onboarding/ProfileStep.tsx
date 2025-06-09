@@ -12,7 +12,7 @@ interface ProfileStepProps {
 }
 
 const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
-  const { isLoading, setIsLoading, formData, setFormData, updateProfile } = useProfileForm(onComplete);
+  const { isLoading, setIsLoading, isLoadingProfile, formData, setFormData, updateProfile } = useProfileForm(onComplete);
   const { 
     avatarPreview, 
     bannerPreview, 
@@ -40,6 +40,15 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
   };
 
   const isFormValid = formData.full_name && formData.bio && avatarPreview;
+
+  if (isLoadingProfile) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Chargement de votre profil...</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

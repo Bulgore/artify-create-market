@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Package, CheckCircle, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Package, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -26,7 +25,6 @@ interface ProductsStepProps {
 const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,8 +67,38 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
   };
 
   const handleCreateProduct = () => {
-    // Rediriger vers la création de produit
-    navigate('/studio');
+    // Marquer temporairement l'onboarding comme terminé pour permettre l'accès au studio
+    const markOnboardingTemp = async () => {
+      try {
+        await supabase
+          .from('users')
+          .update({ onboarding_completed: true })
+          .eq('id', user?.id);
+        
+        // Ouvrir le studio dans un nouvel onglet pour éviter de perdre le contexte
+        window.open('/studio', '_blank');
+        
+        toast({
+          title: 'Studio ouvert',
+          description: 'Le studio s\'est ouvert dans un nouvel onglet. Créez vos produits puis revenez ici.',
+        });
+        
+        // Rafraîchir les produits après quelques secondes
+        setTimeout(() => {
+          loadProducts();
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Error updating onboarding status:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erreur',
+          description: 'Impossible d\'ouvrir le studio.',
+        });
+      }
+    };
+
+    markOnboardingTemp();
   };
 
   const getStatusBadge = (status: string) => {
@@ -178,8 +206,8 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         </Card>
       )}
 
-      {/* Action Button */}
-      <div className="text-center">
+      {/* Action Buttons */}
+      <div className="text-center space-y-4">
         <Button
           onClick={handleCreateProduct}
           size="lg"
@@ -187,10 +215,19 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         >
           <Plus className="h-4 w-4" />
           {products.length === 0 ? 'Créer mon premier produit' : 'Créer un nouveau produit'}
+          <ExternalLink className="h-4 w-4" />
         </Button>
-        <p className="text-sm text-muted-foreground mt-2">
-          Vous serez redirigé vers votre studio créateur
+        <p className="text-sm text-muted-foreground">
+          Le studio s'ouvrira dans un nouvel onglet pour créer vos produits
         </p>
+        
+        <Button
+          onClick={loadProducts}
+          variant="outline"
+          size="sm"
+        >
+          Rafraîchir la liste
+        </Button>
       </div>
 
       {/* Completion Message */}

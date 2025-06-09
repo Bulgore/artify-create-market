@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Circle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Circle, ArrowRight, ArrowLeft, Skip, Settings } from 'lucide-react';
 import ProfileStep from './ProfileStep';
 import ProductsStep from './ProductsStep';
 import SubscriptionStep from './SubscriptionStep';
@@ -22,6 +23,7 @@ interface OnboardingStep {
 const CreatorOnboarding = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [steps, setSteps] = useState<OnboardingStep[]>([
@@ -124,6 +126,45 @@ const CreatorOnboarding = () => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex(currentStepIndex - 1);
     }
+  };
+
+  const skipOnboarding = async () => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+      
+      // Marquer l'onboarding comme terminé
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          onboarding_completed: true,
+          creator_status: 'draft' // Garder en draft jusqu'à ce que le profil soit complété
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Onboarding ignoré',
+        description: 'Vous pouvez compléter votre profil plus tard via l\'administration.',
+      });
+
+      navigate('/studio');
+    } catch (error) {
+      console.error('Error skipping onboarding:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible d\'ignorer l\'onboarding.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const goToAdmin = () => {
+    navigate('/admin');
   };
 
   const checkCanSubmitForReview = async () => {
@@ -230,7 +271,30 @@ const CreatorOnboarding = () => {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-center">Parcours Créateur Podsleek</CardTitle>
+          <CardTitle className="text-center flex items-center justify-between">
+            <span>Parcours Créateur Podsleek</span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToAdmin}
+                className="flex items-center gap-1"
+              >
+                <Settings className="h-4 w-4" />
+                Administration
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={skipOnboarding}
+                disabled={isLoading}
+                className="flex items-center gap-1"
+              >
+                <Skip className="h-4 w-4" />
+                Ignorer
+              </Button>
+            </div>
+          </CardTitle>
           <div className="space-y-4">
             <Progress value={progress} className="w-full" />
             <div className="flex justify-between text-sm text-muted-foreground">

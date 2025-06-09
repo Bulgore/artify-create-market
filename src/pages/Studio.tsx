@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -17,9 +18,11 @@ import {
   Settings, 
   LayoutDashboard, 
   Search,
-  LogOut
+  LogOut,
+  ArrowLeft
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,13 +71,15 @@ const Studio = () => {
 
       setUserStatus(data);
 
-      // Rediriger vers l'onboarding si nécessaire
-      if (data && !data.onboarding_completed) {
-        navigate('/onboarding');
-      }
+      // Rediriger vers l'onboarding seulement si explicitement demandé
+      // Permettre l'accès au studio même si l'onboarding n'est pas terminé
     } catch (error) {
       console.error('Error checking creator status:', error);
     }
+  };
+
+  const goBackToOnboarding = () => {
+    navigate('/onboarding');
   };
   
   // Show loading while auth is initializing
@@ -221,9 +226,22 @@ const Studio = () => {
 
           <div className="flex-1 overflow-auto">
             <header className="bg-white p-4 flex items-center justify-between border-b">
-              <h1 className="text-xl font-semibold">
-                {isCreator ? "Studio de Création" : isPrinter ? "Dashboard Imprimeur" : "Studio"}
-              </h1>
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-semibold">
+                  {isCreator ? "Studio de Création" : isPrinter ? "Dashboard Imprimeur" : "Studio"}
+                </h1>
+                {isCreator && !userStatus?.onboarding_completed && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goBackToOnboarding}
+                    className="flex items-center gap-1"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Retour à l'onboarding
+                  </Button>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-orange-500">
                   {user.user_metadata?.full_name || user.email}

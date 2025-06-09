@@ -23,6 +23,7 @@ export const useProfileForm = (onComplete: () => void) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     full_name: '',
     bio: '',
@@ -45,13 +46,21 @@ export const useProfileForm = (onComplete: () => void) => {
     if (!user) return;
 
     try {
+      setIsLoadingProfile(true);
+      console.log('🔄 Loading user profile for:', user.id);
+      
       const { data, error } = await supabase
         .from('users')
         .select('full_name, bio, keywords, website_url, social_links')
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      console.log('✅ Profile data loaded:', data);
 
       if (data) {
         const socialLinks: SocialLinks = {
@@ -77,6 +86,8 @@ export const useProfileForm = (onComplete: () => void) => {
       }
     } catch (error) {
       console.error('Error loading profile:', error);
+    } finally {
+      setIsLoadingProfile(false);
     }
   };
 
@@ -84,6 +95,8 @@ export const useProfileForm = (onComplete: () => void) => {
     if (!user) return false;
 
     try {
+      console.log('💾 Updating profile...', formData);
+      
       const { error } = await supabase
         .from('users')
         .update({
@@ -122,8 +135,10 @@ export const useProfileForm = (onComplete: () => void) => {
     user,
     isLoading,
     setIsLoading,
+    isLoadingProfile,
     formData,
     setFormData,
-    updateProfile
+    updateProfile,
+    loadUserProfile
   };
 };
