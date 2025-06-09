@@ -14,6 +14,12 @@ interface ProfileStepProps {
   onComplete: () => void;
 }
 
+interface SocialLinks {
+  instagram?: string;
+  twitter?: string;
+  facebook?: string;
+}
+
 const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -53,16 +59,21 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
       if (error) throw error;
 
       if (data) {
+        // Type guard pour social_links
+        const socialLinks: SocialLinks = {};
+        if (data.social_links && typeof data.social_links === 'object') {
+          const links = data.social_links as Record<string, any>;
+          socialLinks.instagram = links.instagram || '';
+          socialLinks.twitter = links.twitter || '';
+          socialLinks.facebook = links.facebook || '';
+        }
+
         setFormData({
           full_name: data.full_name || '',
           bio: data.bio || '',
           keywords: data.keywords?.join(', ') || '',
           website_url: data.website_url || '',
-          social_links: {
-            instagram: data.social_links?.instagram || '',
-            twitter: data.social_links?.twitter || '',
-            facebook: data.social_links?.facebook || ''
-          }
+          social_links: socialLinks
         });
         
         if (data.avatar_url) setAvatarPreview(data.avatar_url);

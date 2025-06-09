@@ -51,6 +51,9 @@ interface EditUserModalProps {
   onSave: () => void;
 }
 
+type CreatorStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+type CreatorLevel = 'debutant' | 'confirme' | 'premium';
+
 const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, onSave }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -62,8 +65,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, on
     website_url: user?.website_url || '',
     default_commission: user?.default_commission || 15,
     is_super_admin: user?.is_super_admin || false,
-    creator_status: user?.creator_status || 'draft',
-    creator_level: user?.creator_level || 'debutant',
+    creator_status: (user?.creator_status || 'draft') as CreatorStatus,
+    creator_level: (user?.creator_level || 'debutant') as CreatorLevel,
   });
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -77,8 +80,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, on
         website_url: user.website_url || '',
         default_commission: user.default_commission || 15,
         is_super_admin: user.is_super_admin || false,
-        creator_status: user.creator_status || 'draft',
-        creator_level: user.creator_level || 'debutant',
+        creator_status: (user.creator_status || 'draft') as CreatorStatus,
+        creator_level: (user.creator_level || 'debutant') as CreatorLevel,
       });
       setRejectionReason('');
     }
@@ -235,7 +238,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, on
                 </Label>
                 <Select 
                   value={formData.creator_status}
-                  onValueChange={(value) => setFormData({ ...formData, creator_status: value })}
+                  onValueChange={(value: CreatorStatus) => setFormData({ ...formData, creator_status: value })}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue />
@@ -255,7 +258,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, on
                 </Label>
                 <Select 
                   value={formData.creator_level}
-                  onValueChange={(value) => setFormData({ ...formData, creator_level: value })}
+                  onValueChange={(value: CreatorLevel) => setFormData({ ...formData, creator_level: value })}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue />
