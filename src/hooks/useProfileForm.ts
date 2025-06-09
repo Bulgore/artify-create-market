@@ -12,12 +12,16 @@ interface SocialLinks {
 }
 
 interface FormData {
+  // Nouveaux champs multilingues
   full_name_fr: string;
   full_name_en: string;
   full_name_ty: string;
   bio_fr: string;
   bio_en: string;
   bio_ty: string;
+  // Anciens champs pour compatibilité
+  full_name: string;
+  bio: string;
   keywords: string;
   website_url: string;
   social_links: SocialLinks;
@@ -35,6 +39,8 @@ export const useProfileForm = (onComplete: () => void) => {
     bio_fr: '',
     bio_en: '',
     bio_ty: '',
+    full_name: '', // Compatibilité
+    bio: '', // Compatibilité
     keywords: '',
     website_url: '',
     social_links: {
@@ -91,6 +97,9 @@ export const useProfileForm = (onComplete: () => void) => {
           bio_fr: data.bio_fr || '',
           bio_en: data.bio_en || '',
           bio_ty: data.bio_ty || '',
+          // Compatibilité : utiliser la version française comme valeur par défaut
+          full_name: data.full_name_fr || '',
+          bio: data.bio_fr || '',
           keywords: data.keywords?.join(', ') || '',
           website_url: data.website_url || '',
           social_links: socialLinks

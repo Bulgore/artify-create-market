@@ -15,13 +15,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, LogOut, Settings, Palette } from 'lucide-react';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth(); // Utilisation de signOut au lieu de logout
   const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       navigate('/');
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);

@@ -31,12 +31,12 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
   const validateForm = (): boolean => {
     const errors: string[] = [];
 
-    if (!formData.full_name || formData.full_name.trim().length < 2) {
-      errors.push('Le nom/pseudo est obligatoire (minimum 2 caractères)');
+    if (!formData.full_name_fr || formData.full_name_fr.trim().length < 2) {
+      errors.push('Le nom/pseudo en français est obligatoire (minimum 2 caractères)');
     }
 
-    if (!formData.bio || formData.bio.trim().length < 10) {
-      errors.push('La description est obligatoire (minimum 10 caractères)');
+    if (!formData.bio_fr || formData.bio_fr.trim().length < 10) {
+      errors.push('La description en français est obligatoire (minimum 10 caractères)');
     }
 
     if (!avatarPreview) {
@@ -89,10 +89,10 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
   };
 
   const isFormValid = () => {
-    return formData.full_name && 
-           formData.full_name.trim().length >= 2 && 
-           formData.bio && 
-           formData.bio.trim().length >= 10 && 
+    return formData.full_name_fr && 
+           formData.full_name_fr.trim().length >= 2 && 
+           formData.bio_fr && 
+           formData.bio_fr.trim().length >= 10 && 
            avatarPreview;
   };
 
@@ -140,8 +140,8 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
         <h4 className="text-blue-800 font-medium mb-2">📋 Champs obligatoires :</h4>
         <ul className="text-blue-700 text-sm space-y-1">
           <li>✓ Photo de profil</li>
-          <li>✓ Nom/Pseudo (minimum 2 caractères)</li>
-          <li>✓ Description de votre univers créatif (minimum 10 caractères)</li>
+          <li>✓ Nom/Pseudo en français (minimum 2 caractères)</li>
+          <li>✓ Description de votre univers créatif en français (minimum 10 caractères)</li>
         </ul>
       </div>
 
