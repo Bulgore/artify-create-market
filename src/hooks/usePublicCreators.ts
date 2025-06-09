@@ -11,7 +11,11 @@ export const usePublicCreators = (limit = 12) => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching public creators with limit:', limit);
+      
       const data = await getPublicCreators(limit);
+      console.log('Fetched public creators:', data);
+      
       setCreators(data);
     } catch (err) {
       console.error('Error fetching creators:', err);

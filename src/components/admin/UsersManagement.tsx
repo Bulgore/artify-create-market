@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { validateAdminAccess } from "@/utils/secureRoleUtils";
 import { useAuth } from "@/contexts/AuthContext";
+import EditUserModal from "./EditUserModal";
 
 interface User {
   id: string;
@@ -25,6 +26,10 @@ interface User {
   updated_at: string;
   default_commission: number;
   avatar_url: string | null;
+  bio: string | null;
+  is_public_profile: boolean;
+  website_url: string | null;
+  social_links: any;
   email?: string;
   is_active?: boolean;
 }
@@ -36,6 +41,8 @@ const UsersManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -213,6 +220,20 @@ const UsersManagement = () => {
     }
   };
 
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSave = () => {
+    fetchUsers(); // Reload users after edit
+  };
+
+  const handleEditClose = () => {
+    setEditingUser(null);
+    setIsEditModalOpen(false);
+  };
+
   const filteredUsers = users.filter(user => 
     (user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
     (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
@@ -256,108 +277,128 @@ const UsersManagement = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col md:flex-row justify-between md:items-center">
-          <div>
-            <CardTitle>Gestion des Utilisateurs</CardTitle>
-            <CardDescription>Administrez les comptes créateurs et imprimeurs</CardDescription>
-          </div>
-          <div className="mt-4 md:mt-0 flex gap-2">
-            <div className="relative">
-              <Input 
-                placeholder="Rechercher un utilisateur..." 
-                className="w-full md:w-64 pr-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between md:items-center">
+            <div>
+              <CardTitle>Gestion des Utilisateurs</CardTitle>
+              <CardDescription>Administrez les comptes créateurs et imprimeurs</CardDescription>
             </div>
-            <Button onClick={fetchUsers} variant="outline" size="icon">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            <div className="mt-4 md:mt-0 flex gap-2">
+              <div className="relative">
+                <Input 
+                  placeholder="Rechercher un utilisateur..." 
+                  className="w-full md:w-64 pr-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              </div>
+              <Button onClick={fetchUsers} variant="outline" size="icon">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Rôle</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Date d'inscription</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
-                    <RefreshCw className="h-6 w-6 animate-spin mx-auto text-gray-400" />
-                  </TableCell>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Rôle</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Profil Public</TableHead>
+                  <TableHead>Date d'inscription</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-gray-500">
-                    Aucun utilisateur trouvé
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.full_name || 'N/A'}</TableCell>
-                    <TableCell>{user.email || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {getRoleDisplayName(user.role)}
-                        {user.is_super_admin && (
-                          <span className="ml-1 text-xs bg-orange-500 px-1 rounded text-white">SA</span>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.is_active ? "default" : "secondary"}>
-                        {user.is_active ? 'Actif' : 'Inactif'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button variant="outline" size="icon" title="Modifier">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => toggleUserStatus(user.id, user.is_active || false)}
-                        title={user.is_active ? "Désactiver" : "Activer"}
-                      >
-                        {user.is_active ? (
-                          <UserX className="h-4 w-4" />
-                        ) : (
-                          <UserCheck className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => deleteUser(user.id)}
-                        title="Supprimer"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-10">
+                      <RefreshCw className="h-6 w-6 animate-spin mx-auto text-gray-400" />
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-10 text-gray-500">
+                      Aucun utilisateur trouvé
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.full_name || 'N/A'}</TableCell>
+                      <TableCell>{user.email || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {getRoleDisplayName(user.role)}
+                          {user.is_super_admin && (
+                            <span className="ml-1 text-xs bg-orange-500 px-1 rounded text-white">SA</span>
+                          )}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_active ? "default" : "secondary"}>
+                          {user.is_active ? 'Actif' : 'Inactif'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_public_profile ? "default" : "outline"}>
+                          {user.is_public_profile ? 'Public' : 'Privé'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          title="Modifier"
+                          onClick={() => handleEdit(user)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => toggleUserStatus(user.id, user.is_active || false)}
+                          title={user.is_active ? "Désactiver" : "Activer"}
+                        >
+                          {user.is_active ? (
+                            <UserX className="h-4 w-4" />
+                          ) : (
+                            <UserCheck className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => deleteUser(user.id)}
+                          title="Supprimer"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <EditUserModal
+        user={editingUser}
+        isOpen={isEditModalOpen}
+        onClose={handleEditClose}
+        onSave={handleEditSave}
+      />
+    </>
   );
 };
 

@@ -169,6 +169,8 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
 
 export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> => {
   try {
+    console.log('Fetching public creators from database...');
+    
     const { data, error } = await supabase
       .from('users')
       .select(`
@@ -177,10 +179,11 @@ export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> =>
         avatar_url,
         bio,
         website_url,
-        social_links
+        social_links,
+        is_public_profile
       `)
-      .eq('is_public_profile', true)
       .eq('role', 'créateur')
+      .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) {
@@ -188,7 +191,9 @@ export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> =>
       return [];
     }
 
-    // Compter les produits pour chaque créateur
+    console.log('Raw creators data:', data);
+
+    // Compter les produits pour chaque créateur et filtrer ceux avec profil public
     const creatorsWithCounts = await Promise.all(
       (data || []).map(async (creator) => {
         const { count } = await supabase
@@ -197,14 +202,24 @@ export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> =>
           .eq('creator_id', creator.id)
           .eq('status', 'published');
 
-        return {
+        const creatorData = {
           ...creator,
           products_count: count || 0
         };
+
+        console.log(`Creator ${creator.full_name}: public_profile=${creator.is_public_profile}, products=${count}`);
+        
+        return creatorData;
       })
     );
 
-    return creatorsWithCounts;
+    // Filtrer les créateurs avec profil public OU qui ont des produits publiés
+    const visibleCreators = creatorsWithCounts.filter(creator => 
+      creator.is_public_profile || creator.products_count > 0
+    );
+
+    console.log('Filtered visible creators:', visibleCreators);
+    return visibleCreators;
   } catch (error) {
     console.error('Error in getPublicCreators:', error);
     return [];
