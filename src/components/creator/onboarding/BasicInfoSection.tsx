@@ -1,76 +1,91 @@
 
 import React from 'react';
+import { MultilingualInput } from '@/components/ui/MultilingualInput';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Tag } from 'lucide-react';
-
-interface FormData {
-  full_name: string;
-  bio: string;
-  keywords: string;
-  website_url: string;
-  social_links: {
-    instagram: string;
-    twitter: string;
-    facebook: string;
-  };
-}
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BasicInfoSectionProps {
-  formData: FormData;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  formData: {
+    full_name_fr: string;
+    full_name_en: string;
+    full_name_ty: string;
+    bio_fr: string;
+    bio_en: string;
+    bio_ty: string;
+    keywords: string;
+    website_url: string;
+    social_links: {
+      instagram: string;
+      twitter: string;
+      facebook: string;
+    };
+  };
+  setFormData: (data: any) => void;
 }
 
 const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ formData, setFormData }) => {
+  const { t } = useLanguage();
+
+  const handleMultilingualChange = (field: string, value: { fr?: string; en?: string; ty?: string }) => {
+    setFormData({
+      ...formData,
+      [`${field}_fr`]: value.fr || '',
+      [`${field}_en`]: value.en || '',
+      [`${field}_ty`]: value.ty || '',
+    });
+  };
+
   return (
-    <div className="space-y-4">
-      <div>
-        <Label htmlFor="full_name">Nom/Pseudo *</Label>
-        <Input
-          id="full_name"
-          value={formData.full_name}
-          onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-          placeholder="Votre nom d'artiste ou pseudo"
-          required
-        />
-      </div>
+    <div className="space-y-6">
+      <MultilingualInput
+        label={t('profile.name', 'Nom/Pseudo')}
+        type="input"
+        value={{
+          fr: formData.full_name_fr,
+          en: formData.full_name_en,
+          ty: formData.full_name_ty,
+        }}
+        onChange={(value) => handleMultilingualChange('full_name', value)}
+        placeholder={t('profile.name_placeholder', 'Votre nom ou nom d\'artiste')}
+        required
+      />
 
-      <div>
-        <Label htmlFor="bio">Description de votre univers créatif *</Label>
-        <Textarea
-          id="bio"
-          value={formData.bio}
-          onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-          placeholder="Décrivez votre style, vos inspirations, ce qui vous passionne..."
-          rows={4}
-          required
-        />
-        <p className="text-sm text-muted-foreground mt-1">
-          Cette description apparaîtra sur votre profil public. Soyez authentique et inspirant !
-        </p>
-      </div>
+      <MultilingualInput
+        label={t('profile.bio', 'Description de votre univers créatif')}
+        type="textarea"
+        value={{
+          fr: formData.bio_fr,
+          en: formData.bio_en,
+          ty: formData.bio_ty,
+        }}
+        onChange={(value) => handleMultilingualChange('bio', value)}
+        placeholder={t('profile.bio_placeholder', 'Décrivez votre style, vos inspirations...')}
+        required
+        rows={4}
+      />
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor="keywords">
-          <Tag className="h-4 w-4 inline mr-2" />
-          Mots-clés / Tags
+          {t('profile.keywords', 'Mots-clés')} <span className="text-gray-500">({t('common.optional', 'optionnel')})</span>
         </Label>
         <Input
           id="keywords"
           value={formData.keywords}
           onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
-          placeholder="design, illustration, minimaliste, vintage..."
+          placeholder={t('profile.keywords_placeholder', 'street art, nature, polynésie...')}
         />
-        <p className="text-sm text-muted-foreground mt-1">
-          Séparez les mots-clés par des virgules. Ils aideront les clients à vous trouver.
+        <p className="text-sm text-gray-500">
+          {t('profile.keywords_help', 'Séparez les mots-clés par des virgules')}
         </p>
       </div>
 
-      <div>
-        <Label htmlFor="website_url">Site web personnel (optionnel)</Label>
+      <div className="space-y-2">
+        <Label htmlFor="website">
+          {t('profile.website', 'Site web')} <span className="text-gray-500">({t('common.optional', 'optionnel')})</span>
+        </Label>
         <Input
-          id="website_url"
+          id="website"
           type="url"
           value={formData.website_url}
           onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}

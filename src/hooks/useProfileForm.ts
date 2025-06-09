@@ -12,8 +12,12 @@ interface SocialLinks {
 }
 
 interface FormData {
-  full_name: string;
-  bio: string;
+  full_name_fr: string;
+  full_name_en: string;
+  full_name_ty: string;
+  bio_fr: string;
+  bio_en: string;
+  bio_ty: string;
   keywords: string;
   website_url: string;
   social_links: SocialLinks;
@@ -25,8 +29,12 @@ export const useProfileForm = (onComplete: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [formData, setFormData] = useState<FormData>({
-    full_name: '',
-    bio: '',
+    full_name_fr: '',
+    full_name_en: '',
+    full_name_ty: '',
+    bio_fr: '',
+    bio_en: '',
+    bio_ty: '',
     keywords: '',
     website_url: '',
     social_links: {
@@ -51,7 +59,7 @@ export const useProfileForm = (onComplete: () => void) => {
       
       const { data, error } = await supabase
         .from('users')
-        .select('full_name, bio, keywords, website_url, social_links')
+        .select('full_name_fr, full_name_en, full_name_ty, bio_fr, bio_en, bio_ty, keywords, website_url, social_links')
         .eq('id', user.id)
         .single();
 
@@ -77,8 +85,12 @@ export const useProfileForm = (onComplete: () => void) => {
         }
 
         setFormData({
-          full_name: data.full_name || '',
-          bio: data.bio || '',
+          full_name_fr: data.full_name_fr || '',
+          full_name_en: data.full_name_en || '',
+          full_name_ty: data.full_name_ty || '',
+          bio_fr: data.bio_fr || '',
+          bio_en: data.bio_en || '',
+          bio_ty: data.bio_ty || '',
           keywords: data.keywords?.join(', ') || '',
           website_url: data.website_url || '',
           social_links: socialLinks
@@ -98,19 +110,23 @@ export const useProfileForm = (onComplete: () => void) => {
       console.log('💾 Updating profile...', formData);
       
       // Validation stricte côté backend aussi
-      if (!formData.full_name || formData.full_name.trim().length < 2) {
-        throw new Error('Le nom/pseudo est obligatoire (minimum 2 caractères)');
+      if (!formData.full_name_fr || formData.full_name_fr.trim().length < 2) {
+        throw new Error('Le nom/pseudo en français est obligatoire (minimum 2 caractères)');
       }
       
-      if (!formData.bio || formData.bio.trim().length < 10) {
-        throw new Error('La description est obligatoire (minimum 10 caractères)');
+      if (!formData.bio_fr || formData.bio_fr.trim().length < 10) {
+        throw new Error('La description en français est obligatoire (minimum 10 caractères)');
       }
 
       const { error } = await supabase
         .from('users')
         .update({
-          full_name: formData.full_name.trim(),
-          bio: formData.bio.trim(),
+          full_name_fr: formData.full_name_fr.trim(),
+          full_name_en: formData.full_name_en?.trim() || null,
+          full_name_ty: formData.full_name_ty?.trim() || null,
+          bio_fr: formData.bio_fr.trim(),
+          bio_en: formData.bio_en?.trim() || null,
+          bio_ty: formData.bio_ty?.trim() || null,
           keywords: formData.keywords.split(',').map(k => k.trim()).filter(Boolean),
           website_url: formData.website_url?.trim() || null,
           social_links: formData.social_links as any,

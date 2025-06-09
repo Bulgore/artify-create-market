@@ -88,15 +88,23 @@ export type Database = {
           created_at: string
           creator_id: string
           creator_margin_percentage: number
-          description: string | null
+          description_en: string | null
+          description_fr: string | null
+          description_ty: string | null
           design_data: Json
           id: string
           is_published: boolean
-          name: string
+          name_en: string | null
+          name_fr: string
+          name_ty: string | null
           preview_url: string | null
           print_product_id: string
-          seo_description: string | null
-          seo_title: string | null
+          seo_description_en: string | null
+          seo_description_fr: string | null
+          seo_description_ty: string | null
+          seo_title_en: string | null
+          seo_title_fr: string | null
+          seo_title_ty: string | null
           slug: string | null
           status: string | null
           tags: string[] | null
@@ -107,15 +115,23 @@ export type Database = {
           created_at?: string
           creator_id: string
           creator_margin_percentage?: number
-          description?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          description_ty?: string | null
           design_data?: Json
           id?: string
           is_published?: boolean
-          name: string
+          name_en?: string | null
+          name_fr: string
+          name_ty?: string | null
           preview_url?: string | null
           print_product_id: string
-          seo_description?: string | null
-          seo_title?: string | null
+          seo_description_en?: string | null
+          seo_description_fr?: string | null
+          seo_description_ty?: string | null
+          seo_title_en?: string | null
+          seo_title_fr?: string | null
+          seo_title_ty?: string | null
           slug?: string | null
           status?: string | null
           tags?: string[] | null
@@ -126,15 +142,23 @@ export type Database = {
           created_at?: string
           creator_id?: string
           creator_margin_percentage?: number
-          description?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          description_ty?: string | null
           design_data?: Json
           id?: string
           is_published?: boolean
-          name?: string
+          name_en?: string | null
+          name_fr?: string
+          name_ty?: string | null
           preview_url?: string | null
           print_product_id?: string
-          seo_description?: string | null
-          seo_title?: string | null
+          seo_description_en?: string | null
+          seo_description_fr?: string | null
+          seo_description_ty?: string | null
+          seo_title_en?: string | null
+          seo_title_fr?: string | null
+          seo_title_ty?: string | null
           slug?: string | null
           status?: string | null
           tags?: string[] | null
@@ -214,10 +238,14 @@ export type Database = {
           created_at: string | null
           creator_id: string | null
           creator_margin: number | null
-          description: string | null
+          description_en: string | null
+          description_fr: string | null
+          description_ty: string | null
           id: string
           is_published: boolean | null
-          name: string
+          name_en: string | null
+          name_fr: string
+          name_ty: string | null
           preview_url: string
           price: number
           updated_at: string | null
@@ -227,10 +255,14 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           creator_margin?: number | null
-          description?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          description_ty?: string | null
           id?: string
           is_published?: boolean | null
-          name: string
+          name_en?: string | null
+          name_fr: string
+          name_ty?: string | null
           preview_url: string
           price: number
           updated_at?: string | null
@@ -240,10 +272,14 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           creator_margin?: number | null
-          description?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          description_ty?: string | null
           id?: string
           is_published?: boolean | null
-          name?: string
+          name_en?: string | null
+          name_fr?: string
+          name_ty?: string | null
           preview_url?: string
           price?: number
           updated_at?: string | null
@@ -257,6 +293,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      interface_translations: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value_en: string | null
+          value_fr: string | null
+          value_ty: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value_en?: string | null
+          value_fr?: string | null
+          value_ty?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value_en?: string | null
+          value_fr?: string | null
+          value_ty?: string | null
+        }
+        Relationships: []
       }
       media_files: {
         Row: {
@@ -386,27 +455,39 @@ export type Database = {
       }
       pages: {
         Row: {
-          content: string
+          content_en: string | null
+          content_fr: string
+          content_ty: string | null
           created_at: string | null
           id: string
           slug: string | null
-          title: string
+          title_en: string | null
+          title_fr: string
+          title_ty: string | null
           updated_at: string | null
         }
         Insert: {
-          content: string
+          content_en?: string | null
+          content_fr: string
+          content_ty?: string | null
           created_at?: string | null
           id?: string
           slug?: string | null
-          title: string
+          title_en?: string | null
+          title_fr: string
+          title_ty?: string | null
           updated_at?: string | null
         }
         Update: {
-          content?: string
+          content_en?: string | null
+          content_fr?: string
+          content_ty?: string | null
           created_at?: string | null
           id?: string
           slug?: string | null
-          title?: string
+          title_en?: string | null
+          title_fr?: string
+          title_ty?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -417,12 +498,16 @@ export type Database = {
           available_sizes: string[]
           base_price: number
           created_at: string
-          description: string | null
+          description_en: string | null
+          description_fr: string | null
+          description_ty: string | null
           id: string
           images: string[]
           is_active: boolean
           material: string
-          name: string
+          name_en: string | null
+          name_fr: string
+          name_ty: string | null
           print_areas: Json
           printer_id: string
           status: string | null
@@ -435,12 +520,16 @@ export type Database = {
           available_sizes?: string[]
           base_price: number
           created_at?: string
-          description?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          description_ty?: string | null
           id?: string
           images?: string[]
           is_active?: boolean
           material: string
-          name: string
+          name_en?: string | null
+          name_fr: string
+          name_ty?: string | null
           print_areas?: Json
           printer_id: string
           status?: string | null
@@ -453,12 +542,16 @@ export type Database = {
           available_sizes?: string[]
           base_price?: number
           created_at?: string
-          description?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          description_ty?: string | null
           id?: string
           images?: string[]
           is_active?: boolean
           material?: string
-          name?: string
+          name_en?: string | null
+          name_fr?: string
+          name_ty?: string | null
           print_areas?: Json
           printer_id?: string
           status?: string | null
@@ -494,9 +587,13 @@ export type Database = {
           is_active: boolean | null
           mockup_area: Json | null
           mockup_image_url: string
-          name: string
+          name_en: string | null
+          name_fr: string
+          name_ty: string | null
           svg_file_url: string
-          technical_instructions: string | null
+          technical_instructions_en: string | null
+          technical_instructions_fr: string | null
+          technical_instructions_ty: string | null
           type: string
           updated_at: string | null
         }
@@ -510,9 +607,13 @@ export type Database = {
           is_active?: boolean | null
           mockup_area?: Json | null
           mockup_image_url: string
-          name: string
+          name_en?: string | null
+          name_fr: string
+          name_ty?: string | null
           svg_file_url: string
-          technical_instructions?: string | null
+          technical_instructions_en?: string | null
+          technical_instructions_fr?: string | null
+          technical_instructions_ty?: string | null
           type: string
           updated_at?: string | null
         }
@@ -526,9 +627,13 @@ export type Database = {
           is_active?: boolean | null
           mockup_area?: Json | null
           mockup_image_url?: string
-          name?: string
+          name_en?: string | null
+          name_fr?: string
+          name_ty?: string | null
           svg_file_url?: string
-          technical_instructions?: string | null
+          technical_instructions_en?: string | null
+          technical_instructions_fr?: string | null
+          technical_instructions_ty?: string | null
           type?: string
           updated_at?: string | null
         }
@@ -544,7 +649,9 @@ export type Database = {
       }
       reusable_blocks: {
         Row: {
-          button_text: string | null
+          button_text_en: string | null
+          button_text_fr: string | null
+          button_text_ty: string | null
           content: Json
           created_at: string
           created_by: string
@@ -554,13 +661,17 @@ export type Database = {
           is_active: boolean
           link_url: string | null
           placement: string
-          title: string
+          title_en: string | null
+          title_fr: string
+          title_ty: string | null
           type: string
           updated_at: string
           visibility: string
         }
         Insert: {
-          button_text?: string | null
+          button_text_en?: string | null
+          button_text_fr?: string | null
+          button_text_ty?: string | null
           content?: Json
           created_at?: string
           created_by: string
@@ -570,13 +681,17 @@ export type Database = {
           is_active?: boolean
           link_url?: string | null
           placement: string
-          title: string
+          title_en?: string | null
+          title_fr: string
+          title_ty?: string | null
           type: string
           updated_at?: string
           visibility?: string
         }
         Update: {
-          button_text?: string | null
+          button_text_en?: string | null
+          button_text_fr?: string | null
+          button_text_ty?: string | null
           content?: Json
           created_at?: string
           created_by?: string
@@ -586,7 +701,9 @@ export type Database = {
           is_active?: boolean
           link_url?: string | null
           placement?: string
-          title?: string
+          title_en?: string | null
+          title_fr?: string
+          title_ty?: string | null
           type?: string
           updated_at?: string
           visibility?: string
@@ -694,11 +811,15 @@ export type Database = {
           available_sizes: string[]
           base_price: number
           created_at: string | null
-          description: string | null
+          description_en: string | null
+          description_fr: string | null
+          description_ty: string | null
           id: string
           images: string[]
           material: string
-          name: string
+          name_en: string | null
+          name_fr: string
+          name_ty: string | null
           print_area: Json
           printer_id: string | null
           stock_quantity: number
@@ -709,11 +830,15 @@ export type Database = {
           available_sizes: string[]
           base_price: number
           created_at?: string | null
-          description?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          description_ty?: string | null
           id?: string
           images: string[]
           material: string
-          name: string
+          name_en?: string | null
+          name_fr: string
+          name_ty?: string | null
           print_area: Json
           printer_id?: string | null
           stock_quantity?: number
@@ -724,11 +849,15 @@ export type Database = {
           available_sizes?: string[]
           base_price?: number
           created_at?: string | null
-          description?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          description_ty?: string | null
           id?: string
           images?: string[]
           material?: string
-          name?: string
+          name_en?: string | null
+          name_fr?: string
+          name_ty?: string | null
           print_area?: Json
           printer_id?: string | null
           stock_quantity?: number
@@ -752,16 +881,44 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          preferred_language: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preferred_language?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preferred_language?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           avatar_url: string | null
           banner_url: string | null
-          bio: string | null
+          bio_en: string | null
+          bio_fr: string | null
+          bio_ty: string | null
           created_at: string | null
           creator_level: Database["public"]["Enums"]["creator_level"] | null
           creator_status: Database["public"]["Enums"]["creator_status"] | null
           default_commission: number | null
-          full_name: string | null
+          full_name_en: string | null
+          full_name_fr: string | null
+          full_name_ty: string | null
           id: string
           is_public_profile: boolean | null
           is_super_admin: boolean | null
@@ -780,12 +937,16 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           banner_url?: string | null
-          bio?: string | null
+          bio_en?: string | null
+          bio_fr?: string | null
+          bio_ty?: string | null
           created_at?: string | null
           creator_level?: Database["public"]["Enums"]["creator_level"] | null
           creator_status?: Database["public"]["Enums"]["creator_status"] | null
           default_commission?: number | null
-          full_name?: string | null
+          full_name_en?: string | null
+          full_name_fr?: string | null
+          full_name_ty?: string | null
           id: string
           is_public_profile?: boolean | null
           is_super_admin?: boolean | null
@@ -804,12 +965,16 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           banner_url?: string | null
-          bio?: string | null
+          bio_en?: string | null
+          bio_fr?: string | null
+          bio_ty?: string | null
           created_at?: string | null
           creator_level?: Database["public"]["Enums"]["creator_level"] | null
           creator_status?: Database["public"]["Enums"]["creator_status"] | null
           default_commission?: number | null
-          full_name?: string | null
+          full_name_en?: string | null
+          full_name_fr?: string | null
+          full_name_ty?: string | null
           id?: string
           is_public_profile?: boolean | null
           is_super_admin?: boolean | null

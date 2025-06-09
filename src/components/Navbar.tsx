@@ -1,178 +1,121 @@
 
-import React, { memo } from "react";
-import { Button } from "@/components/ui/button";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Input } from "@/components/ui/input";
-import { Search, Settings } from "lucide-react";
-import { useNavigation } from "@/hooks/use-navigation";
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Button } from '@/components/ui/button';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, LogOut, Settings, Palette } from 'lucide-react';
 
-const Navbar = memo(() => {
-  const { user, signOut, isAdmin, loading } = useAuth();
+const Navbar = () => {
+  const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { navigationItems, isLoading } = useNavigation("header");
-  
-  const userRole = user?.user_metadata?.role || "creator";
-  const isAdminUser = isAdmin();
 
-  // Ne pas afficher la navbar pendant le chargement initial de l'auth
-  if (loading) {
-    return (
-      <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold text-black">Podsleek</Link>
-        <div className="w-32 h-10 bg-gray-200 animate-pulse rounded"></div>
-      </nav>
-    );
-  }
-
-  // Liens statiques toujours présents
-  const staticLinks = [
-    {
-      title: "Accueil",
-      url: "/",
-      active: location.pathname === '/'
-    },
-    {
-      title: "Produits",
-      url: "/products",
-      active: location.pathname === '/products'
-    },
-    {
-      title: "Créateurs",
-      url: "/artists",
-      active: location.pathname === '/artists'
-    },
-    {
-      title: "Imprimeurs",
-      url: "/printers",
-      active: location.pathname === '/printers'
-    }
-  ];
-
-  const handleSignOut = async () => {
+  const handleLogout = async () => {
     try {
-      await signOut();
-      navigate("/");
+      await logout();
+      navigate('/');
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
+      console.error('Erreur lors de la déconnexion:', error);
     }
   };
 
   return (
-    <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
-      <Link to="/" className="text-2xl font-bold text-black">Podsleek</Link>
-      
-      <div className="hidden md:flex relative max-w-xs w-full mx-6">
-        <Input 
-          type="text" 
-          placeholder="Rechercher un produit..." 
-          className="pr-10 rounded-full border-gray-300"
-        />
-        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
-      </div>
-      
-      <div className="hidden md:flex space-x-6">
-        {/* Affichage des liens statiques */}
-        {staticLinks.map((link) => (
-          <Link 
-            key={link.title}
-            to={link.url} 
-            className={`${link.active ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
-          >
-            {link.title}
-          </Link>
-        ))}
-        
-        {/* Affichage des liens personnalisés */}
-        {!isLoading && navigationItems.map((item, index) => {
-          // Si le lien est externe
-          if (item.isExternal) {
-            return (
-              <a 
-                key={`custom-${index}`} 
-                href={item.url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-gray-900 hover:text-[#33C3F0] transition-colors"
-              >
-                {item.title}
-              </a>
-            );
-          }
-          
-          // Si c'est un lien interne
-          return (
-            <Link 
-              key={`custom-${index}`}
-              to={item.url} 
-              className={`${location.pathname === item.url ? 'text-[#33C3F0]' : 'text-gray-900'} hover:text-[#33C3F0] transition-colors`}
-            >
-              {item.title}
+    <nav className="bg-white shadow-sm border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link to="/" className="flex-shrink-0">
+              <span className="text-2xl font-bold text-orange-600">
+                {t('site.title', 'Podsleek')}
+              </span>
             </Link>
-          );
-        })}
-      </div>
-      
-      <div className="flex space-x-4">
-        {user ? (
-          <>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/profile")}
-              className="hidden sm:inline-flex"
-            >
-              Mon Profil
-            </Button>
             
-            {isAdminUser && (
-              <Button
-                onClick={() => navigate("/admin")}
-                className="bg-red-600 hover:bg-red-700 text-white"
+            <div className="hidden md:ml-8 md:flex md:space-x-8">
+              <Link
+                to="/products"
+                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                <Settings className="mr-2 h-4 w-4" />
-                Administration
-              </Button>
-            )}
-            
-            {!isAdminUser && (
-              <Button 
-                onClick={() => navigate("/studio")}
-                className="hidden sm:inline-flex bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
+                {t('nav.products', 'Produits')}
+              </Link>
+              <Link
+                to="/artists"
+                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                {userRole === "printer" ? "Mon Dashboard" : "Mon Studio"}
-              </Button>
-            )}
+                {t('nav.artists', 'Artistes')}
+              </Link>
+              <Link
+                to="/page/about"
+                className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
+              >
+                {t('nav.about', 'À propos')}
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <LanguageSelector />
             
-            <Button 
-              className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
-              onClick={handleSignOut}
-            >
-              Déconnexion
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/auth")}
-              className="hidden sm:inline-flex"
-            >
-              Connexion
-            </Button>
-            <Button 
-              className="bg-[#33C3F0] hover:bg-[#0FA0CE] text-white"
-              onClick={() => navigate("/auth?tab=register")}
-            >
-              Inscription
-            </Button>
-          </>
-        )}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
+                      <AvatarFallback>
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-white border shadow-lg" align="end" forceMount>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>{t('nav.profile', 'Profil')}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/studio" className="flex items-center cursor-pointer">
+                      <Palette className="mr-2 h-4 w-4" />
+                      <span>{t('nav.studio', 'Studio')}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>{t('nav.admin', 'Administration')}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{t('button.logout', 'Déconnexion')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" asChild>
+                  <Link to="/auth">{t('button.login', 'Connexion')}</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/auth">{t('button.register', 'S\'inscrire')}</Link>
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </nav>
   );
-});
-
-Navbar.displayName = "Navbar";
+};
 
 export default Navbar;
