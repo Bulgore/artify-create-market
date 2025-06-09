@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Circle, ArrowRight, ArrowLeft, Skip, Settings } from 'lucide-react';
+import { CheckCircle, Circle, ArrowRight, ArrowLeft, SkipForward, Settings } from 'lucide-react';
 import ProfileStep from './ProfileStep';
 import ProductsStep from './ProductsStep';
 import SubscriptionStep from './SubscriptionStep';
@@ -290,7 +289,7 @@ const CreatorOnboarding = () => {
                 disabled={isLoading}
                 className="flex items-center gap-1"
               >
-                <Skip className="h-4 w-4" />
+                <SkipForward className="h-4 w-4" />
                 Ignorer
               </Button>
             </div>
