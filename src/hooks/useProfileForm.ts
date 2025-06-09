@@ -97,13 +97,22 @@ export const useProfileForm = (onComplete: () => void) => {
     try {
       console.log('💾 Updating profile...', formData);
       
+      // Validation stricte côté backend aussi
+      if (!formData.full_name || formData.full_name.trim().length < 2) {
+        throw new Error('Le nom/pseudo est obligatoire (minimum 2 caractères)');
+      }
+      
+      if (!formData.bio || formData.bio.trim().length < 10) {
+        throw new Error('La description est obligatoire (minimum 10 caractères)');
+      }
+
       const { error } = await supabase
         .from('users')
         .update({
-          full_name: formData.full_name,
-          bio: formData.bio,
+          full_name: formData.full_name.trim(),
+          bio: formData.bio.trim(),
           keywords: formData.keywords.split(',').map(k => k.trim()).filter(Boolean),
-          website_url: formData.website_url || null,
+          website_url: formData.website_url?.trim() || null,
           social_links: formData.social_links as any,
           avatar_url: avatarUrl,
           banner_url: bannerUrl,
@@ -113,19 +122,20 @@ export const useProfileForm = (onComplete: () => void) => {
 
       if (error) throw error;
 
+      console.log('✅ Profile updated successfully');
+
       toast({
         title: 'Profil mis à jour !',
         description: 'Votre profil créateur a été sauvegardé avec succès.',
       });
 
-      onComplete();
       return true;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('❌ Error updating profile:', error);
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Impossible de sauvegarder votre profil.',
+        description: error instanceof Error ? error.message : 'Impossible de sauvegarder votre profil.',
       });
       return false;
     }

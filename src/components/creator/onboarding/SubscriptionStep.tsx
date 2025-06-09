@@ -50,16 +50,17 @@ const SubscriptionStep: React.FC<SubscriptionStepProps> = ({ onComplete }) => {
     setIsLoading(true);
     try {
       if (level === 'premium') {
-        // Ici on pourrait intégrer Stripe pour le paiement
+        // CORRECTION CRITIQUE : Ne pas activer le premium sans paiement effectif
         toast({
-          title: 'Fonctionnalité à venir',
-          description: 'Le système de paiement Premium sera bientôt disponible.',
+          title: 'Paiement requis',
+          description: 'Le niveau Premium nécessite un paiement. Cette fonctionnalité sera bientôt disponible.',
         });
         setIsLoading(false);
-        return;
+        // Continuer avec le niveau débutant pour l'instant
+        level = 'debutant';
       }
 
-      // Pour le niveau débutant, on met simplement à jour
+      // Sauvegarder le niveau choisi (débutant uniquement pour l'instant)
       const { error } = await supabase
         .from('users')
         .update({ creator_level: level })
@@ -68,12 +69,16 @@ const SubscriptionStep: React.FC<SubscriptionStepProps> = ({ onComplete }) => {
       if (error) throw error;
 
       setCurrentLevel(level);
-      onComplete();
-
+      
+      console.log('✅ Subscription level saved:', level);
+      
       toast({
         title: 'Choix enregistré !',
         description: `Vous avez choisi le niveau ${level === 'debutant' ? 'Débutant' : 'Premium'}.`,
       });
+
+      // Continuer vers l'étape suivante
+      onComplete();
 
     } catch (error) {
       console.error('Error updating level:', error);
@@ -85,6 +90,11 @@ const SubscriptionStep: React.FC<SubscriptionStepProps> = ({ onComplete }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSkipPremium = () => {
+    // Directement passer au niveau débutant et continuer
+    handleChooseLevel('debutant');
   };
 
   const features = {
@@ -111,43 +121,24 @@ const SubscriptionStep: React.FC<SubscriptionStepProps> = ({ onComplete }) => {
       {/* Introduction */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-center">Choisissez votre niveau créateur</CardTitle>
+          <CardTitle className="text-center">Découvrez le niveau Premium</CardTitle>
           <p className="text-center text-muted-foreground">
-            Vous pouvez commencer gratuitement et passer au Premium à tout moment
+            Commencez gratuitement avec le niveau Débutant. Vous pourrez passer au Premium plus tard.
           </p>
         </CardHeader>
-      </Card>
-
-      {/* Explanation */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-3">Comment fonctionne Podsleek ?</h3>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>• Vous créez des designs personnalisés sur nos produits</p>
-            <p>• Les clients achètent vos créations</p>
-            <p>• Vous recevez une commission sur chaque vente</p>
-            <p>• Les produits sont imprimés et expédiés automatiquement</p>
-          </div>
-          
-          <h4 className="font-semibold mt-4 mb-2">Modalités de paiement Premium :</h4>
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p>• Paiement mensuel de 19€/mois</p>
-            <p>• OU prélèvement automatique sur vos gains (25€/mois)</p>
-            <p>• Annulation possible à tout moment</p>
-          </div>
-        </CardContent>
       </Card>
 
       {/* Plans Comparison */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Plan Débutant */}
-        <Card className={`relative ${currentLevel === 'debutant' ? 'ring-2 ring-primary' : ''}`}>
+        <Card className="relative border-2 border-green-200 bg-green-50">
           <CardHeader>
             <div className="text-center">
               <Star className="h-8 w-8 mx-auto mb-2 text-blue-500" />
               <CardTitle>Niveau Débutant</CardTitle>
               <p className="text-2xl font-bold text-green-600">Gratuit</p>
               <p className="text-sm text-muted-foreground">Parfait pour commencer</p>
+              <Badge className="mt-2 bg-green-100 text-green-800">Recommandé pour débuter</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -163,22 +154,21 @@ const SubscriptionStep: React.FC<SubscriptionStepProps> = ({ onComplete }) => {
             <Button
               onClick={() => handleChooseLevel('debutant')}
               disabled={isLoading}
-              variant={currentLevel === 'debutant' ? 'default' : 'outline'}
-              className="w-full"
+              className="w-full bg-green-600 hover:bg-green-700"
             >
-              {currentLevel === 'debutant' ? 'Niveau actuel' : 'Choisir Débutant'}
+              {isLoading ? 'En cours...' : 'Commencer avec Débutant'}
             </Button>
           </CardContent>
         </Card>
 
         {/* Plan Premium */}
-        <Card className={`relative ${currentLevel === 'premium' ? 'ring-2 ring-orange-500' : ''}`}>
+        <Card className="relative opacity-75">
           <CardHeader>
             <div className="text-center">
               <Crown className="h-8 w-8 mx-auto mb-2 text-orange-500" />
               <CardTitle className="flex items-center justify-center gap-2">
                 Niveau Premium
-                <Badge className="bg-orange-100 text-orange-800">Recommandé</Badge>
+                <Badge variant="outline">Bientôt disponible</Badge>
               </CardTitle>
               <p className="text-2xl font-bold text-orange-600">19€/mois</p>
               <p className="text-sm text-muted-foreground">Ou prélevé sur vos gains</p>
@@ -195,44 +185,43 @@ const SubscriptionStep: React.FC<SubscriptionStepProps> = ({ onComplete }) => {
             </ul>
             
             <Button
-              onClick={() => handleChooseLevel('premium')}
-              disabled={isLoading}
-              variant={currentLevel === 'premium' ? 'default' : 'outline'}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+              disabled={true}
+              variant="outline"
+              className="w-full"
             >
-              {currentLevel === 'premium' ? 'Niveau actuel' : 'Passer au Premium'}
+              Paiement requis (bientôt disponible)
             </Button>
           </CardContent>
         </Card>
       </div>
 
       {/* Benefits Highlight */}
-      <Card className="border-orange-200 bg-orange-50">
+      <Card className="border-blue-200 bg-blue-50">
         <CardContent className="p-4">
-          <h3 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
+          <h3 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Pourquoi choisir Premium ?
+            Pourquoi Premium sera intéressant ?
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="flex items-start gap-2">
-              <Zap className="h-4 w-4 text-orange-600 mt-1 flex-shrink-0" />
+              <Zap className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
               <div>
-                <p className="font-medium text-orange-800">Plus de visibilité</p>
-                <p className="text-orange-700">Vos produits apparaissent en priorité</p>
+                <p className="font-medium text-blue-800">Plus de visibilité</p>
+                <p className="text-blue-700">Vos produits apparaîtront en priorité</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <Shield className="h-4 w-4 text-orange-600 mt-1 flex-shrink-0" />
+              <Shield className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
               <div>
-                <p className="font-medium text-orange-800">Meilleurs revenus</p>
-                <p className="text-orange-700">Commission réduite de 20% à 15%</p>
+                <p className="font-medium text-blue-800">Meilleurs revenus</p>
+                <p className="text-blue-700">Commission réduite de 20% à 15%</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <Crown className="h-4 w-4 text-orange-600 mt-1 flex-shrink-0" />
+              <Crown className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
               <div>
-                <p className="font-medium text-orange-800">Badge Premium</p>
-                <p className="text-orange-700">Inspire confiance aux clients</p>
+                <p className="font-medium text-blue-800">Badge Premium</p>
+                <p className="text-blue-700">Inspire confiance aux clients</p>
               </div>
             </div>
           </div>
@@ -240,16 +229,17 @@ const SubscriptionStep: React.FC<SubscriptionStepProps> = ({ onComplete }) => {
       </Card>
 
       {/* Continue Button */}
-      <div className="text-center">
+      <div className="text-center space-y-3">
         <Button
-          onClick={onComplete}
+          onClick={handleSkipPremium}
           size="lg"
           className="bg-green-600 hover:bg-green-700"
+          disabled={isLoading}
         >
-          Continuer avec mon choix
+          {isLoading ? 'En cours...' : 'Continuer avec le niveau Débutant'}
         </Button>
-        <p className="text-sm text-muted-foreground mt-2">
-          Vous pourrez modifier ce choix plus tard dans vos paramètres
+        <p className="text-sm text-muted-foreground">
+          Vous pourrez passer au Premium plus tard dans vos paramètres
         </p>
       </div>
     </div>

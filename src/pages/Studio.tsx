@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -50,20 +49,20 @@ const Studio = () => {
     }
   }, [user, loading, isSuperAdmin, navigate]);
 
-  // Check creator onboarding status
+  // Check creator onboarding status and force onboarding if needed
   useEffect(() => {
     if (user && isCreator) {
-      checkCreatorStatus();
+      checkCreatorStatusAndRedirect();
     }
   }, [user, isCreator]);
 
-  const checkCreatorStatus = async () => {
+  const checkCreatorStatusAndRedirect = async () => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('creator_status, onboarding_completed')
+        .select('creator_status, onboarding_completed, full_name, bio, avatar_url')
         .eq('id', user.id)
         .single();
 
@@ -71,13 +70,21 @@ const Studio = () => {
 
       setUserStatus(data);
 
-      // Rediriger vers l'onboarding si pas complété
-      if (!data.onboarding_completed) {
+      // FORCE onboarding if not completed OR if essential profile data is missing
+      const hasEssentialData = data.full_name && data.bio && data.avatar_url;
+      
+      if (!data.onboarding_completed || !hasEssentialData) {
+        console.log('🔄 Redirecting to onboarding - missing essential data or onboarding not completed');
         navigate('/onboarding');
         return;
       }
+
+      // If onboarding completed but status still draft, continue to studio
+      console.log('✅ Onboarding completed, access to studio granted');
     } catch (error) {
       console.error('Error checking creator status:', error);
+      // If error checking status, redirect to onboarding to be safe
+      navigate('/onboarding');
     }
   };
 
