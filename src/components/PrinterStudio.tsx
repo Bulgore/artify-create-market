@@ -10,6 +10,14 @@ import { AlertTriangle } from "lucide-react";
 
 interface PrintProduct {
   id: string;
+  // Nouveaux champs multilingues
+  name_fr: string;
+  name_en?: string | null;
+  name_ty?: string | null;
+  description_fr?: string | null;
+  description_en?: string | null;
+  description_ty?: string | null;
+  // Anciens champs pour compatibilité
   name: string;
   description: string | null;
   base_price: number;
@@ -21,6 +29,13 @@ interface PrintProduct {
   template_id: string | null;
   is_active: boolean;
 }
+
+// Fonction utilitaire pour mapper les champs multilingues
+const mapPrintProductWithCompatibility = (product: any): PrintProduct => ({
+  ...product,
+  name: product.name_fr || product.name || '',
+  description: product.description_fr || product.description || ''
+});
 
 const PrinterStudio: React.FC = () => {
   const { user } = useAuth();
@@ -57,7 +72,8 @@ const PrinterStudio: React.FC = () => {
       if (error) throw error;
       
       console.log("Printer's products loaded:", data?.length || 0, "products");
-      setPrintProducts(data || []);
+      const mappedProducts = data?.map(mapPrintProductWithCompatibility) || [];
+      setPrintProducts(mappedProducts);
     } catch (error: any) {
       console.error("Error fetching print products:", error);
       toast({

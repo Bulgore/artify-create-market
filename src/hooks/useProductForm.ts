@@ -6,13 +6,21 @@ import { toast } from "@/hooks/use-toast";
 
 interface SelectedTemplate {
   id: string;
+  // Nouveaux champs multilingues
+  name_fr: string;
+  name_en?: string | null;
+  name_ty?: string | null;
+  technical_instructions_fr?: string | null;
+  technical_instructions_en?: string | null;
+  technical_instructions_ty?: string | null;
+  // Anciens champs pour compatibilité
   name: string;
+  technical_instructions?: string | null;
   type: string;
   mockup_image_url: string;
   design_area: any;
   available_positions: string[];
   available_colors: string[];
-  technical_instructions: string;
 }
 
 interface ProductFormData {
@@ -52,10 +60,17 @@ export const useProductForm = () => {
 
   const handleTemplateSelect = (templateId: string, template: SelectedTemplate) => {
     console.log("Template selected:", templateId, template);
+    // Assurer la compatibilité avec les anciens champs
+    const mappedTemplate = {
+      ...template,
+      name: template.name_fr || template.name || '',
+      technical_instructions: template.technical_instructions_fr || template.technical_instructions || ''
+    };
+    
     setFormData(prev => ({
       ...prev,
       template_id: templateId,
-      selectedTemplate: template,
+      selectedTemplate: mappedTemplate,
       // Pré-remplir les couleurs disponibles du gabarit
       available_colors: template.available_colors || []
     }));
@@ -129,8 +144,8 @@ export const useProductForm = () => {
       const productData = {
         printer_id: user.id,
         template_id: formData.template_id,
-        name: formData.name.trim(),
-        description: formData.description?.trim() || null,
+        name_fr: formData.name.trim(),
+        description_fr: formData.description?.trim() || null,
         base_price: formData.base_price,
         material: formData.material.trim(),
         stock_quantity: formData.stock_quantity,

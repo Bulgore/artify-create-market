@@ -5,6 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface PrintProduct {
   id: string;
+  // Nouveaux champs multilingues
+  name_fr: string;
+  name_en?: string | null;
+  name_ty?: string | null;
+  description_fr?: string | null;
+  description_en?: string | null;
+  description_ty?: string | null;
+  // Anciens champs pour compatibilité
   name: string;
   description: string | null;
   base_price: number;
@@ -19,7 +27,16 @@ interface PrintProduct {
 
 interface ProductTemplate {
   id: string;
+  // Nouveaux champs multilingues
+  name_fr: string;
+  name_en?: string | null;
+  name_ty?: string | null;
+  technical_instructions_fr?: string | null;
+  technical_instructions_en?: string | null;
+  technical_instructions_ty?: string | null;
+  // Anciens champs pour compatibilité
   name: string;
+  technical_instructions?: string | null;
   type: string;
 }
 
@@ -34,6 +51,13 @@ interface EditProductFormData {
   is_active: boolean;
   template_id: string | null;
 }
+
+// Fonction utilitaire pour mapper les templates avec compatibilité
+const mapTemplateWithCompatibility = (template: any): ProductTemplate => ({
+  ...template,
+  name: template.name_fr || template.name || '',
+  technical_instructions: template.technical_instructions_fr || template.technical_instructions || ''
+});
 
 export const useEditProduct = (product: PrintProduct | null) => {
   const [formData, setFormData] = useState<EditProductFormData>({
@@ -56,8 +80,8 @@ export const useEditProduct = (product: PrintProduct | null) => {
       console.log('Product template_id:', product.template_id);
       
       setFormData({
-        name: product.name,
-        description: product.description || '',
+        name: product.name || product.name_fr || '',
+        description: product.description || product.description_fr || '',
         base_price: product.base_price,
         material: product.material,
         stock_quantity: product.stock_quantity,
@@ -74,14 +98,15 @@ export const useEditProduct = (product: PrintProduct | null) => {
       console.log('Fetching templates for product editing...');
       const { data, error } = await supabase
         .from('product_templates')
-        .select('id, name, type')
+        .select('id, name_fr, name_en, name_ty, technical_instructions_fr, technical_instructions_en, technical_instructions_ty, type')
         .eq('is_active', true)
-        .order('name');
+        .order('name_fr');
 
       if (error) throw error;
       
       console.log('Templates fetched:', data?.length || 0);
-      setTemplates(data || []);
+      const mappedTemplates = data?.map(mapTemplateWithCompatibility) || [];
+      setTemplates(mappedTemplates);
     } catch (error: any) {
       console.error('Error fetching templates:', error);
       toast({
@@ -120,8 +145,8 @@ export const useEditProduct = (product: PrintProduct | null) => {
       console.log('Template ID being saved:', formData.template_id);
 
       const updateData = {
-        name: formData.name.trim(),
-        description: formData.description?.trim() || null,
+        name_fr: formData.name.trim(),
+        description_fr: formData.description?.trim() || null,
         base_price: formData.base_price,
         material: formData.material.trim(),
         stock_quantity: formData.stock_quantity,

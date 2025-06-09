@@ -16,14 +16,22 @@ export interface CreatorFormData {
 
 export interface User {
   id: string;
-  full_name: string | null;
+  // Nouveaux champs multilingues
+  full_name_fr?: string | null;
+  full_name_en?: string | null;
+  full_name_ty?: string | null;
+  bio_fr?: string | null;
+  bio_en?: string | null;
+  bio_ty?: string | null;
+  // Anciens champs pour compatibilité (mappés depuis les versions françaises)
+  full_name?: string | null;
+  bio?: string | null;
   role: string;
   is_super_admin: boolean;
   created_at: string;
   updated_at: string;
   default_commission: number;
   avatar_url: string | null;
-  bio: string | null;
   is_public_profile: boolean;
   website_url: string | null;
   social_links: any;
