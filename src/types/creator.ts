@@ -23,9 +23,9 @@ export interface User {
   bio_fr?: string | null;
   bio_en?: string | null;
   bio_ty?: string | null;
-  // Anciens champs pour compatibilité (optionnels avec fallback)
-  full_name?: string | null;
-  bio?: string | null;
+  // Anciens champs pour compatibilité (toujours présents)
+  full_name: string;
+  bio: string;
   role: string;
   is_super_admin: boolean;
   created_at: string;

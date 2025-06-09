@@ -10,9 +10,9 @@ export interface PublicCreatorProduct {
   description_fr?: string | null;
   description_en?: string | null;
   description_ty?: string | null;
-  // Anciens champs pour compatibilité
-  name?: string;
-  description?: string | null;
+  // Anciens champs pour compatibilité (toujours présents)
+  name: string;
+  description: string | null;
   preview_url: string | null;
   creator_margin_percentage: number;
   category: string;
@@ -21,14 +21,14 @@ export interface PublicCreatorProduct {
   created_at: string;
   creator: {
     id: string;
-    full_name?: string | null;
+    full_name: string;
     avatar_url: string | null;
-    bio?: string | null;
+    bio: string;
     is_public_profile: boolean;
   };
   print_product: {
     id: string;
-    name?: string;
+    name: string;
     base_price: number;
     images: string[];
     material: string;
@@ -47,20 +47,22 @@ export interface PublicCreator {
   bio_fr?: string | null;
   bio_en?: string | null;
   bio_ty?: string | null;
-  // Anciens champs pour compatibilité
-  full_name?: string | null;
-  bio?: string | null;
+  // Anciens champs pour compatibilité (toujours présents)
+  full_name: string;
+  bio: string;
   avatar_url: string | null;
   website_url: string | null;
   social_links: any;
   products_count: number;
+  is_public_profile: boolean;
 }
 
 // Fonction utilitaire pour mapper les créateurs avec compatibilité
 const mapCreatorWithCompatibility = (creator: any): PublicCreator => ({
   ...creator,
   full_name: creator.full_name ?? creator.full_name_fr ?? '',
-  bio: creator.bio ?? creator.bio_fr ?? ''
+  bio: creator.bio ?? creator.bio_fr ?? '',
+  is_public_profile: creator.is_public_profile ?? false
 });
 
 // Fonction utilitaire pour mapper les produits avec compatibilité
@@ -144,12 +146,11 @@ export const getPublishedProducts = async (options?: {
       // Mapper le créateur avec compatibilité
       if (product.creator) {
         mappedProduct.creator = {
-          ...mapCreatorWithCompatibility(product.creator),
           id: product.creator.id,
           avatar_url: product.creator.avatar_url,
           is_public_profile: product.creator.is_public_profile,
-          full_name: product.creator.full_name_fr ?? product.creator.full_name ?? '',
-          bio: product.creator.bio_fr ?? product.creator.bio ?? ''
+          full_name: product.creator.full_name_fr ?? '',
+          bio: product.creator.bio_fr ?? ''
         };
       }
       
@@ -157,7 +158,7 @@ export const getPublishedProducts = async (options?: {
       if (product.print_product) {
         mappedProduct.print_product = {
           ...product.print_product,
-          name: product.print_product.name_fr ?? product.print_product.name ?? ''
+          name: product.print_product.name_fr ?? ''
         };
       }
       
@@ -228,12 +229,11 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
     // Mapper le créateur avec compatibilité
     if (data.creator) {
       mappedProduct.creator = {
-        ...mapCreatorWithCompatibility(data.creator),
         id: data.creator.id,
         avatar_url: data.creator.avatar_url,
         is_public_profile: data.creator.is_public_profile,
-        full_name: data.creator.full_name_fr ?? data.creator.full_name ?? '',
-        bio: data.creator.bio_fr ?? data.creator.bio ?? ''
+        full_name: data.creator.full_name_fr ?? '',
+        bio: data.creator.bio_fr ?? ''
       };
     }
     
@@ -241,7 +241,7 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
     if (data.print_product) {
       mappedProduct.print_product = {
         ...data.print_product,
-        name: data.print_product.name_fr ?? data.print_product.name ?? ''
+        name: data.print_product.name_fr ?? ''
       };
     }
 
@@ -300,7 +300,8 @@ export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> =>
           ...creator,
           products_count: count || 0,
           full_name: creator.full_name_fr ?? '',
-          bio: creator.bio_fr ?? ''
+          bio: creator.bio_fr ?? '',
+          is_public_profile: creator.is_public_profile ?? false
         });
 
         console.log(`Creator ${creatorData.full_name}: public_profile=${creator.is_public_profile}, products=${count}`);
@@ -336,7 +337,8 @@ export const getCreatorBySlug = async (creatorId: string): Promise<PublicCreator
         bio_ty,
         avatar_url,
         website_url,
-        social_links
+        social_links,
+        is_public_profile
       `)
       .eq('id', creatorId)
       .eq('is_public_profile', true)
@@ -358,7 +360,8 @@ export const getCreatorBySlug = async (creatorId: string): Promise<PublicCreator
       ...creator,
       products_count: count || 0,
       full_name: creator.full_name_fr ?? '',
-      bio: creator.bio_fr ?? ''
+      bio: creator.bio_fr ?? '',
+      is_public_profile: creator.is_public_profile ?? false
     });
   } catch (error) {
     console.error('Error in getCreatorBySlug:', error);

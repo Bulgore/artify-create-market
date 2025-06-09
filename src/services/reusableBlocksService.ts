@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ReusableBlock, CreateReusableBlockData } from "@/types/reusableBlocks";
+import { ReusableBlock, CreateReusableBlockData, mapReusableBlockWithCompatibility } from "@/types/reusableBlocks";
 
 export const reusableBlocksService = {
   async getBlocks(placement?: string): Promise<ReusableBlock[]> {
@@ -20,7 +20,7 @@ export const reusableBlocksService = {
       throw error;
     }
 
-    return (data || []) as ReusableBlock[];
+    return (data || []).map(mapReusableBlockWithCompatibility);
   },
 
   async getActiveBlocks(placement?: string): Promise<ReusableBlock[]> {
@@ -41,7 +41,7 @@ export const reusableBlocksService = {
       throw error;
     }
 
-    return (data || []) as ReusableBlock[];
+    return (data || []).map(mapReusableBlockWithCompatibility);
   },
 
   async createBlock(blockData: CreateReusableBlockData): Promise<ReusableBlock> {
@@ -65,7 +65,7 @@ export const reusableBlocksService = {
       throw error;
     }
 
-    return data as ReusableBlock;
+    return mapReusableBlockWithCompatibility(data);
   },
 
   async updateBlock(id: string, blockData: Partial<CreateReusableBlockData>): Promise<ReusableBlock> {
@@ -84,7 +84,7 @@ export const reusableBlocksService = {
       throw error;
     }
 
-    return data as ReusableBlock;
+    return mapReusableBlockWithCompatibility(data);
   },
 
   async deleteBlock(id: string): Promise<void> {

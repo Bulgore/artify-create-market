@@ -5,20 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { mapTemplateWithCompatibility } from '@/types/customProduct';
-
-interface ProductTemplate {
-  id: string;
-  name?: string;
-  name_fr: string;
-  name_en?: string | null;
-  name_ty?: string | null;
-  type: string;
-  mockup_image_url: string;
-  design_area: any;
-  available_positions: string[];
-  available_colors: string[];
-}
+import { mapTemplateWithCompatibility, ProductTemplate } from '@/types/customProduct';
 
 interface TemplateSelectorProps {
   selectedTemplateId?: string;
@@ -46,14 +33,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
       if (error) throw error;
 
-      const mappedTemplates = (data || []).map(template => {
-        const mapped = mapTemplateWithCompatibility(template);
-        return {
-          ...mapped,
-          name: template.name_fr || template.name || ''
-        };
-      });
-
+      const mappedTemplates = (data || []).map(mapTemplateWithCompatibility);
       setTemplates(mappedTemplates);
     } catch (error: any) {
       console.error('Error fetching templates:', error);

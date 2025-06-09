@@ -8,12 +8,21 @@ export interface PageData {
   content_fr?: string;
   content_en?: string | null;
   content_ty?: string | null;
-  // Anciens champs pour compatibilité
-  title?: string;
-  content?: string;
+  // Anciens champs pour compatibilité (toujours présents)
+  title: string;
+  content: string;
   slug: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface NavigationItem {
+  id: string;
+  title: string;
+  url: string;
+  order: number;
+  parent_id?: string | null;
+  is_active: boolean;
 }
 
 // Fonction utilitaire pour mapper les pages avec compatibilité

@@ -4,15 +4,15 @@ export interface PrintProduct {
   printer_id: string;
   template_id: string | null;
   // Nouveaux champs multilingues
-  name_fr: string;
+  name_fr?: string;
   name_en?: string | null;
   name_ty?: string | null;
   description_fr?: string | null;
   description_en?: string | null;
   description_ty?: string | null;
-  // Anciens champs pour compatibilité (optionnels)
-  name?: string;
-  description?: string | null;
+  // Anciens champs pour compatibilité (toujours présents)
+  name: string;
+  description: string | null;
   base_price: number;
   material: string;
   stock_quantity: number;
@@ -30,15 +30,15 @@ export interface PrintProduct {
 export interface ProductTemplate {
   id: string;
   // Nouveaux champs multilingues
-  name_fr: string;
+  name_fr?: string;
   name_en?: string | null;
   name_ty?: string | null;
   technical_instructions_fr?: string | null;
   technical_instructions_en?: string | null;
   technical_instructions_ty?: string | null;
-  // Anciens champs pour compatibilité (optionnels)
-  name?: string;
-  technical_instructions?: string | null;
+  // Anciens champs pour compatibilité (toujours présents)
+  name: string;
+  technical_instructions: string | null;
   type: string;
   design_area: any;
   mockup_area?: any;
