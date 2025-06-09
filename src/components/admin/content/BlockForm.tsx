@@ -22,7 +22,7 @@ const BlockForm: React.FC<BlockFormProps> = ({ block, onSave, onCancel }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CreateReusableBlockData>({
-    title: '',
+    title_fr: '',
     type: 'text',
     content: {},
     placement: 'homepage',
@@ -34,12 +34,16 @@ const BlockForm: React.FC<BlockFormProps> = ({ block, onSave, onCancel }) => {
   useEffect(() => {
     if (block) {
       setFormData({
-        title: block.title,
+        title_fr: block.title_fr || block.title || '',
+        title_en: block.title_en,
+        title_ty: block.title_ty,
         type: block.type,
         content: block.content,
         image_url: block.image_url,
         link_url: block.link_url,
-        button_text: block.button_text,
+        button_text_fr: block.button_text_fr || block.button_text,
+        button_text_en: block.button_text_en,
+        button_text_ty: block.button_text_ty,
         placement: block.placement,
         display_order: block.display_order,
         is_active: block.is_active,
@@ -190,11 +194,11 @@ const BlockForm: React.FC<BlockFormProps> = ({ block, onSave, onCancel }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="title">Titre du bloc</Label>
+              <Label htmlFor="title_fr">Titre du bloc (français)</Label>
               <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                id="title_fr"
+                value={formData.title_fr}
+                onChange={(e) => setFormData(prev => ({ ...prev, title_fr: e.target.value }))}
                 placeholder="Titre du bloc"
                 required
               />
@@ -262,11 +266,11 @@ const BlockForm: React.FC<BlockFormProps> = ({ block, onSave, onCancel }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="button_text">Texte du bouton (optionnel)</Label>
+              <Label htmlFor="button_text_fr">Texte du bouton (français)</Label>
               <Input
-                id="button_text"
-                value={formData.button_text || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, button_text: e.target.value }))}
+                id="button_text_fr"
+                value={formData.button_text_fr || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, button_text_fr: e.target.value }))}
                 placeholder="Cliquez ici"
               />
             </div>

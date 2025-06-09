@@ -14,8 +14,14 @@ import ProductOptions from './forms/ProductOptions';
 
 interface PrintProduct {
   id: string;
-  name: string;
-  description: string | null;
+  name_fr?: string;
+  name_en?: string;
+  name_ty?: string;
+  name?: string;
+  description_fr?: string | null;
+  description_en?: string | null;
+  description_ty?: string | null;
+  description?: string | null;
   base_price: number;
   material: string;
   stock_quantity: number;
@@ -39,6 +45,15 @@ const EditPrintProductModal: React.FC<EditPrintProductModalProps> = ({
   product,
   onProductUpdated
 }) => {
+  // Mapper le produit avec les champs français pour la compatibilité
+  const mappedProduct = product ? {
+    ...product,
+    name_fr: product.name_fr || product.name || '',
+    description_fr: product.description_fr || product.description || '',
+    name: product.name || product.name_fr || '',
+    description: product.description || product.description_fr || ''
+  } : null;
+
   const {
     formData,
     setFormData,
@@ -46,7 +61,7 @@ const EditPrintProductModal: React.FC<EditPrintProductModalProps> = ({
     isLoading,
     fetchTemplates,
     updateProduct
-  } = useEditProduct(product);
+  } = useEditProduct(mappedProduct);
 
   const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
   const availableColors = ['white', 'black', 'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'gray'];

@@ -9,7 +9,7 @@ export interface ReusableBlock {
   button_text_en?: string | null;
   button_text_ty?: string | null;
   // Anciens champs pour compatibilité (toujours présents)
-  title: string;
+  title?: string;
   button_text?: string;
   type: 'hero' | 'banner' | 'text' | 'image' | 'slider' | 'testimonials' | 'cta';
   content: any;

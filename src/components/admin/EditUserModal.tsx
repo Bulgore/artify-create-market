@@ -18,10 +18,10 @@ interface EditUserModalProps {
   user: User | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onUserUpdated: () => void;
 }
 
-const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, onSave }) => {
+const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, onUserUpdated }) => {
   const [formData, setFormData] = useState<CreatorFormData>({
     full_name: user?.full_name || '',
     role: user?.role || 'créateur',
@@ -35,7 +35,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, on
   });
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const { loading, handleSave } = useEditUser(user, onSave, onClose);
+  const { loading, handleSave } = useEditUser(user, onUserUpdated, onClose);
 
   React.useEffect(() => {
     if (user) {
