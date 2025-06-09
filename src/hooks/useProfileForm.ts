@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface SocialLinks {
+  [key: string]: string;
   instagram: string;
   twitter: string;
   facebook: string;
@@ -90,7 +91,7 @@ export const useProfileForm = (onComplete: () => void) => {
           bio: formData.bio,
           keywords: formData.keywords.split(',').map(k => k.trim()).filter(Boolean),
           website_url: formData.website_url || null,
-          social_links: formData.social_links,
+          social_links: formData.social_links as any,
           avatar_url: avatarUrl,
           banner_url: bannerUrl,
           updated_at: new Date().toISOString()
