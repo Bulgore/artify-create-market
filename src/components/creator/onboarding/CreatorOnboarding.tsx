@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Circle, ArrowRight, ArrowLeft, SkipForward, Settings } from 'lucide-react';
 import ProfileStep from './ProfileStep';
-import ProductsStep from './ProductsStep';
 import SubscriptionStep from './SubscriptionStep';
 
 interface OnboardingStep {
@@ -34,16 +34,9 @@ const CreatorOnboarding = () => {
       completed: false
     },
     {
-      id: 'products',
-      name: 'products',
-      title: 'Vos premiers produits',
-      description: 'Créez au moins 3 produits personnalisés pour validation',
-      completed: false
-    },
-    {
       id: 'subscription',
       name: 'subscription',
-      title: 'Abonnement Premium',
+      title: 'Découverte Premium',
       description: 'Découvrez les avantages du niveau Premium (optionnel)',
       completed: false
     }
@@ -127,7 +120,7 @@ const CreatorOnboarding = () => {
     }
   };
 
-  const skipOnboarding = async () => {
+  const completeOnboarding = async () => {
     if (!user) return;
 
     try {
@@ -138,7 +131,43 @@ const CreatorOnboarding = () => {
         .from('users')
         .update({ 
           onboarding_completed: true,
-          creator_status: 'draft' // Garder en draft jusqu'à ce que le profil soit complété
+          creator_status: 'draft' // Statut draft en attendant la création des 3 produits
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Profil créé avec succès !',
+        description: 'Bienvenue dans votre espace créateur. Vous pouvez maintenant créer vos premiers produits.',
+      });
+
+      // Redirection vers le studio/dashboard
+      navigate('/studio');
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de finaliser l\'onboarding.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const skipOnboarding = async () => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+      
+      // Marquer l'onboarding comme terminé sans compléter le profil
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          onboarding_completed: true,
+          creator_status: 'draft'
         })
         .eq('id', user.id);
 
@@ -146,7 +175,7 @@ const CreatorOnboarding = () => {
 
       toast({
         title: 'Onboarding ignoré',
-        description: 'Vous pouvez compléter votre profil plus tard via l\'administration.',
+        description: 'Vous pouvez compléter votre profil plus tard via votre espace créateur.',
       });
 
       navigate('/studio');
@@ -166,97 +195,14 @@ const CreatorOnboarding = () => {
     navigate('/admin');
   };
 
-  const checkCanSubmitForReview = async () => {
-    if (!user) return false;
-
-    try {
-      // Vérifier que le profil est complet
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('full_name, bio, avatar_url')
-        .eq('id', user.id)
-        .single();
-
-      if (userError) throw userError;
-
-      const profileComplete = userData?.full_name && userData?.bio && userData?.avatar_url;
-
-      // Vérifier qu'il y a au moins 3 produits
-      const { count, error: countError } = await supabase
-        .from('creator_products')
-        .select('*', { count: 'exact', head: true })
-        .eq('creator_id', user.id);
-
-      if (countError) throw countError;
-
-      return profileComplete && (count || 0) >= 3;
-    } catch (error) {
-      console.error('Error checking submission criteria:', error);
-      return false;
-    }
-  };
-
-  const submitForReview = async () => {
-    if (!user) return;
-
-    setIsLoading(true);
-    try {
-      const canSubmit = await checkCanSubmitForReview();
-      
-      if (!canSubmit) {
-        toast({
-          variant: 'destructive',
-          title: 'Critères non remplis',
-          description: 'Veuillez compléter votre profil et créer au moins 3 produits.',
-        });
-        return;
-      }
-
-      // Utiliser la fonction SQL pour changer le statut
-      const { error } = await supabase.rpc('change_creator_status', {
-        creator_id: user.id,
-        new_status: 'pending'
-      });
-
-      if (error) throw error;
-
-      // Marquer l'onboarding comme terminé
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ 
-          onboarding_completed: true,
-          submitted_for_review_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: 'Profil soumis !',
-        description: 'Votre profil est en cours de validation par notre équipe.',
-      });
-
-    } catch (error) {
-      console.error('Error submitting for review:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de soumettre votre profil pour validation.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const progress = (steps.filter(step => step.completed).length / steps.length) * 100;
   const currentStep = steps[currentStepIndex];
+  const allStepsCompleted = steps.every(step => step.completed);
 
   const renderCurrentStep = () => {
     switch (currentStep.name) {
       case 'profile':
         return <ProfileStep onComplete={() => markStepCompleted('profile')} />;
-      case 'products':
-        return <ProductsStep onComplete={() => markStepCompleted('products')} />;
       case 'subscription':
         return <SubscriptionStep onComplete={() => markStepCompleted('subscription')} />;
       default:
@@ -271,7 +217,7 @@ const CreatorOnboarding = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-center flex items-center justify-between">
-            <span>Parcours Créateur Podsleek</span>
+            <span>Création de votre profil créateur</span>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -354,15 +300,36 @@ const CreatorOnboarding = () => {
             </Button>
           ) : (
             <Button
-              onClick={submitForReview}
-              disabled={isLoading || !steps.every(step => step.completed)}
+              onClick={completeOnboarding}
+              disabled={isLoading || !allStepsCompleted}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isLoading ? 'Soumission...' : 'Soumettre pour validation'}
+              {isLoading ? 'Finalisation...' : 'Accéder à mon espace créateur'}
             </Button>
           )}
         </div>
       </div>
+
+      {/* Message d'information sur la suite */}
+      {allStepsCompleted && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <h3 className="font-semibold text-blue-800 mb-2">🎉 Félicitations !</h3>
+            <p className="text-blue-700 text-sm mb-3">
+              Votre profil créateur est maintenant configuré. Dans votre espace créateur, vous pourrez :
+            </p>
+            <ul className="text-blue-700 text-sm space-y-1 list-disc list-inside mb-3">
+              <li>Créer vos premiers produits personnalisés</li>
+              <li>Gérer vos designs et mockups</li>
+              <li>Suivre vos ventes et statistiques</li>
+              <li>Modifier votre profil à tout moment</li>
+            </ul>
+            <p className="text-blue-700 text-sm font-medium">
+              💡 Pour être visible publiquement, vous devrez créer au moins 3 produits de qualité qui seront validés par notre équipe.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

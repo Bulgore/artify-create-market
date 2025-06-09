@@ -1,157 +1,193 @@
 
-import React from 'react';
-import { SimpleDesignUploader } from './design-uploader/SimpleDesignUploader';
-import { DesignPreview } from './design-uploader/DesignPreview';
-import { MockupPreview } from './design-uploader/MockupPreview';
-import DesignPreviewSection from './DesignPreviewSection';
-import ProductSelector from './ProductSelector';
-import ProductDetailsForm from './ProductDetailsForm';
-import { useDesignManagement } from '@/hooks/useDesignManagement';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Palette, Package, Settings, Eye } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Package, TrendingUp, Users, Settings } from 'lucide-react';
+import SimplifiedProductCreation from './SimplifiedProductCreation';
+import DesignList from './DesignList';
+import SalesPanel from './SalesPanel';
+import OnboardingBanner from './onboarding/OnboardingBanner';
 
 const CreatorWorkspace: React.FC = () => {
-  const {
-    designUrl,
-    designPosition,
-    showPositioner,
-    handleDesignUpload,
-    handlePositionChange,
-    resetDesign
-  } = useDesignManagement();
-
-  const [selectedProduct, setSelectedProduct] = React.useState(null);
-  const [productData, setProductData] = React.useState({
-    name: '',
-    description: '',
-    margin_percentage: 20
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    productsCount: 0,
+    publishedProducts: 0,
+    totalSales: 0
   });
+  const [creatorStatus, setCreatorStatus] = useState<string>('draft');
+  const [isLoading, setIsLoading] = useState(true);
 
-  console.log('🎨 CreatorWorkspace state:', {
-    designUrl: designUrl?.substring(0, 50) + '...',
-    selectedProduct: selectedProduct?.name,
-    showPositioner,
-    designPosition
-  });
+  useEffect(() => {
+    if (user) {
+      loadCreatorData();
+    }
+  }, [user]);
 
-  // Calcul du prix final
-  const basePrice = selectedProduct?.base_price || 0;
-  const finalPrice = basePrice * (1 + productData.margin_percentage / 100);
+  const loadCreatorData = async () => {
+    if (!user) return;
 
-  // Validation pour soumettre
-  const canSubmit = selectedProduct && designUrl && productData.name.trim();
+    try {
+      setIsLoading(true);
+      
+      // Charger les statistiques du créateur
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('creator_status, products_count')
+        .eq('id', user.id)
+        .single();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmit) return;
-    
-    console.log('Submitting product:', {
-      selectedProduct,
-      designUrl,
-      designPosition,
-      productData,
-      finalPrice
-    });
-    // TODO: Implémenter la soumission
+      if (userError) throw userError;
+
+      setCreatorStatus(userData?.creator_status || 'draft');
+
+      // Compter les produits
+      const { count: totalProducts, error: countError } = await supabase
+        .from('creator_products')
+        .select('*', { count: 'exact', head: true })
+        .eq('creator_id', user.id);
+
+      if (countError) throw countError;
+
+      const { count: publishedProducts, error: publishedError } = await supabase
+        .from('creator_products')
+        .select('*', { count: 'exact', head: true })
+        .eq('creator_id', user.id)
+        .eq('is_published', true);
+
+      if (publishedError) throw publishedError;
+
+      setStats({
+        productsCount: totalProducts || 0,
+        publishedProducts: publishedProducts || 0,
+        totalSales: 0 // À implémenter plus tard
+      });
+
+    } catch (error) {
+      console.error('Error loading creator data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800">Profil approuvé</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">En validation</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Corrections requises</Badge>;
+      default:
+        return <Badge variant="outline">Brouillon</Badge>;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-lg">
-        <h1 className="text-2xl font-bold mb-2">Studio Créateur</h1>
-        <p className="text-blue-100">Créez et personnalisez vos produits uniques</p>
-      </div>
+      {/* Bandeau d'onboarding */}
+      <OnboardingBanner 
+        productsCount={stats.productsCount}
+        creatorStatus={creatorStatus}
+      />
 
-      {/* Étape 1: Sélection du produit */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Étape 1: Choisir un produit
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProductSelector onProductSelect={setSelectedProduct} />
-        </CardContent>
-      </Card>
-
-      {/* Étape 2: Upload du design */}
-      {selectedProduct && (
+      {/* En-tête avec statistiques */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Étape 2: Uploader votre design
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Statut</CardTitle>
+            <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <SimpleDesignUploader onDesignUpload={handleDesignUpload} />
+            {getStatusBadge(creatorStatus)}
           </CardContent>
         </Card>
-      )}
 
-      {/* Aperçu du design uploadé */}
-      {designUrl && (
-        <DesignPreview designUrl={designUrl} onRemove={resetDesign} />
-      )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Produits créés</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.productsCount}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.publishedProducts} publiés
+            </p>
+          </CardContent>
+        </Card>
 
-      {/* Étape 3: Positionnement + Aperçu en temps réel */}
-      {showPositioner && selectedProduct && designUrl && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Colonne gauche: Éditeur de positionnement */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ventes totales</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalSales}</div>
+            <p className="text-xs text-muted-foreground">
+              À venir
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Clients</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">
+              À venir
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Onglets principaux */}
+      <Tabs defaultValue="products" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="products">Mes Produits</TabsTrigger>
+          <TabsTrigger value="create">Créer un Produit</TabsTrigger>
+          <TabsTrigger value="designs">Mes Designs</TabsTrigger>
+          <TabsTrigger value="sales">Ventes</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="products" className="space-y-4">
+          <DesignList onProductCreated={loadCreatorData} />
+        </TabsContent>
+
+        <TabsContent value="create" className="space-y-4">
+          <SimplifiedProductCreation onProductCreated={loadCreatorData} />
+        </TabsContent>
+
+        <TabsContent value="designs" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Étape 3: Positionner votre design
-              </CardTitle>
+              <CardTitle>Bibliothèque de designs</CardTitle>
             </CardHeader>
             <CardContent>
-              <DesignPreviewSection
-                showPositioner={showPositioner}
-                selectedProduct={selectedProduct}
-                designUrl={designUrl}
-                onPositionChange={handlePositionChange}
-              />
+              <p className="text-muted-foreground">
+                Gérez vos designs et créations ici. Fonctionnalité à venir.
+              </p>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Colonne droite: Aperçu mockup temps réel */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Aperçu temps réel
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MockupPreview
-                mockupUrl={selectedProduct.product_templates?.mockup_image_url}
-                designUrl={designUrl}
-                designArea={designPosition ? {
-                  x: (designPosition.x / 400) * 100,
-                  y: (designPosition.y / 400) * 100,
-                  width: (designPosition.width / 400) * 100,
-                  height: (designPosition.height / 400) * 100
-                } : undefined}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Étape 4: Détails du produit */}
-      {selectedProduct && designUrl && (
-        <ProductDetailsForm
-          productData={productData}
-          setProductData={setProductData}
-          finalPrice={finalPrice}
-          isLoading={false}
-          canSubmit={!!canSubmit}
-          onSubmit={handleSubmit}
-        />
-      )}
+        <TabsContent value="sales" className="space-y-4">
+          <SalesPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

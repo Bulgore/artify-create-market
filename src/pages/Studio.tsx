@@ -19,7 +19,7 @@ import {
   LayoutDashboard, 
   Search,
   LogOut,
-  ArrowLeft
+  User
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -71,14 +71,17 @@ const Studio = () => {
 
       setUserStatus(data);
 
-      // Rediriger vers l'onboarding seulement si explicitement demandé
-      // Permettre l'accès au studio même si l'onboarding n'est pas terminé
+      // Rediriger vers l'onboarding si pas complété
+      if (!data.onboarding_completed) {
+        navigate('/onboarding');
+        return;
+      }
     } catch (error) {
       console.error('Error checking creator status:', error);
     }
   };
 
-  const goBackToOnboarding = () => {
+  const goToProfile = () => {
     navigate('/onboarding');
   };
   
@@ -128,15 +131,24 @@ const Studio = () => {
           <p className="text-sm text-gray-500 mb-6">
             Vous recevrez une notification dès que votre profil sera approuvé.
           </p>
-          <button
-            onClick={() => {
-              signOut();
-              navigate("/");
-            }}
-            className="text-orange-600 hover:text-orange-700 underline"
-          >
-            Retour à l'accueil
-          </button>
+          <div className="space-y-2">
+            <Button
+              onClick={goToProfile}
+              variant="outline"
+              className="w-full"
+            >
+              Modifier mon profil
+            </Button>
+            <button
+              onClick={() => {
+                signOut();
+                navigate("/");
+              }}
+              className="text-orange-600 hover:text-orange-700 underline text-sm"
+            >
+              Retour à l'accueil
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -150,12 +162,12 @@ const Studio = () => {
           <p className="text-gray-600 mb-4">
             Votre profil nécessite quelques ajustements avant d'être publié.
           </p>
-          <button
+          <Button
             onClick={() => navigate('/onboarding')}
             className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 mb-4"
           >
             Modifier mon profil
-          </button>
+          </Button>
           <br />
           <button
             onClick={() => {
@@ -230,15 +242,15 @@ const Studio = () => {
                 <h1 className="text-xl font-semibold">
                   {isCreator ? "Studio de Création" : isPrinter ? "Dashboard Imprimeur" : "Studio"}
                 </h1>
-                {isCreator && !userStatus?.onboarding_completed && (
+                {isCreator && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={goBackToOnboarding}
+                    onClick={goToProfile}
                     className="flex items-center gap-1"
                   >
-                    <ArrowLeft className="h-4 w-4" />
-                    Retour à l'onboarding
+                    <User className="h-4 w-4" />
+                    Modifier mon profil
                   </Button>
                 )}
               </div>
