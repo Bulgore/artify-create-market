@@ -23,7 +23,7 @@ export interface User {
   bio_fr?: string | null;
   bio_en?: string | null;
   bio_ty?: string | null;
-  // Anciens champs pour compatibilité (mappés depuis les versions françaises)
+  // Anciens champs pour compatibilité (optionnels avec fallback)
   full_name?: string | null;
   bio?: string | null;
   role: string;
@@ -41,4 +41,16 @@ export interface User {
   creator_level?: string;
   products_count?: number;
   onboarding_completed?: boolean;
+  banner_url?: string | null;
+  keywords?: string[];
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  rejection_reason?: string | null;
 }
+
+// Fonction utilitaire pour mapper les utilisateurs avec compatibilité
+export const mapUserWithCompatibility = (user: any): User => ({
+  ...user,
+  full_name: user.full_name ?? user.full_name_fr ?? '',
+  bio: user.bio ?? user.bio_fr ?? ''
+});

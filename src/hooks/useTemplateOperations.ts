@@ -19,7 +19,15 @@ export const useTemplateOperations = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Mapper avec compatibilité
+      const mappedTemplates = (data || []).map((template: any) => ({
+        ...template,
+        name: template.name_fr ?? template.name ?? '',
+        technical_instructions: template.technical_instructions_fr ?? template.technical_instructions ?? ''
+      }));
+      
+      return mappedTemplates;
     } catch (error: any) {
       console.error('Error fetching templates:', error);
       toast({
@@ -55,7 +63,8 @@ export const useTemplateOperations = () => {
       } : null;
 
       const templateData = {
-        name: formData.name || '',
+        name_fr: formData.name || '',
+        technical_instructions_fr: formData.technical_instructions || '',
         type: formData.type || '',
         svg_file_url: formData.svg_file_url || '',
         mockup_image_url: formData.mockup_image_url || '',
@@ -64,7 +73,6 @@ export const useTemplateOperations = () => {
         mockup_area: cleanMockupArea ? JSON.stringify(cleanMockupArea) : null,
         available_positions: formData.available_positions || ['face'],
         available_colors: formData.available_colors || ['white', 'black'],
-        technical_instructions: formData.technical_instructions || '',
         is_active: Boolean(formData.is_active)
       };
 

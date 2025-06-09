@@ -3,8 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface PublicCreatorProduct {
   id: string;
-  name: string;
-  description: string | null;
+  // Nouveaux champs multilingues
+  name_fr?: string;
+  name_en?: string | null;
+  name_ty?: string | null;
+  description_fr?: string | null;
+  description_en?: string | null;
+  description_ty?: string | null;
+  // Anciens champs pour compatibilité
+  name?: string;
+  description?: string | null;
   preview_url: string | null;
   creator_margin_percentage: number;
   category: string;
@@ -34,13 +42,35 @@ export interface PublicCreatorProduct {
 
 export interface PublicCreator {
   id: string;
-  full_name: string | null;
+  // Nouveaux champs multilingues
+  full_name_fr?: string | null;
+  full_name_en?: string | null;
+  full_name_ty?: string | null;
+  bio_fr?: string | null;
+  bio_en?: string | null;
+  bio_ty?: string | null;
+  // Anciens champs pour compatibilité
+  full_name?: string | null;
+  bio?: string | null;
   avatar_url: string | null;
-  bio: string | null;
   website_url: string | null;
   social_links: any;
   products_count: number;
 }
+
+// Fonction utilitaire pour mapper les créateurs avec compatibilité
+const mapCreatorWithCompatibility = (creator: any): PublicCreator => ({
+  ...creator,
+  full_name: creator.full_name ?? creator.full_name_fr ?? '',
+  bio: creator.bio ?? creator.bio_fr ?? ''
+});
+
+// Fonction utilitaire pour mapper les produits avec compatibilité
+const mapProductWithCompatibility = (product: any): PublicCreatorProduct => ({
+  ...product,
+  name: product.name ?? product.name_fr ?? '',
+  description: product.description ?? product.description_fr ?? ''
+});
 
 export const getPublishedProducts = async (options?: {
   category?: string;
@@ -52,8 +82,12 @@ export const getPublishedProducts = async (options?: {
       .from('creator_products')
       .select(`
         id,
-        name,
-        description,
+        name_fr,
+        name_en,
+        name_ty,
+        description_fr,
+        description_en,
+        description_ty,
         preview_url,
         creator_margin_percentage,
         category,
@@ -64,14 +98,20 @@ export const getPublishedProducts = async (options?: {
         created_at,
         creator:creator_id (
           id,
-          full_name,
+          full_name_fr,
+          full_name_en,
+          full_name_ty,
+          bio_fr,
+          bio_en,
+          bio_ty,
           avatar_url,
-          bio,
           is_public_profile
         ),
         print_product:print_product_id (
           id,
-          name,
+          name_fr,
+          name_en,
+          name_ty,
           base_price,
           images,
           material,
@@ -101,13 +141,35 @@ export const getPublishedProducts = async (options?: {
       return [];
     }
 
-    // Calculer le prix final
-    return (data || []).map(product => ({
-      ...product,
-      final_price: product.print_product ? 
-        product.print_product.base_price * (1 + product.creator_margin_percentage / 100) : 
-        undefined
-    }));
+    // Calculer le prix final et mapper avec compatibilité
+    return (data || []).map(product => {
+      const mappedProduct = mapProductWithCompatibility(product);
+      
+      // Mapper le créateur avec compatibilité
+      if (product.creator) {
+        mappedProduct.creator = {
+          ...mapCreatorWithCompatibility(product.creator),
+          id: product.creator.id,
+          avatar_url: product.creator.avatar_url,
+          is_public_profile: product.creator.is_public_profile
+        };
+      }
+      
+      // Mapper le produit d'impression avec compatibilité
+      if (product.print_product) {
+        mappedProduct.print_product = {
+          ...product.print_product,
+          name: product.print_product.name_fr ?? product.print_product.name ?? ''
+        };
+      }
+      
+      return {
+        ...mappedProduct,
+        final_price: product.print_product ? 
+          product.print_product.base_price * (1 + product.creator_margin_percentage / 100) : 
+          undefined
+      };
+    });
   } catch (error) {
     console.error('Error in getPublishedProducts:', error);
     return [];
@@ -120,8 +182,12 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
       .from('creator_products')
       .select(`
         id,
-        name,
-        description,
+        name_fr,
+        name_en,
+        name_ty,
+        description_fr,
+        description_en,
+        description_ty,
         preview_url,
         creator_margin_percentage,
         category,
@@ -132,14 +198,20 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
         created_at,
         creator:creator_id (
           id,
-          full_name,
+          full_name_fr,
+          full_name_en,
+          full_name_ty,
+          bio_fr,
+          bio_en,
+          bio_ty,
           avatar_url,
-          bio,
           is_public_profile
         ),
         print_product:print_product_id (
           id,
-          name,
+          name_fr,
+          name_en,
+          name_ty,
           base_price,
           images,
           material,
@@ -155,8 +227,28 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
       return null;
     }
 
+    const mappedProduct = mapProductWithCompatibility(data);
+    
+    // Mapper le créateur avec compatibilité
+    if (data.creator) {
+      mappedProduct.creator = {
+        ...mapCreatorWithCompatibility(data.creator),
+        id: data.creator.id,
+        avatar_url: data.creator.avatar_url,
+        is_public_profile: data.creator.is_public_profile
+      };
+    }
+    
+    // Mapper le produit d'impression avec compatibilité
+    if (data.print_product) {
+      mappedProduct.print_product = {
+        ...data.print_product,
+        name: data.print_product.name_fr ?? data.print_product.name ?? ''
+      };
+    }
+
     return {
-      ...data,
+      ...mappedProduct,
       final_price: data.print_product ? 
         data.print_product.base_price * (1 + data.creator_margin_percentage / 100) : 
         undefined
@@ -175,9 +267,13 @@ export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> =>
       .from('users')
       .select(`
         id,
-        full_name,
+        full_name_fr,
+        full_name_en,
+        full_name_ty,
+        bio_fr,
+        bio_en,
+        bio_ty,
         avatar_url,
-        bio,
         website_url,
         social_links,
         is_public_profile
@@ -202,12 +298,12 @@ export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> =>
           .eq('creator_id', creator.id)
           .eq('status', 'published');
 
-        const creatorData = {
+        const creatorData = mapCreatorWithCompatibility({
           ...creator,
           products_count: count || 0
-        };
+        });
 
-        console.log(`Creator ${creator.full_name}: public_profile=${creator.is_public_profile}, products=${count}`);
+        console.log(`Creator ${creatorData.full_name}: public_profile=${creator.is_public_profile}, products=${count}`);
         
         return creatorData;
       })
@@ -232,9 +328,13 @@ export const getCreatorBySlug = async (creatorId: string): Promise<PublicCreator
       .from('users')
       .select(`
         id,
-        full_name,
+        full_name_fr,
+        full_name_en,
+        full_name_ty,
+        bio_fr,
+        bio_en,
+        bio_ty,
         avatar_url,
-        bio,
         website_url,
         social_links
       `)
@@ -254,10 +354,10 @@ export const getCreatorBySlug = async (creatorId: string): Promise<PublicCreator
       .eq('creator_id', creator.id)
       .eq('status', 'published');
 
-    return {
+    return mapCreatorWithCompatibility({
       ...creator,
       products_count: count || 0
-    };
+    });
   } catch (error) {
     console.error('Error in getCreatorBySlug:', error);
     return null;

@@ -40,15 +40,15 @@ const NewDesign = () => {
     try {
       const { data, error } = await supabase
         .from('tshirt_templates')
-        .select('id, name_fr, images, base_price')
-        .eq('stock_quantity', 0, false);
+        .select('id, name_fr, name, images, base_price, stock_quantity')
+        .neq('stock_quantity', 0);
       
       if (error) throw error;
       
       // Mapper avec compatibilité
       const mappedTemplates = (data || []).map((template: any) => ({
         ...template,
-        name: template.name_fr ?? template.name ?? '',
+        name: template.name ?? template.name_fr ?? '',
         id: template.id,
         images: template.images || [],
         base_price: template.base_price || 0
@@ -99,9 +99,7 @@ const NewDesign = () => {
     try {
       const designData = {
         name_fr: formData.name,
-        name: formData.name, // Compatibilité
         description_fr: formData.description,
-        description: formData.description, // Compatibilité
         creator_id: user.id,
         price: formData.price,
         creator_margin: formData.creator_margin,

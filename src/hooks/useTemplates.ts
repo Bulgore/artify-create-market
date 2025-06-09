@@ -37,6 +37,7 @@ export const useTemplates = () => {
 
   const loadTemplates = async () => {
     const data = await fetchTemplates();
+    // Data is already mapped in fetchTemplates
     setTemplates(data);
   };
 

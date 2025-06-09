@@ -1,37 +1,40 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { PageData } from "@/types/pages";
 
-// Define a separate interface for the raw database response
-interface SupabasePageRow {
+export interface PageData {
   id: string;
-  title: string;
-  content: string;
-  slug: string | null;
+  // Nouveaux champs multilingues
+  title_fr?: string;
+  title_en?: string | null;
+  title_ty?: string | null;
+  content_fr?: string;
+  content_en?: string | null;
+  content_ty?: string | null;
+  // Anciens champs pour compatibilité
+  title?: string;
+  content?: string;
+  slug: string;
   created_at: string;
-  updated_at: string | null;
+  updated_at: string;
 }
 
-// Convert database row to application model
-function mapToPageData(page: SupabasePageRow): PageData {
-  return {
-    id: page.id,
-    title: page.title,
-    content: page.content,
-    slug: page.slug || page.id.toLowerCase(),
-    created_at: page.created_at,
-    updated_at: page.updated_at || page.created_at
-  };
-}
+// Fonction utilitaire pour mapper les pages avec compatibilité
+const mapPageWithCompatibility = (page: any): PageData => ({
+  ...page,
+  title: page.title ?? page.title_fr ?? '',
+  content: page.content ?? page.content_fr ?? '',
+  slug: page.slug || page.id.toLowerCase(),
+  updated_at: page.updated_at || page.created_at
+});
 
 export const fetchAllPages = async (): Promise<{ data: PageData[] | null; error: any }> => {
   const { data, error } = await supabase
     .from('pages')
     .select('*')
-    .order('title', { ascending: true });
+    .order('title_fr', { ascending: true });
     
   // Map the database rows to our application model
-  const pagesData = data ? data.map((row: SupabasePageRow) => mapToPageData(row)) : null;
+  const pagesData = data ? data.map(mapPageWithCompatibility) : null;
     
   return {
     data: pagesData,
@@ -46,12 +49,12 @@ export const fetchPageBySlug = async (slug: string): Promise<{ data: PageData | 
     .from('pages')
     .select('*')
     .eq('slug', slug)
-    .maybeSingle(); // Use maybeSingle instead of single to handle cases where no data is found
+    .maybeSingle();
   
   console.log('Supabase response:', data);
   
   // Map the database row to our application model
-  const pageData = data ? mapToPageData(data as SupabasePageRow) : null;
+  const pageData = data ? mapPageWithCompatibility(data) : null;
   
   return { data: pageData, error };
 };
@@ -69,8 +72,8 @@ export const createPage = async (title: string, content: string, slug: string): 
   const { error } = await supabase
     .from('pages')
     .insert({ 
-      title: title,
-      content: content,
+      title_fr: title,
+      content_fr: content,
       slug: pageSlug
     });
     
@@ -90,8 +93,8 @@ export const updatePage = async (pageId: string, title: string, content: string,
   const { error } = await supabase
     .from('pages')
     .update({ 
-      title: title,
-      content: content,
+      title_fr: title,
+      content_fr: content,
       slug: pageSlug,
       updated_at: new Date().toISOString()
     })
