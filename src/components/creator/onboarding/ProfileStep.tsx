@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,9 +14,9 @@ interface ProfileStepProps {
 }
 
 interface SocialLinks {
-  instagram?: string;
-  twitter?: string;
-  facebook?: string;
+  instagram: string;
+  twitter: string;
+  facebook: string;
 }
 
 const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
@@ -60,7 +59,12 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
 
       if (data) {
         // Type guard pour social_links
-        const socialLinks: SocialLinks = {};
+        const socialLinks: SocialLinks = {
+          instagram: '',
+          twitter: '',
+          facebook: ''
+        };
+        
         if (data.social_links && typeof data.social_links === 'object') {
           const links = data.social_links as Record<string, any>;
           socialLinks.instagram = links.instagram || '';
