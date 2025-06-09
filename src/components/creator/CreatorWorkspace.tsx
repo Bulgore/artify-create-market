@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package, TrendingUp, Users, Settings } from 'lucide-react';
-import SimplifiedProductCreation from './SimplifiedProductCreation';
+import { SimplifiedProductCreation } from './SimplifiedProductCreation';
 import DesignList from './DesignList';
 import SalesPanel from './SalesPanel';
 import OnboardingBanner from './onboarding/OnboardingBanner';
@@ -20,6 +20,7 @@ const CreatorWorkspace: React.FC = () => {
   });
   const [creatorStatus, setCreatorStatus] = useState<string>('draft');
   const [isLoading, setIsLoading] = useState(true);
+  const [designs, setDesigns] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -60,6 +61,16 @@ const CreatorWorkspace: React.FC = () => {
 
       if (publishedError) throw publishedError;
 
+      // Charger les produits/designs
+      const { data: designsData, error: designsError } = await supabase
+        .from('creator_products')
+        .select('*')
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (designsError) throw designsError;
+
+      setDesigns(designsData || []);
       setStats({
         productsCount: totalProducts || 0,
         publishedProducts: publishedProducts || 0,
@@ -84,6 +95,13 @@ const CreatorWorkspace: React.FC = () => {
       default:
         return <Badge variant="outline">Brouillon</Badge>;
     }
+  };
+
+  const handleProductCreate = async (productData: any) => {
+    // Logic to handle product creation
+    console.log('Creating product:', productData);
+    // Refresh data after creation
+    await loadCreatorData();
   };
 
   if (isLoading) {
@@ -164,11 +182,22 @@ const CreatorWorkspace: React.FC = () => {
         </TabsList>
 
         <TabsContent value="products" className="space-y-4">
-          <DesignList onProductCreated={loadCreatorData} />
+          <DesignList 
+            designs={designs}
+            onDesignUpdated={loadCreatorData}
+            onCreateDesign={() => {
+              // Switch to create tab
+              const createTab = document.querySelector('[data-state="inactive"][value="create"]') as HTMLElement;
+              if (createTab) createTab.click();
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="create" className="space-y-4">
-          <SimplifiedProductCreation onProductCreated={loadCreatorData} />
+          <SimplifiedProductCreation 
+            printProducts={[]}
+            onProductCreate={handleProductCreate}
+          />
         </TabsContent>
 
         <TabsContent value="designs" className="space-y-4">
