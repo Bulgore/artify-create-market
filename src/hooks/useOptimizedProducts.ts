@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { publicProductsService } from '@/services/publicProductsService';
+import { getPublishedProducts, PublicCreatorProduct } from '@/services/publicProductsService';
 import { useCache } from './useCache';
 
 interface ProductFilters {
@@ -28,13 +28,13 @@ export const useOptimizedProducts = (options: UseOptimizedProductsOptions = {}) 
     cacheTtl = 5 * 60 * 1000 // 5 minutes
   } = options;
 
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<PublicCreatorProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  const cache = useCache('products-cache', { 
+  const cache = useCache<PublicCreatorProduct[]>('products-cache', { 
     ttl: cacheTtl, 
     storageKey: enableCache ? 'products-cache' : undefined 
   });
@@ -65,14 +65,10 @@ export const useOptimizedProducts = (options: UseOptimizedProductsOptions = {}) 
       setLoading(true);
       setError(null);
 
-      const data = await publicProductsService.getProducts({
+      const data = await getPublishedProducts({
         limit,
         offset: resetProducts ? 0 : (page - 1) * limit,
-        search: filters.search,
-        category: filters.category,
-        minPrice: filters.priceRange?.min,
-        maxPrice: filters.priceRange?.max,
-        sortBy: filters.sortBy
+        category: filters.category
       });
 
       console.log('Fetched products from API:', data.length);
