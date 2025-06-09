@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,14 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Circle, ArrowRight, ArrowLeft, SkipForward, Settings } from 'lucide-react';
 import ProfileStep from './ProfileStep';
 import SubscriptionStep from './SubscriptionStep';
-
-interface OnboardingStep {
-  id: string;
-  name: string;
-  title: string;
-  description: string;
-  completed: boolean;
-}
+import { OnboardingStep } from './OnboardingStep';
 
 const CreatorOnboarding = () => {
   const { user } = useAuth();
@@ -81,14 +73,14 @@ const CreatorOnboarding = () => {
       setSteps(prevSteps => 
         prevSteps.map(step => {
           if (step.name === 'profile') {
-            return { ...step, completed: profileCompleted };
+            return { ...step, completed: !!profileCompleted }; // Force boolean conversion
           }
-          return { ...step, completed: completedSteps.includes(step.name) };
+          return { ...step, completed: !!completedSteps.includes(step.name) }; // Force boolean conversion
         })
       );
 
       // Permettre de skipper seulement si le profil est complété
-      setCanSkip(profileCompleted);
+      setCanSkip(!!profileCompleted); // Force boolean conversion
 
       // Aller à la première étape non complétée
       if (!profileCompleted) {

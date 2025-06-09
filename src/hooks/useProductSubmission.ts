@@ -32,8 +32,8 @@ export const useProductSubmission = () => {
         .insert({
           creator_id: user.id,
           print_product_id: selectedProduct.id,
-          name: productData.name,
-          description: productData.description,
+          name_fr: productData.name,
+          description_fr: productData.description,
           creator_margin_percentage: productData.margin_percentage,
           design_data: {
             design_image_url: designUrl,

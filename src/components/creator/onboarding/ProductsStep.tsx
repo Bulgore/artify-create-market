@@ -47,13 +47,24 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
     try {
       const { data, error } = await supabase
         .from('creator_products')
-        .select('id, name, description, preview_url, status, created_at')
+        .select('id, name_fr, description_fr, preview_url, status, created_at')
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setProducts(data || []);
+      // Mapper avec compatibilité
+      const mappedProducts = (data || []).map((product: any) => ({
+        ...product,
+        name: product.name_fr ?? product.name ?? '',
+        description: product.description_fr ?? product.description ?? null,
+        id: product.id,
+        preview_url: product.preview_url,
+        status: product.status || 'draft',
+        created_at: product.created_at
+      }));
+
+      setProducts(mappedProducts);
     } catch (error) {
       console.error('Error loading products:', error);
       toast({
@@ -147,7 +158,6 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         </CardHeader>
       </Card>
 
-      {/* Instructions */}
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold mb-2">Conseils pour créer des produits de qualité :</h3>
@@ -161,7 +171,6 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         </CardContent>
       </Card>
 
-      {/* Products List */}
       {products.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((product) => (
@@ -172,7 +181,7 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
                     <img
                       src={product.preview_url}
                       alt={product.name}
-                      className="w-full h-32 object-cover rounded"
+                      className="w-full h-32 object-cover rounded mb-2"
                     />
                   )}
                   <div>
@@ -206,7 +215,6 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         </Card>
       )}
 
-      {/* Action Buttons */}
       <div className="text-center space-y-4">
         <Button
           onClick={handleCreateProduct}
@@ -230,7 +238,6 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         </Button>
       </div>
 
-      {/* Completion Message */}
       {isComplete && (
         <Card className="border-green-200 bg-green-50">
           <CardContent className="p-4 text-center">

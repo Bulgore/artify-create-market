@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { PrintProduct } from '@/types/customProduct';
+import { PrintProduct, mapPrintProductWithCompatibility, mapTemplateWithCompatibility } from '@/types/customProduct';
 
 export const usePrintProducts = () => {
   const [printProducts, setPrintProducts] = useState<PrintProduct[]>([]);
@@ -83,7 +83,9 @@ export const usePrintProducts = () => {
       const productsWithTemplates = [];
       
       for (const product of allProducts) {
-        console.log(`\n🔍 Analyzing product: ${product.name}`);
+        const mappedProduct = mapPrintProductWithCompatibility(product);
+        
+        console.log(`\n🔍 Analyzing product: ${mappedProduct.name}`);
         console.log(`   - ID: ${product.id}`);
         console.log(`   - template_id: ${product.template_id}`);
         console.log(`   - is_active: ${product.is_active}`);
@@ -102,7 +104,7 @@ export const usePrintProducts = () => {
           .single();
 
         if (templateError) {
-          console.error(`   ❌ Template fetch error for ${product.name}:`, templateError);
+          console.error(`   ❌ Template fetch error for ${mappedProduct.name}:`, templateError);
           
           // Diagnostiquer si c'est un problème de permission
           if (templateError.code === 'PGRST116' || templateError.message?.includes('permission denied')) {
@@ -116,7 +118,8 @@ export const usePrintProducts = () => {
           continue;
         }
 
-        console.log(`   ✅ Template found: ${template.name}`);
+        const mappedTemplate = mapTemplateWithCompatibility(template);
+        console.log(`   ✅ Template found: ${mappedTemplate.name}`);
         console.log(`   📐 Template design_area:`, template.design_area);
 
         // Vérifier la zone d'impression
@@ -126,7 +129,7 @@ export const usePrintProducts = () => {
             ? JSON.parse(template.design_area) 
             : template.design_area;
         } catch (e) {
-          console.error(`   ❌ Invalid design_area JSON for ${product.name}:`, e);
+          console.error(`   ❌ Invalid design_area JSON for ${mappedProduct.name}:`, e);
           continue;
         }
 
@@ -140,12 +143,12 @@ export const usePrintProducts = () => {
 
         // Construire l'objet produit avec template
         const productWithTemplate = {
-          ...product,
-          product_templates: template
+          ...mappedProduct,
+          product_templates: mappedTemplate
         };
 
         productsWithTemplates.push(productWithTemplate);
-        console.log(`   ✅ Product ${product.name} VALIDATED and ADDED`);
+        console.log(`   ✅ Product ${mappedProduct.name} VALIDATED and ADDED`);
       }
 
       console.log(`\n📊 SUMMARY:`);
@@ -159,10 +162,11 @@ export const usePrintProducts = () => {
         
         // Diagnostic détaillé
         const diagnostics = allProducts.map(product => {
+          const mappedProduct = mapPrintProductWithCompatibility(product);
           const issues = [];
           if (!product.template_id) issues.push("No template assigned");
           if (!product.is_active) issues.push("Product not active");
-          return `${product.name}: ${issues.length > 0 ? issues.join(', ') : 'Unknown issue'}`;
+          return `${mappedProduct.name}: ${issues.length > 0 ? issues.join(', ') : 'Unknown issue'}`;
         });
 
         toast({

@@ -1,162 +1,136 @@
 
-import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ProductTemplate {
   id: string;
   name: string;
+  technical_instructions?: string | null;
   type: string;
   mockup_image_url: string;
   design_area: any;
   available_positions: string[];
   available_colors: string[];
-  technical_instructions: string;
 }
 
 interface TemplateSelectorProps {
-  selectedTemplateId: string | null;
   onTemplateSelect: (templateId: string, template: ProductTemplate) => void;
 }
 
-const TemplateSelector: React.FC<TemplateSelectorProps> = ({
-  selectedTemplateId,
-  onTemplateSelect
-}) => {
+const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onTemplateSelect }) => {
   const [templates, setTemplates] = useState<ProductTemplate[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ProductTemplate | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchTemplates();
   }, []);
 
   const fetchTemplates = async () => {
-    setIsLoading(true);
     try {
-      console.log("Fetching all active templates for printer...");
+      setIsLoading(true);
       
-      // Récupérer TOUS les gabarits actifs, peu importe qui les a créés
       const { data, error } = await supabase
         .from('product_templates')
         .select('*')
         .eq('is_active', true)
-        .order('name', { ascending: true });
+        .order('name_fr');
 
-      if (error) {
-        console.error("Error fetching templates:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("All active templates fetched successfully:", data?.length || 0, "templates");
-      setTemplates(data || []);
-      
-      if (!data || data.length === 0) {
-        toast({
-          title: "Information",
-          description: "Aucun gabarit actif disponible. Les gabarits doivent être créés par l'administrateur.",
-        });
-      }
-    } catch (error: any) {
-      console.error("Error fetching templates:", error);
+      // Mapper avec compatibilité
+      const mappedTemplates = (data || []).map((template: any) => ({
+        ...template,
+        name: template.name_fr ?? template.name ?? '',
+        technical_instructions: template.technical_instructions_fr ?? template.technical_instructions ?? null
+      }));
+
+      setTemplates(mappedTemplates);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de charger les gabarits disponibles.",
+        description: "Impossible de charger les gabarits."
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+  const handleTemplateSelect = (template: ProductTemplate) => {
+    setSelectedTemplate(template);
+    onTemplateSelect(template.id, template);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Chargement des gabarits...</CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (templates.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Aucun gabarit disponible</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Aucun gabarit de produit n'est actuellement disponible. Contactez l'administrateur.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="template">Gabarit de produit *</Label>
-        <Select
-          value={selectedTemplateId || ""}
-          onValueChange={(value) => {
-            const template = templates.find(t => t.id === value);
-            if (template) {
-              console.log("Template selected:", template.name, template.id);
-              onTemplateSelect(value, template);
-            }
-          }}
-          disabled={isLoading}
-        >
-          <SelectTrigger>
-            <SelectValue 
-              placeholder={
-                isLoading 
-                  ? "Chargement des gabarits..." 
-                  : templates.length === 0 
-                    ? "Aucun gabarit disponible"
-                    : "Sélectionnez un gabarit"
-              } 
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {templates.map((template) => (
-              <SelectItem key={template.id} value={template.id}>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{template.name}</span>
-                  <span className="text-sm text-gray-500">({template.type})</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {selectedTemplate && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex gap-4">
-              <div className="w-20 h-20 rounded overflow-hidden bg-gray-100 flex-shrink-0">
-                {selectedTemplate.mockup_image_url ? (
-                  <img
-                    src={selectedTemplate.mockup_image_url}
-                    alt={selectedTemplate.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log("Image failed to load:", selectedTemplate.mockup_image_url);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                    Pas d'image
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 space-y-1">
-                <h4 className="font-medium text-sm">{selectedTemplate.name}</h4>
-                <p className="text-xs text-gray-600">Type: {selectedTemplate.type}</p>
-                {selectedTemplate.available_positions && selectedTemplate.available_positions.length > 0 && (
-                  <p className="text-xs text-gray-600">
-                    Positions: {selectedTemplate.available_positions.join(', ')}
-                  </p>
-                )}
-                {selectedTemplate.available_colors && selectedTemplate.available_colors.length > 0 && (
-                  <p className="text-xs text-gray-600">
-                    Couleurs: {selectedTemplate.available_colors.join(', ')}
-                  </p>
-                )}
-                {selectedTemplate.technical_instructions && (
-                  <p className="text-xs text-gray-500 italic">
-                    Instructions: {selectedTemplate.technical_instructions}
-                  </p>
-                )}
-              </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Sélectionner un gabarit</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {templates.map((template) => (
+            <div
+              key={template.id}
+              className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                selectedTemplate?.id === template.id
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+              onClick={() => handleTemplateSelect(template)}
+            >
+              <img
+                src={template.mockup_image_url}
+                alt={template.name}
+                className="w-full h-32 object-cover rounded mb-2"
+              />
+              <h3 className="font-medium mb-2">{template.name}</h3>
+              <Badge variant="secondary" className="mb-2">{template.type}</Badge>
+              {template.technical_instructions && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {template.technical_instructions}
+                </p>
+              )}
+              {selectedTemplate?.id === template.id && (
+                <Button size="sm" className="w-full mt-2">
+                  Sélectionné
+                </Button>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
