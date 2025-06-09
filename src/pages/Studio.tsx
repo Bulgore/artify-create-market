@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import CreatorStudio from "@/components/CreatorStudio";
@@ -22,11 +22,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
 
 const Studio = () => {
   const { user, loading, signOut } = useAuth();
   const { isCreator, isPrinter, isSuperAdmin, userRole } = useUserRole();
   const navigate = useNavigate();
+  const [userStatus, setUserStatus] = useState<{
+    creator_status?: string;
+    onboarding_completed?: boolean;
+  } | null>(null);
   
   // Redirect if not logged in
   useEffect(() => {
@@ -41,6 +46,36 @@ const Studio = () => {
       navigate("/admin");
     }
   }, [user, loading, isSuperAdmin, navigate]);
+
+  // Check creator onboarding status
+  useEffect(() => {
+    if (user && isCreator) {
+      checkCreatorStatus();
+    }
+  }, [user, isCreator]);
+
+  const checkCreatorStatus = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('creator_status, onboarding_completed')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      setUserStatus(data);
+
+      // Rediriger vers l'onboarding si nécessaire
+      if (data && !data.onboarding_completed) {
+        navigate('/onboarding');
+      }
+    } catch (error) {
+      console.error('Error checking creator status:', error);
+    }
+  };
   
   // Show loading while auth is initializing
   if (loading) {
@@ -71,6 +106,61 @@ const Studio = () => {
           <h2 className="text-xl font-bold text-gray-800 mb-4">Accès non autorisé</h2>
           <p className="text-gray-600 mb-4">Rôle d'utilisateur non reconnu: {userRole}</p>
           <p className="text-sm text-gray-400">Veuillez contacter l'administrateur.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show status message for creators pending approval
+  if (isCreator && userStatus?.creator_status === 'pending') {
+    return (
+      <div className="h-screen w-full bg-slate-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Profil en cours de validation</h2>
+          <p className="text-gray-600 mb-4">
+            Votre profil et vos premiers produits sont en cours de validation par notre équipe.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Vous recevrez une notification dès que votre profil sera approuvé.
+          </p>
+          <button
+            onClick={() => {
+              signOut();
+              navigate("/");
+            }}
+            className="text-orange-600 hover:text-orange-700 underline"
+          >
+            Retour à l'accueil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isCreator && userStatus?.creator_status === 'rejected') {
+    return (
+      <div className="h-screen w-full bg-slate-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Corrections nécessaires</h2>
+          <p className="text-gray-600 mb-4">
+            Votre profil nécessite quelques ajustements avant d'être publié.
+          </p>
+          <button
+            onClick={() => navigate('/onboarding')}
+            className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 mb-4"
+          >
+            Modifier mon profil
+          </button>
+          <br />
+          <button
+            onClick={() => {
+              signOut();
+              navigate("/");
+            }}
+            className="text-orange-600 hover:text-orange-700 underline text-sm"
+          >
+            Retour à l'accueil
+          </button>
         </div>
       </div>
     );

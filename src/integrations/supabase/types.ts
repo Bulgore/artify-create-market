@@ -9,6 +9,79 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      creator_notifications: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_notifications_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_onboarding_steps: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          creator_id: string
+          id: string
+          step_name: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          step_name: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          step_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_onboarding_steps_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_products: {
         Row: {
           category: string | null
@@ -80,6 +153,57 @@ export type Database = {
             columns: ["print_product_id"]
             isOneToOne: false
             referencedRelation: "print_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string | null
+          creator_id: string
+          id: string
+          new_level: Database["public"]["Enums"]["creator_level"] | null
+          new_status: Database["public"]["Enums"]["creator_status"]
+          old_level: Database["public"]["Enums"]["creator_level"] | null
+          old_status: Database["public"]["Enums"]["creator_status"] | null
+          reason: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          new_level?: Database["public"]["Enums"]["creator_level"] | null
+          new_status: Database["public"]["Enums"]["creator_status"]
+          old_level?: Database["public"]["Enums"]["creator_level"] | null
+          old_status?: Database["public"]["Enums"]["creator_status"] | null
+          reason?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          new_level?: Database["public"]["Enums"]["creator_level"] | null
+          new_status?: Database["public"]["Enums"]["creator_status"]
+          old_level?: Database["public"]["Enums"]["creator_level"] | null
+          old_status?: Database["public"]["Enums"]["creator_status"] | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_status_history_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -631,47 +755,85 @@ export type Database = {
       users: {
         Row: {
           avatar_url: string | null
+          banner_url: string | null
           bio: string | null
           created_at: string | null
+          creator_level: Database["public"]["Enums"]["creator_level"] | null
+          creator_status: Database["public"]["Enums"]["creator_status"] | null
           default_commission: number | null
           full_name: string | null
           id: string
           is_public_profile: boolean | null
           is_super_admin: boolean | null
+          keywords: string[] | null
+          onboarding_completed: boolean | null
+          products_count: number | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           role: string
           social_links: Json | null
+          submitted_for_review_at: string | null
           updated_at: string | null
           website_url: string | null
         }
         Insert: {
           avatar_url?: string | null
+          banner_url?: string | null
           bio?: string | null
           created_at?: string | null
+          creator_level?: Database["public"]["Enums"]["creator_level"] | null
+          creator_status?: Database["public"]["Enums"]["creator_status"] | null
           default_commission?: number | null
           full_name?: string | null
           id: string
           is_public_profile?: boolean | null
           is_super_admin?: boolean | null
+          keywords?: string[] | null
+          onboarding_completed?: boolean | null
+          products_count?: number | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           role: string
           social_links?: Json | null
+          submitted_for_review_at?: string | null
           updated_at?: string | null
           website_url?: string | null
         }
         Update: {
           avatar_url?: string | null
+          banner_url?: string | null
           bio?: string | null
           created_at?: string | null
+          creator_level?: Database["public"]["Enums"]["creator_level"] | null
+          creator_status?: Database["public"]["Enums"]["creator_status"] | null
           default_commission?: number | null
           full_name?: string | null
           id?: string
           is_public_profile?: boolean | null
           is_super_admin?: boolean | null
+          keywords?: string[] | null
+          onboarding_completed?: boolean | null
+          products_count?: number | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           role?: string
           social_links?: Json | null
+          submitted_for_review_at?: string | null
           updated_at?: string | null
           website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -744,12 +906,33 @@ export type Database = {
           platform_earnings: number
         }[]
       }
+      change_creator_status: {
+        Args: {
+          creator_id: string
+          new_status: Database["public"]["Enums"]["creator_status"]
+          new_level?: Database["public"]["Enums"]["creator_level"]
+          changed_by?: string
+          reason?: string
+        }
+        Returns: boolean
+      }
+      create_creator_notification: {
+        Args: {
+          creator_id: string
+          notification_type: string
+          title: string
+          message: string
+        }
+        Returns: string
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: string
       }
     }
     Enums: {
+      creator_level: "debutant" | "confirme" | "premium"
+      creator_status: "draft" | "pending" | "approved" | "rejected"
       user_role: "superAdmin" | "admin" | "imprimeur" | "créateur"
     }
     CompositeTypes: {
@@ -866,6 +1049,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      creator_level: ["debutant", "confirme", "premium"],
+      creator_status: ["draft", "pending", "approved", "rejected"],
       user_role: ["superAdmin", "admin", "imprimeur", "créateur"],
     },
   },
