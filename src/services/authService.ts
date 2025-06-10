@@ -66,11 +66,15 @@ export const signUpUser = async (
   role: string = 'créateur'
 ): Promise<void> => {
   try {
-    // Vérifier d'abord si l'email existe déjà
-    const { data: existingUser } = await supabase.auth.admin.listUsers();
-    const emailExists = existingUser.users.some(user => user.email === email);
+    // Vérifier d'abord si l'email existe déjà via notre fonction RPC sécurisée
+    const { data: emailExists, error: checkError } = await supabase.rpc('check_email_exists', {
+      user_email: email
+    });
     
-    if (emailExists) {
+    if (checkError) {
+      console.warn('Could not check email existence:', checkError);
+      // Continuer sans vérification si on ne peut pas vérifier
+    } else if (emailExists) {
       throw new Error('Un compte avec cette adresse email existe déjà.');
     }
 

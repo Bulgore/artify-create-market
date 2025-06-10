@@ -23,6 +23,12 @@ import {
 import EditUserModal from "./EditUserModal";
 import { User } from "@/types/creator";
 
+interface AuthUser {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
 const UsersManagement = () => {
   const { isSuperAdmin } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -92,16 +98,19 @@ const UsersManagement = () => {
 
       console.log('Users fetched:', usersData?.length || 0);
 
-      // Récupérer les emails depuis auth.users via une fonction RPC sécurisée
-      const { data: authUsers, error: authError } = await supabase.rpc('get_auth_users_for_admin');
+      // Récupérer les emails depuis auth.users via la nouvelle fonction RPC
+      const { data: authUsersData, error: authError } = await supabase.rpc('get_auth_users_for_admin');
 
       if (authError) {
         console.warn('Could not fetch auth users:', authError);
       }
 
+      // Assurer que authUsersData est un tableau
+      const authUsers: AuthUser[] = Array.isArray(authUsersData) ? authUsersData : [];
+
       // Mapper les données avec les emails
       const mappedUsers = (usersData || []).map((user: any): User => {
-        const authUser = authUsers?.find((au: any) => au.id === user.id);
+        const authUser = authUsers.find((au: AuthUser) => au.id === user.id);
         
         return {
           ...user,
@@ -172,8 +181,8 @@ const UsersManagement = () => {
         throw userError;
       }
 
-      // Ensuite supprimer de auth.users via une fonction RPC
-      const { error: authError } = await supabase.rpc('delete_auth_user', {
+      // Ensuite supprimer de auth.users via la fonction RPC
+      const { data: authResult, error: authError } = await supabase.rpc('delete_auth_user', {
         user_id: user.id
       });
 

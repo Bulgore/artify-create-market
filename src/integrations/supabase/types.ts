@@ -1081,6 +1081,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_email_exists: {
+        Args: { user_email: string }
+        Returns: boolean
+      }
       create_creator_notification: {
         Args: {
           creator_id: string
@@ -1089,6 +1093,18 @@ export type Database = {
           message: string
         }
         Returns: string
+      }
+      delete_auth_user: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      get_auth_users_for_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          created_at: string
+        }[]
       }
       get_user_role: {
         Args: { user_id: string }
