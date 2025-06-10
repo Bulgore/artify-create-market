@@ -1110,6 +1110,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: string
       }
+      reset_user_account: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       creator_level: "debutant" | "confirme" | "premium"

@@ -5,19 +5,28 @@ import { validateEmail, sanitizeText } from '@/utils/inputValidation';
 
 export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
-    console.log('Fetching role for user:', userId);
+    console.log('🔍 Fetching role for user:', userId);
+    
+    if (!userId) {
+      console.warn('⚠️ No userId provided to fetchUserRole');
+      return null;
+    }
+
     const { data, error } = await supabase.rpc('get_user_role', { user_id: userId });
     
     if (error) {
-      console.error('Error fetching user role:', error);
-      return null;
+      console.error('❌ Error fetching user role:', error);
+      // En cas d'erreur, retourner un rôle par défaut plutôt que null
+      return 'créateur';
     }
     
-    console.log('Role fetched successfully:', data);
-    return data as string || null;
+    const role = data as string || 'créateur';
+    console.log('✅ Role fetched successfully:', role);
+    return role;
   } catch (error) {
-    console.error('Error fetching user role:', error);
-    return null;
+    console.error('❌ Unexpected error fetching user role:', error);
+    // En cas d'erreur inattendue, retourner un rôle par défaut
+    return 'créateur';
   }
 };
 
@@ -28,6 +37,8 @@ export const createUserProfile = async (
   role: string
 ): Promise<void> => {
   try {
+    console.log('👤 Creating user profile:', { userId, email, role });
+    
     // Validate and sanitize inputs
     if (!validateEmail(email)) {
       throw new Error('Email invalide');
@@ -44,19 +55,32 @@ export const createUserProfile = async (
       .from('users')
       .upsert({
         id: userId,
-        full_name_fr: sanitizedName,
+        full_name_fr: sanitizedName || email.split('@')[0],
+        full_name_en: sanitizedName || email.split('@')[0],
+        full_name_ty: sanitizedName || email.split('@')[0],
+        bio_fr: '',
+        bio_en: '',
+        bio_ty: '',
         role: role,
         is_super_admin: false, // Never set this to true via code
+        creator_status: 'draft',
+        creator_level: 'debutant',
+        onboarding_completed: false,
+        is_public_profile: false,
+        default_commission: 15.00,
+        products_count: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
 
     if (error) {
-      console.error('Error creating user profile:', error);
+      console.error('❌ Error creating user profile:', error);
       throw error;
     }
+    
+    console.log('✅ User profile created successfully');
   } catch (error) {
-    console.error('Error creating user profile:', error);
+    console.error('❌ Error creating user profile:', error);
     throw error;
   }
 };
@@ -68,18 +92,8 @@ export const signUpUser = async (
   role: string = 'créateur'
 ): Promise<void> => {
   try {
-    // Vérifier d'abord si l'email existe déjà via notre fonction RPC sécurisée
-    const { data: emailExists, error: checkError } = await supabase.rpc('check_email_exists', {
-      user_email: email
-    });
+    console.log('📝 Signing up user:', { email, role });
     
-    if (checkError) {
-      console.warn('Could not check email existence:', checkError);
-      // Continuer sans vérification si on ne peut pas vérifier
-    } else if (emailExists) {
-      throw new Error('Un compte avec cette adresse email existe déjà.');
-    }
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -94,12 +108,13 @@ export const signUpUser = async (
 
     if (error) throw error;
     
+    console.log('✅ User signed up successfully');
     toast({
       title: "Inscription réussie",
       description: "Veuillez vérifier votre email pour confirmer votre compte.",
     });
   } catch (error: any) {
-    console.error("Erreur lors de l'inscription:", error);
+    console.error("❌ Erreur lors de l'inscription:", error);
     toast({
       variant: "destructive",
       title: "Erreur d'inscription",
@@ -111,6 +126,8 @@ export const signUpUser = async (
 
 export const signInUser = async (email: string, password: string): Promise<void> => {
   try {
+    console.log('🔑 Signing in user:', email);
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -118,12 +135,13 @@ export const signInUser = async (email: string, password: string): Promise<void>
 
     if (error) throw error;
     
+    console.log('✅ User signed in successfully');
     toast({
       title: "Connexion réussie",
       description: "Bienvenue sur Podsleek!",
     });
   } catch (error: any) {
-    console.error("Erreur lors de la connexion:", error);
+    console.error("❌ Erreur lors de la connexion:", error);
     toast({
       variant: "destructive",
       title: "Erreur de connexion",
@@ -135,15 +153,18 @@ export const signInUser = async (email: string, password: string): Promise<void>
 
 export const signOutUser = async (): Promise<void> => {
   try {
+    console.log('🚪 Signing out user');
+    
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     
+    console.log('✅ User signed out successfully');
     toast({
       title: "Déconnexion réussie",
       description: "À bientôt!",
     });
   } catch (error: any) {
-    console.error("Erreur lors de la déconnexion:", error);
+    console.error("❌ Erreur lors de la déconnexion:", error);
     toast({
       variant: "destructive",
       title: "Erreur de déconnexion",

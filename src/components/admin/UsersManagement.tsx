@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, UserPlus, Edit2, Trash2 } from "lucide-react";
+import { Search, UserPlus, Edit2, Trash2, RefreshCw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +37,7 @@ const UsersManagement = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isResetting, setIsResetting] = useState<string | null>(null);
 
   useEffect(() => {
     if (isSuperAdmin()) {
@@ -57,7 +57,7 @@ const UsersManagement = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching users...');
+      console.log('👥 Fetching users...');
       
       // Récupérer d'abord les utilisateurs depuis la table users
       const { data: usersData, error: usersError } = await supabase
@@ -92,17 +92,17 @@ const UsersManagement = () => {
         .order('created_at', { ascending: false });
 
       if (usersError) {
-        console.error('Error fetching users:', usersError);
+        console.error('❌ Error fetching users:', usersError);
         throw usersError;
       }
 
-      console.log('Users fetched:', usersData?.length || 0);
+      console.log('✅ Users fetched:', usersData?.length || 0);
 
       // Récupérer les emails depuis auth.users via la nouvelle fonction RPC
       const { data: authUsersData, error: authError } = await supabase.rpc('get_auth_users_for_admin');
 
       if (authError) {
-        console.warn('Could not fetch auth users:', authError);
+        console.warn('⚠️ Could not fetch auth users:', authError);
       }
 
       // Assurer que authUsersData est un tableau
@@ -141,10 +141,10 @@ const UsersManagement = () => {
         };
       });
 
-      console.log('Mapped users:', mappedUsers.length, mappedUsers[0]);
+      console.log('✅ Mapped users:', mappedUsers.length);
       setUsers(mappedUsers);
     } catch (error: any) {
-      console.error('Error fetching users:', error);
+      console.error('❌ Error fetching users:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -166,9 +166,42 @@ const UsersManagement = () => {
     setSelectedUser(null);
   };
 
+  const handleResetUser = async (user: User) => {
+    setIsResetting(user.id);
+    try {
+      console.log('🔄 Resetting user account:', user.id);
+      
+      const { data, error } = await supabase.rpc('reset_user_account', {
+        target_user_id: user.id
+      });
+
+      if (error) {
+        console.error('❌ Error resetting user:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Compte réinitialisé",
+        description: `Le compte de ${user.full_name || user.email} a été réinitialisé avec succès.`,
+      });
+
+      // Rafraîchir la liste
+      fetchUsers();
+    } catch (error: any) {
+      console.error('❌ Error resetting user:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de réinitialiser le compte utilisateur.",
+      });
+    } finally {
+      setIsResetting(null);
+    }
+  };
+
   const handleDeleteUser = async (user: User) => {
     try {
-      console.log('Deleting user:', user.id);
+      console.log('🗑️ Deleting user:', user.id);
       
       // Supprimer d'abord de la table users
       const { error: userError } = await supabase
@@ -177,7 +210,7 @@ const UsersManagement = () => {
         .eq('id', user.id);
 
       if (userError) {
-        console.error('Error deleting user profile:', userError);
+        console.error('❌ Error deleting user profile:', userError);
         throw userError;
       }
 
@@ -187,7 +220,7 @@ const UsersManagement = () => {
       });
 
       if (authError) {
-        console.warn('Could not delete auth user:', authError);
+        console.warn('⚠️ Could not delete auth user:', authError);
         // Ne pas échouer si l'utilisateur auth n'existe pas
       }
 
@@ -199,7 +232,7 @@ const UsersManagement = () => {
       // Rafraîchir la liste
       fetchUsers();
     } catch (error: any) {
-      console.error('Error deleting user:', error);
+      console.error('❌ Error deleting user:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -327,6 +360,47 @@ const UsersManagement = () => {
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700"
+                              disabled={isResetting === user.id}
+                            >
+                              {isResetting === user.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" />
+                              ) : (
+                                <RefreshCw className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Réinitialiser le compte</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Êtes-vous sûr de vouloir réinitialiser le compte de <strong>{user.full_name || user.email}</strong> ?
+                                Cette action va :
+                                <ul className="list-disc list-inside mt-2 space-y-1">
+                                  <li>Normaliser les champs multilingues</li>
+                                  <li>Réinitialiser le statut créateur à "draft"</li>
+                                  <li>Remettre le niveau à "débutant"</li>
+                                  <li>Désactiver le profil public</li>
+                                </ul>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleResetUser(user)}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                Réinitialiser
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                         
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true);
+  const [roleLoaded, setRoleLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -26,36 +27,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        console.log('Initializing auth...');
+        console.log('🔄 Initializing auth...');
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (mounted) {
-          console.log('Current session:', currentSession?.user?.email);
+          console.log('📝 Current session:', { 
+            hasSession: !!currentSession, 
+            userEmail: currentSession?.user?.email,
+            userId: currentSession?.user?.id 
+          });
+          
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
           if (currentSession?.user) {
-            // Utiliser un délai pour éviter les appels simultanés
+            // Délai pour éviter les appels simultanés et permettre la stabilisation
             roleTimeout = setTimeout(async () => {
               if (mounted) {
-                console.log('Fetching user role for:', currentSession.user.id);
-                const role = await fetchUserRole(currentSession.user.id);
-                console.log('Fetched role:', role);
-                if (mounted) {
-                  setUserRole(role);
+                console.log('🔍 Fetching user role for:', currentSession.user.id);
+                try {
+                  const role = await fetchUserRole(currentSession.user.id);
+                  console.log('✅ Role fetched successfully:', role);
+                  if (mounted) {
+                    setUserRole(role);
+                    setRoleLoaded(true);
+                  }
+                } catch (error) {
+                  console.error('❌ Error fetching role:', error);
+                  if (mounted) {
+                    setUserRole('créateur'); // Fallback par défaut
+                    setRoleLoaded(true);
+                  }
                 }
               }
-            }, 100);
+            }, 200);
+          } else {
+            setRoleLoaded(true);
           }
           
           setInitializing(false);
-          setLoading(false);
+          // Ne pas définir loading à false ici, attendre que le rôle soit chargé
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('❌ Error initializing auth:', error);
         if (mounted) {
           setInitializing(false);
           setLoading(false);
+          setRoleLoaded(true);
         }
       }
     };
@@ -64,19 +82,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       async (event: string, newSession: Session | null) => {
         if (!mounted) return;
         
-        console.log("Auth state changed:", event, newSession?.user?.email);
+        console.log("🔄 Auth state changed:", { 
+          event, 
+          hasSession: !!newSession, 
+          userEmail: newSession?.user?.email,
+          userId: newSession?.user?.id,
+          currentUserId: user?.id 
+        });
         
         // Éviter les mises à jour redondantes
         if (newSession?.user?.id === user?.id && event !== 'SIGNED_OUT') {
+          console.log('⏭️ Skipping redundant auth state change');
           return;
         }
         
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        setRoleLoaded(false);
         
         if (newSession?.user) {
           if (event === 'SIGNED_UP') {
             try {
+              console.log('👤 Creating user profile for new signup');
               await createUserProfile(
                 newSession.user.id, 
                 newSession.user.email || '', 
@@ -84,27 +111,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 newSession.user.user_metadata?.role || 'créateur'
               );
             } catch (error) {
-              console.error('Error creating user profile:', error);
+              console.error('❌ Error creating user profile:', error);
             }
           }
           
           // Délai pour éviter les appels simultanés
           roleTimeout = setTimeout(async () => {
             if (mounted) {
-              console.log('Fetching role after auth change for:', newSession.user.id);
-              const role = await fetchUserRole(newSession.user.id);
-              console.log('Role after auth change:', role);
-              if (mounted) {
-                setUserRole(role);
+              console.log('🔍 Fetching role after auth change for:', newSession.user.id);
+              try {
+                const role = await fetchUserRole(newSession.user.id);
+                console.log('✅ Role after auth change:', role);
+                if (mounted) {
+                  setUserRole(role);
+                  setRoleLoaded(true);
+                }
+              } catch (error) {
+                console.error('❌ Error fetching role after auth change:', error);
+                if (mounted) {
+                  setUserRole('créateur'); // Fallback par défaut
+                  setRoleLoaded(true);
+                }
               }
             }
-          }, 200);
+          }, 300);
         } else {
           setUserRole(null);
-        }
-        
-        if (!initializing) {
-          setLoading(false);
+          setRoleLoaded(true);
         }
       }
     );
@@ -120,14 +153,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []); // Dépendances vides pour éviter les boucles
 
+  // Mettre à jour loading basé sur l'état de roleLoaded
+  useEffect(() => {
+    if (!initializing && roleLoaded) {
+      console.log('✅ Auth fully loaded:', { 
+        hasUser: !!user, 
+        userRole, 
+        roleLoaded 
+      });
+      setLoading(false);
+    }
+  }, [initializing, roleLoaded, user, userRole]);
+
   // Create secure role checkers
   const isAdmin = () => {
     const role = userRole;
-    return role === 'admin' || role === 'superAdmin';
+    const result = role === 'admin' || role === 'superAdmin';
+    console.log('🔐 isAdmin check:', { role, result });
+    return result;
   };
 
   const isSuperAdmin = () => {
-    return userRole === 'superAdmin';
+    const result = userRole === 'superAdmin';
+    console.log('🔐 isSuperAdmin check:', { userRole, result });
+    return result;
   };
 
   const isImprimeur = () => {
@@ -160,6 +209,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setSession(null);
       setUserRole(null);
+      setRoleLoaded(false);
     } finally {
       setLoading(false);
     }
