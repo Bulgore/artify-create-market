@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, UserPlus, Edit2 } from "lucide-react";
 import EditUserModal from "./EditUserModal";
-import { User, mapUserWithCompatibility } from "@/types/creator";
+import { User } from "@/types/creator";
 
 const UsersManagement = () => {
   const { isSuperAdmin } = useAuth();
@@ -28,9 +28,9 @@ const UsersManagement = () => {
 
   useEffect(() => {
     const filtered = users.filter(user =>
-      user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.role || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredUsers(filtered);
   }, [users, searchTerm]);
@@ -73,13 +73,37 @@ const UsersManagement = () => {
 
       if (error) throw error;
 
-      // Mapper avec compatibilité pour tous les utilisateurs
-      const mappedUsers = (data || []).map((user: any) => mapUserWithCompatibility({
+      // Mapper avec compatibilité pour tous les utilisateurs avec vérifications nulles
+      const mappedUsers = (data || []).map((user: any): User => ({
         ...user,
-        full_name: user.full_name_fr ?? '',
-        bio: user.bio_fr ?? ''
+        // Champs obligatoires avec fallbacks sécurisés
+        full_name: user.full_name_fr || user.full_name_en || user.full_name_ty || user.email || 'Utilisateur sans nom',
+        bio: user.bio_fr || user.bio_en || user.bio_ty || '',
+        role: user.role || 'créateur',
+        email: user.email || '',
+        created_at: user.created_at || new Date().toISOString(),
+        updated_at: user.updated_at || new Date().toISOString(),
+        id: user.id || '',
+        // Champs optionnels avec valeurs par défaut
+        is_super_admin: user.is_super_admin || false,
+        default_commission: user.default_commission || 15,
+        avatar_url: user.avatar_url || null,
+        is_public_profile: user.is_public_profile || false,
+        website_url: user.website_url || null,
+        social_links: user.social_links || {},
+        is_active: user.is_active !== false, // true par défaut sauf si explicitement false
+        creator_status: user.creator_status || undefined,
+        creator_level: user.creator_level || undefined,
+        products_count: user.products_count || 0,
+        onboarding_completed: user.onboarding_completed || false,
+        banner_url: user.banner_url || null,
+        keywords: user.keywords || [],
+        reviewed_at: user.reviewed_at || null,
+        reviewed_by: user.reviewed_by || null,
+        rejection_reason: user.rejection_reason || null
       }));
 
+      console.log('Mapped users:', mappedUsers.length, mappedUsers[0]);
       setUsers(mappedUsers);
     } catch (error: any) {
       console.error('Error fetching users:', error);
@@ -169,19 +193,19 @@ const UsersManagement = () => {
                         {user.avatar_url && (
                           <img
                             src={user.avatar_url}
-                            alt={user.full_name}
+                            alt={user.full_name || 'Avatar'}
                             className="w-10 h-10 rounded-full object-cover"
                           />
                         )}
                         <div>
-                          <h3 className="font-medium">{user.full_name}</h3>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <h3 className="font-medium">{user.full_name || 'Nom non défini'}</h3>
+                          <p className="text-sm text-muted-foreground">{user.email || 'Email non défini'}</p>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge className={getRoleColor(user.role)}>
-                          {user.role}
+                        <Badge className={getRoleColor(user.role || 'créateur')}>
+                          {user.role || 'créateur'}
                         </Badge>
                         {user.is_super_admin && (
                           <Badge variant="destructive">Super Admin</Badge>

@@ -19,8 +19,7 @@ interface DesignElementProps {
 export const DesignElement: React.FC<DesignElementProps> = ({
   designUrl,
   position,
-  isOutOfBounds,
-  onMouseDown
+  isOutOfBounds
 }) => {
   return (
     <g
@@ -32,94 +31,69 @@ export const DesignElement: React.FC<DesignElementProps> = ({
         y="0"
         width={position.width}
         height={position.height}
-        onMouseDown={onMouseDown}
-        className="cursor-move"
+        className="pointer-events-none" // Plus d'interaction
         preserveAspectRatio="xMidYMid meet"
-        style={{ pointerEvents: 'all' }}
+        style={{ pointerEvents: 'none' }}
       />
       
-      {/* Bordure de sélection avec animation subtile et couleur selon la position */}
+      {/* Bordure de visualisation - sans interaction */}
       <rect
         x="0"
         y="0"
         width={position.width}
         height={position.height}
         fill="none"
-        stroke={isOutOfBounds ? "#EF4444" : "#F59E0B"}
+        stroke={isOutOfBounds ? "#EF4444" : "#10B981"}
         strokeWidth="2"
-        strokeDasharray="6,3"
-        className="pointer-events-none animate-pulse"
-        rx="3"
+        strokeDasharray="8,4"
+        className="pointer-events-none"
+        rx="4"
+        opacity="0.8"
       />
       
-      {/* Coins de redimensionnement plus visibles */}
-      {[
-        [0, 0], [position.width, 0], 
-        [0, position.height], [position.width, position.height]
-      ].map(([x, y], index) => (
-        <g key={index}>
-          <circle 
-            cx={x} 
-            cy={y} 
-            r="6" 
-            fill="white" 
-            stroke={isOutOfBounds ? "#EF4444" : "#F59E0B"} 
-            strokeWidth="2" 
-            className="pointer-events-none" 
-          />
-          <circle 
-            cx={x} 
-            cy={y} 
-            r="3" 
-            fill={isOutOfBounds ? "#EF4444" : "#F59E0B"} 
-            className="pointer-events-none" 
-          />
-        </g>
-      ))}
-      
-      {/* Indicateur de rotation au centre avec icône */}
+      {/* Indicateur de positionnement automatique */}
       <g>
         <circle 
           cx={position.width/2} 
           cy={position.height/2} 
-          r="8" 
+          r="12" 
           fill="white" 
           fillOpacity="0.9" 
-          stroke={isOutOfBounds ? "#EF4444" : "#F59E0B"} 
+          stroke="#10B981" 
           strokeWidth="2" 
           className="pointer-events-none" 
         />
         <text 
           x={position.width/2} 
-          y={position.height/2 + 3} 
+          y={position.height/2 + 4} 
           textAnchor="middle" 
-          fontSize="10" 
-          fill={isOutOfBounds ? "#EF4444" : "#F59E0B"} 
+          fontSize="12" 
+          fill="#10B981" 
           className="pointer-events-none"
+          fontWeight="bold"
         >
-          ⟲
+          ✓
         </text>
       </g>
 
-      {/* Affichage des dimensions réelles */}
+      {/* Affichage des dimensions optimisées */}
       <g>
         <rect
           x={position.width + 10}
-          y="-5"
-          width="60"
-          height="20"
-          fill="rgba(0,0,0,0.8)"
-          rx="4"
+          y="-8"
+          width="auto"
+          height="24"
+          fill="rgba(16,185,129,0.9)"
+          rx="6"
         />
         <text
-          x={position.width + 40}
+          x={position.width + 15}
           y="8"
-          textAnchor="middle"
-          fontSize="10"
+          fontSize="11"
           fill="white"
           fontWeight="bold"
         >
-          {Math.round(position.width)}×{Math.round(position.height)}px
+          Auto-centré {Math.round(position.width)}×{Math.round(position.height)}px
         </text>
       </g>
     </g>

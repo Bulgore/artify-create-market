@@ -31,69 +31,36 @@ export const useDesignInteractions = ({
   imageLoaded
 }: UseDesignInteractionsProps) => {
   
+  // Désactiver toutes les interactions - affichage automatique seulement
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!imageLoaded) return;
-    
+    // Plus d'interaction - le visuel reste en place
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
-    
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (rect) {
-      const scaleX = 400 / rect.width;
-      const scaleY = 400 / rect.height;
-      setDragStart({
-        x: (e.clientX - rect.left) * scaleX - position.x,
-        y: (e.clientY - rect.top) * scaleY - position.y
-      });
-    }
-  }, [imageLoaded, position, setIsDragging, setDragStart, svgRef]);
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || !imageLoaded) return;
-    
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (rect) {
-      const scaleX = 400 / rect.width;
-      const scaleY = 400 / rect.height;
-      const newX = (e.clientX - rect.left) * scaleX - dragStart.x;
-      const newY = (e.clientY - rect.top) * scaleY - dragStart.y;
-      
-      updatePosition({
-        ...position,
-        x: newX,
-        y: newY
-      });
-    }
-  }, [isDragging, imageLoaded, position, dragStart, updatePosition, svgRef]);
+    // Plus de déplacement possible
+    e.preventDefault();
+  }, []);
 
   const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, [setIsDragging]);
+    // Plus d'interaction
+  }, []);
 
+  // Désactiver les contrôles de taille - taille automatique
   const handleSizeChange = useCallback((dimension: 'width' | 'height', value: number[]) => {
-    updatePosition({
-      ...position,
-      [dimension]: value[0]
-    });
-  }, [position, updatePosition]);
+    // Plus de redimensionnement manuel
+  }, []);
 
+  // Désactiver la rotation - toujours à 0°
   const handleRotationChange = useCallback((rotation: number[]) => {
-    updatePosition({
-      ...position,
-      rotation: rotation[0]
-    });
-  }, [position, updatePosition]);
+    // Plus de rotation manuelle
+  }, []);
 
+  // Désactiver les inputs manuels - valeurs automatiques
   const handleInputChange = useCallback((field: keyof DesignPosition, value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue)) {
-      updatePosition({
-        ...position,
-        [field]: numValue
-      });
-    }
-  }, [position, updatePosition]);
+    // Plus de modification manuelle des valeurs
+  }, []);
 
   return {
     handleMouseDown,
