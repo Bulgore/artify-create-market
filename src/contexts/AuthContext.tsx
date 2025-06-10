@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
@@ -9,7 +10,6 @@ import {
   signInUser, 
   signOutUser 
 } from '@/services/authService';
-import { getSecureUserRole } from '@/utils/secureRoleUtils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             );
           }
           
-          // Use secure role fetching
+          // Use secure role fetching with delay
           setTimeout(async () => {
             if (mounted) {
               const role = await fetchUserRole(newSession.user.id);
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setUserRole(role);
               }
             }
-          }, 0);
+          }, 100);
         } else {
           setUserRole(null);
         }
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  // Create secure role checkers using the utility function
+  // Create secure role checkers
   const isAdmin = () => {
     return userRole === 'admin' || userRole === 'superAdmin';
   };
@@ -122,8 +122,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     try {
       await signInUser(email, password);
-    } finally {
+    } catch (error) {
       setLoading(false);
+      throw error;
     }
   };
 

@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { validateEmail, sanitizeText } from '@/utils/inputValidation';
 
 export const fetchUserRole = async (userId: string): Promise<string | null> => {
@@ -41,7 +42,7 @@ export const createUserProfile = async (
       .from('users')
       .upsert({
         id: userId,
-        full_name: sanitizedName,
+        full_name_fr: sanitizedName,
         role: role,
         is_super_admin: false, // Never set this to true via code
         created_at: new Date().toISOString(),
@@ -65,6 +66,14 @@ export const signUpUser = async (
   role: string = 'créateur'
 ): Promise<void> => {
   try {
+    // Vérifier d'abord si l'email existe déjà
+    const { data: existingUser } = await supabase.auth.admin.listUsers();
+    const emailExists = existingUser.users.some(user => user.email === email);
+    
+    if (emailExists) {
+      throw new Error('Un compte avec cette adresse email existe déjà.');
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -72,7 +81,8 @@ export const signUpUser = async (
         data: {
           full_name: fullName,
           role: role,
-        }
+        },
+        emailRedirectTo: `${window.location.origin}/`
       }
     });
 
