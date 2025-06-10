@@ -5,6 +5,7 @@ import { validateEmail, sanitizeText } from '@/utils/inputValidation';
 
 export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
+    console.log('Fetching role for user:', userId);
     const { data, error } = await supabase.rpc('get_user_role', { user_id: userId });
     
     if (error) {
@@ -12,6 +13,7 @@ export const fetchUserRole = async (userId: string): Promise<string | null> => {
       return null;
     }
     
+    console.log('Role fetched successfully:', data);
     return data as string || null;
   } catch (error) {
     console.error('Error fetching user role:', error);
