@@ -161,6 +161,11 @@ SUPABASE_SERVICE_ROLE_KEY=[PRIVATE_KEY]`);
 │   │   ├── pricing/     # Gestion prix
 │   │   ├── templates/   # Gestion gabarits
 │   │   ├── users/       # Gestion utilisateurs (NOUVEAU)
+│   │   │   ├── UserCard.tsx           # Carte utilisateur
+│   │   │   ├── UserActions.tsx        # Actions utilisateur
+│   │   │   ├── UserSearch.tsx         # Recherche utilisateurs
+│   │   │   ├── UserResetDialog.tsx    # Dialog réinitialisation
+│   │   │   └── UserDeleteDialog.tsx   # Dialog suppression
 │   │   └── technical-docs/ # Documentation technique
 │   ├── creator/         # Studio créateur
 │   │   ├── design-positioner/  # Positionnement designs
@@ -285,6 +290,57 @@ BEGIN
     WHEN is_super_admin = true THEN 'superAdmin' 
     ELSE role 
   END FROM public.users WHERE id = user_id);
+END;
+$$;`);
+
+    checkNewPage();
+    addSubtitle('🛡️ Fonction reset_user_account() (NOUVEAU)');
+    addText('Cette fonction permet aux super admins de réinitialiser les comptes utilisateurs problématiques.');
+    
+    addCode(`CREATE OR REPLACE FUNCTION public.reset_user_account(target_user_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  auth_user_email text;
+BEGIN
+  -- Vérifier que l'utilisateur appelant est super admin
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users 
+    WHERE users.id = auth.uid() AND users.is_super_admin = true
+  ) THEN
+    RAISE EXCEPTION 'Access denied: Super admin required';
+  END IF;
+  
+  -- Récupérer l'email depuis auth.users
+  SELECT email INTO auth_user_email
+  FROM auth.users WHERE id = target_user_id;
+  
+  IF auth_user_email IS NULL THEN
+    RAISE EXCEPTION 'User not found in auth.users';
+  END IF;
+  
+  -- Réinitialiser le profil avec des valeurs par défaut
+  UPDATE public.users 
+  SET 
+    full_name_fr = COALESCE(NULLIF(full_name_fr, ''), split_part(auth_user_email, '@', 1)),
+    full_name_en = COALESCE(NULLIF(full_name_en, ''), split_part(auth_user_email, '@', 1)),
+    full_name_ty = COALESCE(NULLIF(full_name_ty, ''), split_part(auth_user_email, '@', 1)),
+    bio_fr = '', bio_en = '', bio_ty = '',
+    role = COALESCE(NULLIF(role, ''), 'créateur'),
+    creator_status = 'draft',
+    creator_level = 'debutant',
+    onboarding_completed = false,
+    is_public_profile = false,
+    default_commission = 15.00,
+    products_count = 0,
+    social_links = '{}',
+    website_url = NULL,
+    updated_at = now()
+  WHERE id = target_user_id;
+  
+  RETURN true;
 END;
 $$;`);
 
@@ -522,12 +578,12 @@ npm run lint`);
     addText('Cette documentation doit être mise à jour à chaque modification majeure de la structure de données ou des fonctionnalités critiques.');
 
     // Footer sur toutes les pages
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(128, 128, 128);
-      doc.text(`© 2025 Podsleek - Documentation Technique v1.2.0 - Page ${i}/${pageCount}`, 105, 290, { align: 'center' });
+      doc.text(`© 2025 Podsleek - Documentation Technique v1.2.0 - Page ${i}/${totalPages}`, 105, 290, { align: 'center' });
     }
 
     // Sauvegarde
@@ -889,9 +945,7 @@ BEGIN
     full_name_fr = COALESCE(NULLIF(full_name_fr, ''), split_part(auth_user_email, '@', 1)),
     full_name_en = COALESCE(NULLIF(full_name_en, ''), split_part(auth_user_email, '@', 1)),
     full_name_ty = COALESCE(NULLIF(full_name_ty, ''), split_part(auth_user_email, '@', 1)),
-    bio_fr = '',
-    bio_en = '',
-    bio_ty = '',
+    bio_fr = '', bio_en = '', bio_ty = '',
     role = COALESCE(NULLIF(role, ''), 'créateur'),
     creator_status = 'draft',
     creator_level = 'debutant',
