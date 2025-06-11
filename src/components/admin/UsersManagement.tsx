@@ -28,6 +28,8 @@ const UsersManagement = () => {
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [resetDialogUser, setResetDialogUser] = useState<User | null>(null);
+  const [deleteDialogUser, setDeleteDialogUser] = useState<User | null>(null);
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
@@ -38,6 +40,24 @@ const UsersManagement = () => {
     fetchUsers();
     setIsEditModalOpen(false);
     setSelectedUser(null);
+  };
+
+  const handleResetClick = (user: User) => {
+    setResetDialogUser(user);
+  };
+
+  const handleResetConfirm = async (user: User) => {
+    await handleResetUser(user);
+    setResetDialogUser(null);
+  };
+
+  const handleDeleteClick = (user: User) => {
+    setDeleteDialogUser(user);
+  };
+
+  const handleDeleteConfirm = async (user: User) => {
+    await handleDeleteUser(user);
+    setDeleteDialogUser(null);
   };
 
   if (!isSuperAdmin()) {
@@ -79,18 +99,13 @@ const UsersManagement = () => {
               <div className="space-y-4">
                 {filteredUsers.map((user) => (
                   <UserCard key={user.id} user={user}>
-                    <UserResetDialog user={user} onConfirm={handleResetUser}>
-                      <UserActions
-                        user={user}
-                        isResetting={isResetting === user.id}
-                        onEdit={handleEditUser}
-                        onReset={() => {}}
-                        onDelete={() => {}}
-                      />
-                    </UserResetDialog>
-                    <UserDeleteDialog user={user} onConfirm={handleDeleteUser}>
-                      <div />
-                    </UserDeleteDialog>
+                    <UserActions
+                      user={user}
+                      isResetting={isResetting === user.id}
+                      onEdit={handleEditUser}
+                      onReset={handleResetClick}
+                      onDelete={handleDeleteClick}
+                    />
                   </UserCard>
                 ))}
 
@@ -111,6 +126,24 @@ const UsersManagement = () => {
         onClose={() => setIsEditModalOpen(false)}
         onUserUpdated={handleUserUpdated}
       />
+
+      {resetDialogUser && (
+        <UserResetDialog
+          user={resetDialogUser}
+          onConfirm={handleResetConfirm}
+        >
+          <div />
+        </UserResetDialog>
+      )}
+
+      {deleteDialogUser && (
+        <UserDeleteDialog
+          user={deleteDialogUser}
+          onConfirm={handleDeleteConfirm}
+        >
+          <div />
+        </UserDeleteDialog>
+      )}
     </div>
   );
 };

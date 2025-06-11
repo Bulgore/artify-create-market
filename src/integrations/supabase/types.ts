@@ -909,6 +909,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           banner_url: string | null
+          bio: string | null
           bio_en: string | null
           bio_fr: string | null
           bio_ty: string | null
@@ -916,6 +917,7 @@ export type Database = {
           creator_level: Database["public"]["Enums"]["creator_level"] | null
           creator_status: Database["public"]["Enums"]["creator_status"] | null
           default_commission: number | null
+          full_name: string | null
           full_name_en: string | null
           full_name_fr: string | null
           full_name_ty: string | null
@@ -937,6 +939,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           banner_url?: string | null
+          bio?: string | null
           bio_en?: string | null
           bio_fr?: string | null
           bio_ty?: string | null
@@ -944,6 +947,7 @@ export type Database = {
           creator_level?: Database["public"]["Enums"]["creator_level"] | null
           creator_status?: Database["public"]["Enums"]["creator_status"] | null
           default_commission?: number | null
+          full_name?: string | null
           full_name_en?: string | null
           full_name_fr?: string | null
           full_name_ty?: string | null
@@ -965,6 +969,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           banner_url?: string | null
+          bio?: string | null
           bio_en?: string | null
           bio_fr?: string | null
           bio_ty?: string | null
@@ -972,6 +977,7 @@ export type Database = {
           creator_level?: Database["public"]["Enums"]["creator_level"] | null
           creator_status?: Database["public"]["Enums"]["creator_status"] | null
           default_commission?: number | null
+          full_name?: string | null
           full_name_en?: string | null
           full_name_fr?: string | null
           full_name_ty?: string | null

@@ -45,7 +45,7 @@ export const createUserProfile = async (
     }
     
     const sanitizedName = sanitizeText(fullName);
-    const validRoles = ['créateur', 'imprimeur'];
+    const validRoles = ['créateur', 'imprimeur', 'admin', 'superAdmin'];
     
     if (!validRoles.includes(role)) {
       role = 'créateur'; // Default to creator for security
@@ -55,9 +55,11 @@ export const createUserProfile = async (
       .from('users')
       .upsert({
         id: userId,
+        full_name: sanitizedName || email.split('@')[0],
         full_name_fr: sanitizedName || email.split('@')[0],
         full_name_en: sanitizedName || email.split('@')[0],
         full_name_ty: sanitizedName || email.split('@')[0],
+        bio: '',
         bio_fr: '',
         bio_en: '',
         bio_ty: '',
