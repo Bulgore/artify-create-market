@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Sidebar,
@@ -25,7 +24,7 @@ import {
   LifeBuoy,
   LogOut,
   Zap,
-  Template
+  FileTemplate
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -43,7 +42,7 @@ const AdminSidebar = ({ activeSection, setActiveSection, onSignOut }: AdminSideb
         { id: "pages", name: "Pages", icon: FileText },
         { id: "products", name: "Produits", icon: Package },
         { id: "blocks", name: "Blocs", icon: Layers },
-        { id: "templates", name: "Gabarits", icon: Template }
+        { id: "templates", name: "Gabarits", icon: FileTemplate }
       ]
     },
     {
