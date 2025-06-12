@@ -12,6 +12,7 @@ import MediaManagement from "@/components/admin/MediaManagement";
 import CalendarManagement from "@/components/admin/CalendarManagement";
 import AutomationManagement from "@/components/admin/AutomationManagement";
 import TemplatesManagement from "@/components/admin/TemplatesManagement";
+import MaintenanceManagement from "@/components/admin/MaintenanceManagement";
 
 interface AdminMainContentProps {
   activeSection: string;
@@ -42,6 +43,8 @@ const AdminMainContent = ({ activeSection }: AdminMainContentProps) => {
         return <CalendarManagement />;
       case "automation":
         return <AutomationManagement />;
+      case "maintenance":
+        return <MaintenanceManagement />;
       default:
         return <NewAdminTabs />;
     }

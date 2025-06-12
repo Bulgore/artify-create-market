@@ -36,7 +36,8 @@ const AdminLayout = ({ onSignOut }: AdminLayoutProps) => {
         items: [
           { id: "media", name: "Médias" },
           { id: "calendar", name: "Calendrier" },
-          { id: "automation", name: "Automatisations" }
+          { id: "automation", name: "Automatisations" },
+          { id: "maintenance", name: "Maintenance" }
         ]
       }
     ];
