@@ -13,6 +13,7 @@ import CalendarManagement from "@/components/admin/CalendarManagement";
 import AutomationManagement from "@/components/admin/AutomationManagement";
 import TemplatesManagement from "@/components/admin/TemplatesManagement";
 import MaintenanceManagement from "@/components/admin/MaintenanceManagement";
+import UsersManagement from "@/components/admin/UsersManagement";
 
 interface AdminMainContentProps {
   activeSection: string;
@@ -45,6 +46,8 @@ const AdminMainContent = ({ activeSection }: AdminMainContentProps) => {
         return <AutomationManagement />;
       case "maintenance":
         return <MaintenanceManagement />;
+      case "users":
+        return <UsersManagement />;
       default:
         return <NewAdminTabs />;
     }

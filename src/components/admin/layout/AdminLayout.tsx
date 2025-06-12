@@ -39,6 +39,12 @@ const AdminLayout = ({ onSignOut }: AdminLayoutProps) => {
           { id: "automation", name: "Automatisations" },
           { id: "maintenance", name: "Maintenance" }
         ]
+      },
+      {
+        title: "Administration",
+        items: [
+          { id: "users", name: "Utilisateurs" }
+        ]
       }
     ];
 

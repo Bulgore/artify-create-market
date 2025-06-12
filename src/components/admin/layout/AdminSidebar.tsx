@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Sidebar,
@@ -24,7 +25,8 @@ import {
   LifeBuoy,
   LogOut,
   Zap,
-  File
+  File,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -60,6 +62,12 @@ const AdminSidebar = ({ activeSection, setActiveSection, onSignOut }: AdminSideb
         { id: "calendar", name: "Calendrier", icon: Calendar },
         { id: "automation", name: "Automatisations", icon: Zap },
         { id: "maintenance", name: "Maintenance", icon: Wrench }
+      ]
+    },
+    {
+      title: "Administration",
+      items: [
+        { id: "users", name: "Utilisateurs", icon: Users }
       ]
     }
   ];
