@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Plus, BarChart3, User } from 'lucide-react';
@@ -10,11 +10,68 @@ import { SimplifiedProductCreation } from './SimplifiedProductCreation';
 import { useCustomProductCreator } from '@/hooks/useCustomProductCreator';
 import DesignList from './DesignList';
 import SalesPanel from './SalesPanel';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+interface Design {
+  id: string;
+  name: string;
+  description?: string;
+  preview_url: string;
+  is_published: boolean;
+  creator_margin: number;
+}
 
 const CreatorWorkspace: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('products');
   const [showProductCreation, setShowProductCreation] = useState(false);
+  const [designs, setDesigns] = useState<Design[]>([]);
+  const [isLoadingDesigns, setIsLoadingDesigns] = useState(false);
   const { printProducts, handleProductCreate } = useCustomProductCreator();
+
+  useEffect(() => {
+    if (user && activeTab === 'designs') {
+      loadDesigns();
+    }
+  }, [user, activeTab]);
+
+  const loadDesigns = async () => {
+    if (!user) return;
+    
+    setIsLoadingDesigns(true);
+    try {
+      const { data, error } = await supabase
+        .from('creator_products')
+        .select('id, name_fr, description_fr, preview_url, is_published, creator_margin')
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Mapper avec compatibilité
+      const mappedDesigns = (data || []).map((design: any) => ({
+        id: design.id,
+        name: design.name_fr ?? design.name ?? '',
+        description: design.description_fr ?? design.description ?? '',
+        preview_url: design.preview_url,
+        is_published: design.is_published ?? false,
+        creator_margin: design.creator_margin ?? 20
+      }));
+
+      setDesigns(mappedDesigns);
+    } catch (error) {
+      console.error('Error loading designs:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de charger vos designs.'
+      });
+    } finally {
+      setIsLoadingDesigns(false);
+    }
+  };
 
   const handleCreateProduct = () => {
     console.log('🎯 Bouton "Créer un produit" cliqué - CreatorWorkspace');
@@ -29,9 +86,21 @@ const CreatorWorkspace: React.FC = () => {
     if (success) {
       console.log('✅ Produit créé avec succès depuis CreatorWorkspace');
       setShowProductCreation(false);
+      // Recharger les designs si on est sur l'onglet designs
+      if (activeTab === 'designs') {
+        await loadDesigns();
+      }
     } else {
       console.log('❌ Échec de la création du produit depuis CreatorWorkspace');
     }
+  };
+
+  const handleDesignUpdated = async () => {
+    await loadDesigns();
+  };
+
+  const handleCreateDesign = () => {
+    handleCreateProduct();
   };
 
   return (
@@ -98,7 +167,15 @@ const CreatorWorkspace: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="designs" className="space-y-6">
-          <DesignList />
+          {isLoadingDesigns ? (
+            <div className="text-center py-8">Chargement de vos designs...</div>
+          ) : (
+            <DesignList 
+              designs={designs}
+              onDesignUpdated={handleDesignUpdated}
+              onCreateDesign={handleCreateDesign}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="sales" className="space-y-6">
