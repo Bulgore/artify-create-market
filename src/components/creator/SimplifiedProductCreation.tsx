@@ -43,22 +43,17 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     console.log('📷 Design uploaded:', url);
     setDesignUrl(url);
     
-    // ✅ CORRECTION: Generate optimal centered position immediately
-    if (url && selectedProduct?.product_templates) {
-      const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
-      
-      // Calculate centered position with proper sizing
-      const autoPosition = {
-        x: designArea.x + (designArea.width * 0.2), // 20% margin from left
-        y: designArea.y + (designArea.height * 0.2), // 20% margin from top
-        width: designArea.width * 0.6, // 60% of available width
-        height: designArea.height * 0.6, // 60% of available height
-        rotation: 0
-      };
-      
-      console.log('🎯 Auto-generated centered position:', autoPosition);
-      setDesignPosition(autoPosition);
-    }
+    // ✅ CORRECTION: Position automatique centrée dès l'upload
+    const autoPosition = {
+      x: 30,
+      y: 40,
+      width: 40,
+      height: 20,
+      rotation: 0
+    };
+    
+    console.log('🎯 Auto-generated centered position:', autoPosition);
+    setDesignPosition(autoPosition);
   };
 
   const handleDesignRemove = () => {
@@ -76,7 +71,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       allFieldsValid: !!(selectedProduct && designUrl && productData.name.trim())
     });
 
-    // ✅ CORRECTION: Simplified validation - check only essential fields
+    // ✅ CORRECTION: Validation ultra-simplifiée
     if (!selectedProduct) {
       console.log('❌ No product selected');
       return;
@@ -92,20 +87,14 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       return;
     }
 
-    // ✅ Always ensure we have a position (auto-generate if missing)
-    let finalPosition = designPosition;
-    if (!finalPosition && selectedProduct.product_templates) {
-      const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
-      finalPosition = {
-        x: designArea.x + (designArea.width * 0.2),
-        y: designArea.y + (designArea.height * 0.2),
-        width: designArea.width * 0.6,
-        height: designArea.height * 0.6,
-        rotation: 0
-      };
-      console.log('🔄 Generated fallback position:', finalPosition);
-      setDesignPosition(finalPosition);
-    }
+    // ✅ Position toujours disponible (auto-générée)
+    const finalPosition = designPosition || {
+      x: 30,
+      y: 40,
+      width: 40,
+      height: 20,
+      rotation: 0
+    };
 
     console.log('✅ All validations passed, creating product...');
 
@@ -133,14 +122,13 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     ? selectedProduct.base_price * (1 + productData.margin_percentage / 100)
     : 0;
 
-  // ✅ CORRECTION: More permissive validation - position is auto-generated
+  // ✅ CORRECTION: Validation basique uniquement
   const canSubmit = !!(selectedProduct && designUrl && productData.name.trim());
 
   console.log('🔍 Form validation state:', {
     hasProduct: !!selectedProduct,
     hasDesign: !!designUrl,
     hasName: !!productData.name.trim(),
-    hasPosition: !!designPosition,
     canSubmit
   });
 
@@ -161,7 +149,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                 <SimpleDesignUploader onDesignUpload={handleDesignUpload} />
                 {designUrl && (
                   <div className="mt-2 text-sm text-green-600">
-                    ✅ Design uploadé et positionné automatiquement
+                    ✅ Design uploadé et centré automatiquement
                   </div>
                 )}
               </CardContent>
@@ -233,7 +221,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                   </div>
                 </div>
 
-                {/* ✅ CORRECTION: Clear validation feedback */}
+                {/* ✅ CORRECTION: Validation feedback claire */}
                 {!canSubmit && (
                   <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded">
                     <div className="font-medium mb-1">Informations manquantes :</div>
@@ -245,7 +233,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 
                 {canSubmit && (
                   <div className="text-sm text-green-600 bg-green-50 p-3 rounded">
-                    ✅ Tous les champs sont remplis, vous pouvez créer le produit
+                    ✅ Prêt à créer ! Design centré automatiquement.
                   </div>
                 )}
 

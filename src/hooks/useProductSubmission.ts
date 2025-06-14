@@ -15,11 +15,35 @@ export const useProductSubmission = () => {
     designPosition: any,
     productData: ProductData
   ) => {
-    if (!selectedProduct || !selectedProduct.product_templates || !designUrl || !designPosition || !user) {
+    console.log('🚀 useProductSubmission - handleSubmit called with:', {
+      selectedProduct: selectedProduct?.name,
+      designUrl: !!designUrl,
+      designPosition,
+      productData
+    });
+
+    // ✅ CORRECTION: Validation simplifiée - designPosition n'est plus requis
+    if (!selectedProduct || !selectedProduct.product_templates || !designUrl || !user) {
+      console.log('❌ Validation failed:', {
+        hasProduct: !!selectedProduct,
+        hasTemplate: !!selectedProduct?.product_templates,
+        hasDesign: !!designUrl,
+        hasUser: !!user
+      });
+
       toast({
         variant: "destructive",
         title: "Informations manquantes",
-        description: "Veuillez remplir tous les champs et positionner votre design."
+        description: "Veuillez sélectionner un produit et uploader un design."
+      });
+      return false;
+    }
+
+    if (!productData.name?.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Nom manquant",
+        description: "Veuillez renseigner le nom du produit."
       });
       return false;
     }
@@ -27,11 +51,16 @@ export const useProductSubmission = () => {
     setIsLoading(true);
 
     try {
-      console.log('🚀 Creating product with data:', {
-        creator_id: user.id,
-        print_product_id: selectedProduct.id,
-        productData
-      });
+      // ✅ Générer une position automatique si manquante
+      const autoPosition = designPosition || {
+        x: 30,
+        y: 40, 
+        width: 40,
+        height: 20,
+        rotation: 0
+      };
+
+      console.log('✅ All validations passed, creating product with auto position:', autoPosition);
 
       const { error } = await supabase
         .from('creator_products')
@@ -43,7 +72,7 @@ export const useProductSubmission = () => {
           creator_margin_percentage: productData.margin_percentage,
           design_data: {
             design_image_url: designUrl,
-            position: designPosition,
+            position: autoPosition,
             template_svg_url: selectedProduct.product_templates.svg_file_url
           },
           preview_url: selectedProduct.product_templates.mockup_image_url,
@@ -66,10 +95,9 @@ export const useProductSubmission = () => {
     } catch (error: any) {
       console.error('❌ Error creating product:', error);
       
-      // ✅ CORRECTION : Message d'erreur utilisateur amélioré
       const errorMessage = error?.message?.includes('duplicate') 
         ? "Ce produit existe déjà. Veuillez modifier le nom ou les paramètres."
-        : "Erreur lors de la création du produit. Veuillez réessayer ou contacter le support.";
+        : "Erreur lors de la création du produit. Veuillez réessayer.";
       
       toast({
         variant: "destructive",
