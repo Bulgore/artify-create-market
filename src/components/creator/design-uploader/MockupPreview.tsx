@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye } from 'lucide-react';
 import type { DesignArea } from '@/types/designArea';
+import { calculateAutoPosition, getImageDimensions, AutoPositionResult } from '@/utils/designPositioning';
 
 interface MockupPreviewProps {
   mockupUrl?: string;
@@ -21,6 +22,7 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
   const [designLoaded, setDesignLoaded] = useState(false);
   const [mockupError, setMockupError] = useState(false);
   const [designError, setDesignError] = useState(false);
+  const [autoPosition, setAutoPosition] = useState<AutoPositionResult | null>(null);
 
   useEffect(() => {
     console.log('🖼️ MockupPreview props:', {
@@ -30,6 +32,23 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
       designPosition
     });
   }, [mockupUrl, designUrl, designArea, designPosition]);
+
+  // Calculer la position automatique quand le design et la zone sont disponibles
+  useEffect(() => {
+    if (designUrl && designArea && mockupLoaded) {
+      console.log('🔄 Calcul de la position automatique...');
+      
+      getImageDimensions(designUrl)
+        .then(dimensions => {
+          const position = calculateAutoPosition(dimensions, designArea);
+          setAutoPosition(position);
+          console.log('✅ Position automatique calculée:', position);
+        })
+        .catch(error => {
+          console.error('❌ Erreur calcul position:', error);
+        });
+    }
+  }, [designUrl, designArea, mockupLoaded]);
 
   const handleMockupLoad = () => {
     console.log('✅ Mockup loaded successfully');
@@ -73,71 +92,39 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
     );
   }
 
-  // ✅ CORRECTION: Utiliser les vraies dimensions de la zone d'impression pour centrer le design
-  const getDesignPositionInPrintArea = () => {
-    if (!designArea) {
-      console.warn('⚠️ Aucune zone d\'impression définie, utilisation position par défaut');
-      return {
-        left: '25%',
-        top: '30%',
-        width: '50%',
-        height: '40%'
-      };
-    }
-
-    console.log('📐 Calcul position avec zone d\'impression:', designArea);
-
-    // Convertir les coordonnées absolues de la zone d'impression en pourcentages du mockup
-    // Note: Ces valeurs devraient idéalement venir des dimensions réelles du mockup
-    const mockupWidth = 400; // Largeur du conteneur mockup
-    const mockupHeight = 400; // Hauteur du conteneur mockup
-    
-    // Position et taille de la zone d'impression en pourcentages
-    const printAreaLeft = (designArea.x / mockupWidth) * 100;
-    const printAreaTop = (designArea.y / mockupHeight) * 100;
-    const printAreaWidth = (designArea.width / mockupWidth) * 100;
-    const printAreaHeight = (designArea.height / mockupHeight) * 100;
-    
-    // Le design occupe 90% de la zone d'impression (marge de sécurité)
-    const designSizeRatio = 0.9;
-    const designWidth = printAreaWidth * designSizeRatio;
-    const designHeight = printAreaHeight * designSizeRatio;
-    
-    // Centrer le design dans la zone d'impression
-    const designLeft = printAreaLeft + (printAreaWidth - designWidth) / 2;
-    const designTop = printAreaTop + (printAreaHeight - designHeight) / 2;
-
-    console.log('🎯 Position calculée:', {
-      printArea: { left: printAreaLeft, top: printAreaTop, width: printAreaWidth, height: printAreaHeight },
-      design: { left: designLeft, top: designTop, width: designWidth, height: designHeight }
-    });
-
-    return {
-      left: `${designLeft}%`,
-      top: `${designTop}%`,
-      width: `${designWidth}%`,
-      height: `${designHeight}%`
-    };
-  };
-
-  const designStyle = getDesignPositionInPrintArea();
-
-  // Calculer la position de la zone d'impression pour l'affichage
-  const getPrintAreaStyle = () => {
+  // Calculer la position de la zone d'impression pour l'affichage (en pourcentages du conteneur)
+  const getPrintAreaDisplayStyle = () => {
     if (!designArea) return null;
     
-    const mockupWidth = 400;
-    const mockupHeight = 400;
+    // Dimensions du conteneur d'affichage
+    const containerWidth = 400;
+    const containerHeight = 300;
     
     return {
-      left: `${(designArea.x / mockupWidth) * 100}%`,
-      top: `${(designArea.y / mockupHeight) * 100}%`,
-      width: `${(designArea.width / mockupWidth) * 100}%`,
-      height: `${(designArea.height / mockupHeight) * 100}%`
+      left: `${(designArea.x / containerWidth) * 100}%`,
+      top: `${(designArea.y / containerHeight) * 100}%`,
+      width: `${(designArea.width / containerWidth) * 100}%`,
+      height: `${(designArea.height / containerHeight) * 100}%`
     };
   };
 
-  const printAreaStyle = getPrintAreaStyle();
+  // Calculer la position du design pour l'affichage
+  const getDesignDisplayStyle = () => {
+    if (!autoPosition) return null;
+    
+    const containerWidth = 400;
+    const containerHeight = 300;
+    
+    return {
+      left: `${(autoPosition.x / containerWidth) * 100}%`,
+      top: `${(autoPosition.y / containerHeight) * 100}%`,
+      width: `${(autoPosition.width / containerWidth) * 100}%`,
+      height: `${(autoPosition.height / containerHeight) * 100}%`
+    };
+  };
+
+  const printAreaStyle = getPrintAreaDisplayStyle();
+  const designStyle = getDesignDisplayStyle();
   
   return (
     <Card>
@@ -150,7 +137,7 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
       <CardContent>
         <div className="relative">
           {/* Mockup background */}
-          <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden">
+          <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
             {mockupError ? (
               <div className="w-full h-full flex items-center justify-center text-red-500">
                 <div className="text-center">
@@ -168,21 +155,21 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
               />
             )}
             
-            {/* Zone d'impression - Affichage du gabarit */}
+            {/* Zone d'impression - Gabarit visible */}
             {mockupLoaded && printAreaStyle && (
               <div
                 className="absolute border-2 border-red-500 border-dashed bg-red-500 bg-opacity-10"
                 style={printAreaStyle}
                 title="Zone d'impression définie par l'administrateur"
               >
-                <div className="absolute -top-6 left-0 text-xs text-red-600 bg-white px-1 rounded">
+                <div className="absolute -top-6 left-0 text-xs text-red-600 bg-white px-2 py-1 rounded shadow">
                   Zone d'impression
                 </div>
               </div>
             )}
             
-            {/* Design overlay - POSITION AUTOMATIQUE DANS LA ZONE D'IMPRESSION */}
-            {designUrl && mockupLoaded && (
+            {/* Design positionné automatiquement */}
+            {designUrl && autoPosition && designStyle && (
               <div
                 className="absolute"
                 style={designStyle}
@@ -195,7 +182,7 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
                   <img
                     src={designUrl}
                     alt="Design"
-                    className="w-full h-full object-contain rounded"
+                    className="w-full h-full object-contain rounded shadow-sm"
                     onLoad={handleDesignLoad}
                     onError={handleDesignError}
                   />
@@ -204,16 +191,36 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
             )}
           </div>
           
-          {/* Status indicators */}
-          <div className="mt-2 text-xs text-gray-500 space-y-1">
-            <div>Mockup: {mockupLoaded ? '✅ Chargé' : mockupError ? '❌ Erreur' : '⏳ Chargement'}</div>
+          {/* Informations techniques */}
+          <div className="mt-3 text-xs text-gray-600 space-y-1">
+            <div className="flex items-center gap-2">
+              <span>Mockup:</span>
+              <span className={mockupLoaded ? 'text-green-600' : mockupError ? 'text-red-600' : 'text-yellow-600'}>
+                {mockupLoaded ? '✅ Chargé' : mockupError ? '❌ Erreur' : '⏳ Chargement'}
+              </span>
+            </div>
+            
             {designUrl && (
-              <div>Design: {designLoaded ? '✅ Positionné automatiquement' : designError ? '❌ Erreur' : '⏳ Positionnement auto'}</div>
+              <div className="flex items-center gap-2">
+                <span>Design:</span>
+                <span className={autoPosition ? 'text-green-600' : 'text-yellow-600'}>
+                  {autoPosition ? '✅ Positionné automatiquement' : '⏳ Calcul position...'}
+                </span>
+              </div>
             )}
+            
             {designArea && (
-              <div className="text-blue-600">📍 Zone d'impression: {designArea.width}x{designArea.height}px à ({designArea.x}, {designArea.y})</div>
+              <div className="text-blue-600">
+                📍 Zone d'impression: {designArea.width}×{designArea.height}px à ({designArea.x}, {designArea.y})
+              </div>
             )}
-            <div className="text-green-600">✨ Position: Centrée automatiquement dans la zone d'impression</div>
+            
+            {autoPosition && (
+              <div className="text-green-600">
+                ✨ Position calculée: {Math.round(autoPosition.width)}×{Math.round(autoPosition.height)}px 
+                (échelle: {Math.round(autoPosition.scale * 100)}%)
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

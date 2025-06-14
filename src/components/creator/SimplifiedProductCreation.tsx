@@ -10,6 +10,7 @@ import { SimpleDesignUploader } from './design-uploader/SimpleDesignUploader';
 import { DesignPreview } from './design-uploader/DesignPreview';
 import { MockupPreview } from './design-uploader/MockupPreview';
 import { parseDesignArea } from '@/types/designArea';
+import { calculateAutoPosition, getImageDimensions } from '@/utils/designPositioning';
 import type { PrintProduct } from '@/types/customProduct';
 
 interface SimplifiedProductCreationProps {
@@ -23,7 +24,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<PrintProduct | null>(null);
   const [designUrl, setDesignUrl] = useState('');
-  const [designPosition, setDesignPosition] = useState<any>(null);
+  const [autoDesignPosition, setAutoDesignPosition] = useState<any>(null);
   const [productData, setProductData] = useState({
     name: '',
     description: '',
@@ -36,87 +37,100 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     
     // Reset design and position when product changes
     setDesignUrl('');
-    setDesignPosition(null);
+    setAutoDesignPosition(null);
   };
 
-  const handleDesignUpload = (url: string) => {
+  const handleDesignUpload = async (url: string) => {
     console.log('📷 Design uploaded:', url);
     setDesignUrl(url);
     
-    // ✅ CORRECTION: Position basée sur la vraie zone d'impression
+    // Calculer automatiquement la position optimale
     if (selectedProduct?.product_templates) {
-      const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
-      
-      // Position automatique centrée dans la zone d'impression
-      const autoPosition = {
-        x: designArea.x + (designArea.width * 0.1), // 10% de marge
-        y: designArea.y + (designArea.height * 0.1), // 10% de marge
-        width: designArea.width * 0.8, // 80% de la zone disponible
-        height: designArea.height * 0.8, // 80% de la zone disponible
-        rotation: 0
-      };
-      
-      console.log('🎯 Position auto-générée basée sur la zone d\'impression:', {
-        designArea,
-        autoPosition
-      });
-      
-      setDesignPosition(autoPosition);
-    } else {
-      // Fallback si pas de zone d'impression définie
-      const fallbackPosition = {
-        x: 50,
-        y: 50,
-        width: 200,
-        height: 200,
-        rotation: 0
-      };
-      
-      console.log('⚠️ Utilisation position fallback (pas de zone d\'impression):', fallbackPosition);
-      setDesignPosition(fallbackPosition);
+      try {
+        const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
+        console.log('🎯 Zone d\'impression:', designArea);
+        
+        // Obtenir les dimensions réelles du design
+        const designDimensions = await getImageDimensions(url);
+        console.log('📐 Dimensions du design:', designDimensions);
+        
+        // Calculer la position automatique (logique "contain")
+        const autoPosition = calculateAutoPosition(designDimensions, designArea);
+        
+        // Convertir en format attendu par le backend
+        const finalPosition = {
+          x: autoPosition.x,
+          y: autoPosition.y,
+          width: autoPosition.width,
+          height: autoPosition.height,
+          rotation: 0,
+          scale: autoPosition.scale
+        };
+        
+        console.log('✅ Position automatique générée:', finalPosition);
+        setAutoDesignPosition(finalPosition);
+        
+      } catch (error) {
+        console.error('❌ Erreur calcul position automatique:', error);
+        
+        // Fallback avec position par défaut
+        const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
+        const fallbackPosition = {
+          x: designArea.x + (designArea.width * 0.1),
+          y: designArea.y + (designArea.height * 0.1),
+          width: designArea.width * 0.8,
+          height: designArea.height * 0.8,
+          rotation: 0,
+          scale: 0.8
+        };
+        
+        console.log('⚠️ Utilisation position fallback:', fallbackPosition);
+        setAutoDesignPosition(fallbackPosition);
+      }
     }
   };
 
   const handleDesignRemove = () => {
     setDesignUrl('');
-    setDesignPosition(null);
+    setAutoDesignPosition(null);
   };
 
   const handleSubmit = () => {
     console.log('🚀 SimplifiedProductCreation - handleSubmit called');
-    console.log('📊 Current state validation:', {
+    console.log('📊 État de validation:', {
       selectedProduct: selectedProduct?.name,
       designUrl: !!designUrl,
       productName: productData.name.trim(),
-      designPosition: !!designPosition
+      autoPosition: !!autoDesignPosition
     });
 
-    // ✅ CORRECTION: Validation ultra-simplifiée - plus de vérification de position manuelle
+    // Validation ultra-simplifiée
     if (!selectedProduct) {
-      console.log('❌ No product selected');
+      console.log('❌ Aucun produit sélectionné');
       return;
     }
 
     if (!designUrl) {
-      console.log('❌ No design uploaded');
+      console.log('❌ Aucun design uploadé');
       return;
     }
 
     if (!productData.name.trim()) {
-      console.log('❌ Product name is empty');
+      console.log('❌ Nom du produit manquant');
       return;
     }
 
-    // ✅ Position toujours disponible (auto-générée à l'upload)
-    const finalPosition = designPosition || {
+    // Position automatique disponible ou fallback
+    const finalPosition = autoDesignPosition || {
       x: 50,
       y: 50,
       width: 200,
       height: 200,
-      rotation: 0
+      rotation: 0,
+      scale: 1
     };
 
-    console.log('✅ All validations passed, creating product with position:', finalPosition);
+    console.log('✅ Validation réussie, création du produit avec position:', finalPosition);
 
     const finalProductData = {
       print_product_id: selectedProduct.id,
@@ -130,7 +144,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       preview_url: designUrl
     };
 
-    console.log('🚀 Creating product with final data:', finalProductData);
+    console.log('🚀 Données finales pour création:', finalProductData);
     onProductCreate(finalProductData);
   };
 
@@ -142,14 +156,14 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     ? selectedProduct.base_price * (1 + productData.margin_percentage / 100)
     : 0;
 
-  // ✅ CORRECTION: Validation simplifiée - design auto-positionné donc toujours valide
+  // Validation simplifiée : produit + design + nom
   const canSubmit = !!(selectedProduct && designUrl && productData.name.trim());
 
-  console.log('🔍 Form validation state:', {
+  console.log('🔍 État de validation du formulaire:', {
     hasProduct: !!selectedProduct,
     hasDesign: !!designUrl,
     hasName: !!productData.name.trim(),
-    hasPosition: !!designPosition,
+    hasAutoPosition: !!autoDesignPosition,
     canSubmit
   });
 
@@ -168,9 +182,12 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
               </CardHeader>
               <CardContent>
                 <SimpleDesignUploader onDesignUpload={handleDesignUpload} />
-                {designUrl && (
-                  <div className="mt-2 text-sm text-green-600">
+                {designUrl && autoDesignPosition && (
+                  <div className="mt-2 text-sm text-green-600 bg-green-50 p-2 rounded">
                     ✅ Design uploadé et positionné automatiquement dans la zone d'impression
+                    <div className="text-xs mt-1">
+                      Taille optimale calculée: {Math.round(autoDesignPosition.width)}×{Math.round(autoDesignPosition.height)}px
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -187,7 +204,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
               mockupUrl={selectedProduct.product_templates?.mockup_image_url}
               designUrl={designUrl}
               designArea={designArea}
-              designPosition={designPosition}
+              designPosition={autoDesignPosition}
             />
 
             <Card>
@@ -242,7 +259,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                   </div>
                 </div>
 
-                {/* ✅ CORRECTION: Feedback de validation simplifié */}
+                {/* Feedback de validation */}
                 {!canSubmit && (
                   <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded">
                     <div className="font-medium mb-1">Informations manquantes :</div>
@@ -255,9 +272,9 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                 {canSubmit && (
                   <div className="text-sm text-green-600 bg-green-50 p-3 rounded">
                     ✅ Prêt à créer ! Design automatiquement positionné dans la zone d'impression.
-                    {designArea && (
+                    {designArea && autoDesignPosition && (
                       <div className="mt-1 text-xs">
-                        Zone d'impression: {designArea.width}x{designArea.height}px
+                        Zone: {designArea.width}×{designArea.height}px • Position: {Math.round(autoDesignPosition.scale * 100)}% de la taille originale
                       </div>
                     )}
                   </div>
