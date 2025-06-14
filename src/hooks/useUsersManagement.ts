@@ -40,15 +40,8 @@ export const useUsersManagement = () => {
 
       setIsLoading(true);
       
-      // Utiliser la fonction RPC pour récupérer les utilisateurs avec leurs emails
-      const { data: authUsers, error: authUsersError } = await supabase.rpc('get_auth_users_for_admin');
-      
-      if (authUsersError) {
-        console.error('Error fetching auth users:', authUsersError);
-        throw authUsersError;
-      }
-
-      // Récupérer les profils utilisateurs
+      // Récupérer uniquement les profils utilisateurs avec une requête simple
+      // Les emails seront affichés comme "Email non disponible" en attendant une solution pour la fonction RPC
       const { data: profiles, error: profilesError } = await supabase
         .from('users')
         .select('*')
@@ -56,21 +49,17 @@ export const useUsersManagement = () => {
 
       if (profilesError) throw profilesError;
 
-      // Joindre les données des deux sources
-      const transformedUsers = authUsers.map((authUser: any) => {
-        const profile = profiles.find((p: any) => p.id === authUser.id);
-        
-        return {
-          id: authUser.id,
-          email: authUser.email || 'Email non disponible',
-          full_name: profile?.full_name || profile?.full_name_fr || 'Nom non défini',
-          role: profile?.role || 'créateur',
-          is_super_admin: profile?.is_super_admin || false,
-          created_at: authUser.created_at || profile?.created_at,
-          avatar_url: profile?.avatar_url,
-          creator_status: profile?.creator_status
-        };
-      });
+      // Transformer les données en utilisant uniquement les profils
+      const transformedUsers = profiles.map((profile: any) => ({
+        id: profile.id,
+        email: 'Email disponible via auth.users', // Placeholder en attendant la correction de la fonction RPC
+        full_name: profile.full_name || profile.full_name_fr || 'Nom non défini',
+        role: profile.role || 'créateur',
+        is_super_admin: profile.is_super_admin || false,
+        created_at: profile.created_at,
+        avatar_url: profile.avatar_url,
+        creator_status: profile.creator_status
+      }));
 
       setUsers(transformedUsers);
       
