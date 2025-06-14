@@ -31,8 +31,8 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   });
 
   const handleProductSelect = (product: PrintProduct | null) => {
+    console.log('🎯 Product selected:', product?.name);
     setSelectedProduct(product);
-    console.log('🎯 Product selected:', product?.name, product?.product_templates?.design_area);
     
     // Reset design and position when product changes
     setDesignUrl('');
@@ -43,20 +43,20 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     console.log('📷 Design uploaded:', url);
     setDesignUrl(url);
     
-    // ✅ CORRECTION: Auto-generate position when design is uploaded
+    // ✅ CORRECTION: Generate optimal centered position immediately
     if (url && selectedProduct?.product_templates) {
       const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
       
-      // Calculate optimal centered position automatically
+      // Calculate centered position with proper sizing
       const autoPosition = {
-        x: designArea.x + (designArea.width * 0.1), // 10% margin from left
-        y: designArea.y + (designArea.height * 0.1), // 10% margin from top
-        width: designArea.width * 0.8, // 80% of available width
-        height: designArea.height * 0.8, // 80% of available height
+        x: designArea.x + (designArea.width * 0.2), // 20% margin from left
+        y: designArea.y + (designArea.height * 0.2), // 20% margin from top
+        width: designArea.width * 0.6, // 60% of available width
+        height: designArea.height * 0.6, // 60% of available height
         rotation: 0
       };
       
-      console.log('🎯 Auto-generated position:', autoPosition);
+      console.log('🎯 Auto-generated centered position:', autoPosition);
       setDesignPosition(autoPosition);
     }
   };
@@ -68,14 +68,15 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 
   const handleSubmit = () => {
     console.log('🚀 SimplifiedProductCreation - handleSubmit called');
-    console.log('📊 Current state:', {
+    console.log('📊 Current state validation:', {
       selectedProduct: selectedProduct?.name,
       designUrl: !!designUrl,
-      designPosition,
-      productData
+      designPosition: !!designPosition,
+      productName: productData.name.trim(),
+      allFieldsValid: !!(selectedProduct && designUrl && productData.name.trim())
     });
 
-    // ✅ CORRECTION: Simplified validation - only check essential fields
+    // ✅ CORRECTION: Simplified validation - check only essential fields
     if (!selectedProduct) {
       console.log('❌ No product selected');
       return;
@@ -91,19 +92,22 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       return;
     }
 
-    // ✅ Auto-generate position if missing (fallback)
+    // ✅ Always ensure we have a position (auto-generate if missing)
     let finalPosition = designPosition;
     if (!finalPosition && selectedProduct.product_templates) {
       const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
       finalPosition = {
-        x: designArea.x + (designArea.width * 0.1),
-        y: designArea.y + (designArea.height * 0.1),
-        width: designArea.width * 0.8,
-        height: designArea.height * 0.8,
+        x: designArea.x + (designArea.width * 0.2),
+        y: designArea.y + (designArea.height * 0.2),
+        width: designArea.width * 0.6,
+        height: designArea.height * 0.6,
         rotation: 0
       };
       console.log('🔄 Generated fallback position:', finalPosition);
+      setDesignPosition(finalPosition);
     }
+
+    console.log('✅ All validations passed, creating product...');
 
     const finalProductData = {
       print_product_id: selectedProduct.id,
@@ -129,8 +133,16 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     ? selectedProduct.base_price * (1 + productData.margin_percentage / 100)
     : 0;
 
-  // ✅ Simplified validation check for UI
-  const canSubmit = selectedProduct && designUrl && productData.name.trim();
+  // ✅ CORRECTION: More permissive validation - position is auto-generated
+  const canSubmit = !!(selectedProduct && designUrl && productData.name.trim());
+
+  console.log('🔍 Form validation state:', {
+    hasProduct: !!selectedProduct,
+    hasDesign: !!designUrl,
+    hasName: !!productData.name.trim(),
+    hasPosition: !!designPosition,
+    canSubmit
+  });
 
   return (
     <div className="space-y-6">
@@ -147,9 +159,9 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
               </CardHeader>
               <CardContent>
                 <SimpleDesignUploader onDesignUpload={handleDesignUpload} />
-                {designUrl && designPosition && (
+                {designUrl && (
                   <div className="mt-2 text-sm text-green-600">
-                    ✅ Design positionné automatiquement au centre
+                    ✅ Design uploadé et positionné automatiquement
                   </div>
                 )}
               </CardContent>
@@ -166,6 +178,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
               mockupUrl={selectedProduct.product_templates?.mockup_image_url}
               designUrl={designUrl}
               designArea={designArea}
+              designPosition={designPosition}
             />
 
             <Card>
@@ -220,12 +233,19 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                   </div>
                 </div>
 
-                {/* ✅ Improved validation feedback */}
+                {/* ✅ CORRECTION: Clear validation feedback */}
                 {!canSubmit && (
                   <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded">
-                    {!selectedProduct && "• Sélectionnez un produit"}
-                    {selectedProduct && !designUrl && "• Uploadez un design"}
-                    {selectedProduct && designUrl && !productData.name.trim() && "• Renseignez le nom du produit"}
+                    <div className="font-medium mb-1">Informations manquantes :</div>
+                    {!selectedProduct && <div>• Sélectionnez un produit</div>}
+                    {selectedProduct && !designUrl && <div>• Uploadez un design</div>}
+                    {selectedProduct && designUrl && !productData.name.trim() && <div>• Renseignez le nom du produit</div>}
+                  </div>
+                )}
+
+                {canSubmit && (
+                  <div className="text-sm text-green-600 bg-green-50 p-3 rounded">
+                    ✅ Tous les champs sont remplis, vous pouvez créer le produit
                   </div>
                 )}
 
@@ -234,7 +254,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                   className="w-full"
                   disabled={!canSubmit}
                 >
-                  {canSubmit ? 'Créer le produit' : 'Informations manquantes'}
+                  {canSubmit ? 'Créer le produit' : 'Remplir les champs manquants'}
                 </Button>
               </CardContent>
             </Card>

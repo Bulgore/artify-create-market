@@ -8,12 +8,14 @@ interface MockupPreviewProps {
   mockupUrl?: string;
   designUrl?: string;
   designArea?: DesignArea;
+  designPosition?: any;
 }
 
 export const MockupPreview: React.FC<MockupPreviewProps> = ({
   mockupUrl,
   designUrl,
-  designArea
+  designArea,
+  designPosition
 }) => {
   const [mockupLoaded, setMockupLoaded] = useState(false);
   const [designLoaded, setDesignLoaded] = useState(false);
@@ -24,9 +26,10 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
     console.log('🖼️ MockupPreview props:', {
       mockupUrl: mockupUrl?.substring(0, 50) + '...',
       designUrl: designUrl?.substring(0, 50) + '...',
-      designArea
+      designArea,
+      designPosition
     });
-  }, [mockupUrl, designUrl, designArea]);
+  }, [mockupUrl, designUrl, designArea, designPosition]);
 
   const handleMockupLoad = () => {
     console.log('✅ Mockup loaded successfully');
@@ -70,6 +73,9 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
     );
   }
 
+  // ✅ CORRECTION: Use designPosition if available, fallback to designArea
+  const finalPosition = designPosition || designArea;
+  
   return (
     <Card>
       <CardHeader>
@@ -99,15 +105,17 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
               />
             )}
             
-            {/* Design overlay */}
-            {designUrl && mockupLoaded && designArea && (
+            {/* Design overlay - CORRECTED positioning */}
+            {designUrl && mockupLoaded && finalPosition && (
               <div
                 className="absolute"
                 style={{
-                  left: `${designArea.x}%`,
-                  top: `${designArea.y}%`,
-                  width: `${designArea.width}%`,
-                  height: `${designArea.height}%`,
+                  // ✅ CORRECTION: Better positioning calculation
+                  left: `${finalPosition.x || 20}%`,
+                  top: `${finalPosition.y || 20}%`,
+                  width: `${finalPosition.width || 40}%`,
+                  height: `${finalPosition.height || 40}%`,
+                  transform: `rotate(${finalPosition.rotation || 0}deg)`,
                 }}
               >
                 {designError ? (
@@ -118,7 +126,7 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
                   <img
                     src={designUrl}
                     alt="Design"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain rounded"
                     onLoad={handleDesignLoad}
                     onError={handleDesignError}
                   />
@@ -128,9 +136,14 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
           </div>
           
           {/* Status indicators */}
-          <div className="mt-2 text-xs text-gray-500">
-            <div>Mockup: {mockupLoaded ? '✅' : mockupError ? '❌' : '⏳'}</div>
-            {designUrl && <div>Design: {designLoaded ? '✅' : designError ? '❌' : '⏳'}</div>}
+          <div className="mt-2 text-xs text-gray-500 space-y-1">
+            <div>Mockup: {mockupLoaded ? '✅ Chargé' : mockupError ? '❌ Erreur' : '⏳ Chargement'}</div>
+            {designUrl && (
+              <div>Design: {designLoaded ? '✅ Positionné' : designError ? '❌ Erreur' : '⏳ Positionnement'}</div>
+            )}
+            {finalPosition && (
+              <div className="text-green-600">📍 Position: {Math.round(finalPosition.x)}%, {Math.round(finalPosition.y)}%</div>
+            )}
           </div>
         </div>
       </CardContent>
