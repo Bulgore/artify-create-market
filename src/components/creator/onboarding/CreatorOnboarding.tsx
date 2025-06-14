@@ -103,6 +103,9 @@ const CreatorOnboarding = () => {
     if (!user) return;
 
     try {
+      console.log('🚀 Marking step completed:', stepName);
+      
+      // ✅ CORRECTION : Utiliser UPSERT pour éviter les doublons
       const { error } = await supabase
         .from('creator_onboarding_steps')
         .upsert({
@@ -110,9 +113,21 @@ const CreatorOnboarding = () => {
           step_name: stepName,
           completed: true,
           completed_at: new Date().toISOString()
+        }, {
+          onConflict: 'creator_id,step_name', // Spécifier la contrainte unique
+          ignoreDuplicates: false // Mettre à jour si existe déjà
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error marking step completed:', error);
+        // Ne pas lever l'erreur, juste logger pour éviter de bloquer l'utilisateur
+        toast({
+          variant: "destructive",
+          title: "Attention",
+          description: "L'étape a été complétée mais n'a pas pu être enregistrée. Vous pouvez continuer.",
+        });
+        return;
+      }
 
       setSteps(prevSteps =>
         prevSteps.map(step =>
@@ -120,7 +135,7 @@ const CreatorOnboarding = () => {
         )
       );
 
-      console.log('✅ Step completed:', stepName);
+      console.log('✅ Step completed successfully:', stepName);
 
       // Si c'est l'étape profil qui vient d'être complétée, permettre de skipper
       if (stepName === 'profile') {
@@ -132,7 +147,7 @@ const CreatorOnboarding = () => {
         description: t('onboarding.progress_message', 'Vous progressez dans votre parcours créateur.'),
       });
     } catch (error) {
-      console.error('Error marking step completed:', error);
+      console.error('❌ Unexpected error marking step completed:', error);
     }
   };
 
@@ -154,6 +169,21 @@ const CreatorOnboarding = () => {
     try {
       setIsLoading(true);
       
+      console.log('🏁 Completing onboarding for user:', user.id);
+      
+      // ✅ CORRECTION : Éviter les appels en double avec une vérification
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('onboarding_completed')
+        .eq('id', user.id)
+        .single();
+
+      if (currentUser?.onboarding_completed) {
+        console.log('⚠️ Onboarding already completed, redirecting...');
+        navigate('/studio');
+        return;
+      }
+
       // Marquer l'onboarding comme terminé
       const { error } = await supabase
         .from('users')
@@ -165,21 +195,24 @@ const CreatorOnboarding = () => {
 
       if (error) throw error;
 
-      console.log('✅ Onboarding completed');
+      console.log('✅ Onboarding completed successfully');
 
       toast({
         title: t('onboarding.completed_title', 'Profil créé avec succès !'),
         description: t('onboarding.completed_desc', 'Bienvenue dans votre espace créateur. Vous pouvez maintenant créer vos premiers produits.'),
       });
 
-      // Redirection vers le studio/dashboard
-      navigate('/studio');
+      // ✅ CORRECTION : Utiliser setTimeout pour éviter les warnings React
+      setTimeout(() => {
+        navigate('/studio');
+      }, 100);
+      
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.error('❌ Error completing onboarding:', error);
       toast({
         variant: 'destructive',
         title: t('common.error', 'Erreur'),
-        description: t('onboarding.completion_error', 'Impossible de finaliser l\'onboarding.'),
+        description: t('onboarding.completion_error', 'Impossible de finaliser l\'onboarding. Veuillez réessayer ou contacter le support.'),
       });
     } finally {
       setIsLoading(false);
@@ -192,14 +225,14 @@ const CreatorOnboarding = () => {
     try {
       setIsLoading(true);
       
-      console.log('⚠️ Skipping onboarding (profile must be completed first)');
+      console.log('⏭️ Skipping onboarding (profile must be completed first)');
       await completeOnboarding();
     } catch (error) {
-      console.error('Error skipping onboarding:', error);
+      console.error('❌ Error skipping onboarding:', error);
       toast({
         variant: 'destructive',
         title: t('common.error', 'Erreur'),
-        description: t('onboarding.skip_error', 'Impossible d\'ignorer l\'onboarding.'),
+        description: t('onboarding.skip_error', 'Impossible d\'ignorer l\'onboarding. Veuillez réessayer ou contacter le support.'),
       });
     } finally {
       setIsLoading(false);

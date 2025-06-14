@@ -27,6 +27,12 @@ export const useProductSubmission = () => {
     setIsLoading(true);
 
     try {
+      console.log('🚀 Creating product with data:', {
+        creator_id: user.id,
+        print_product_id: selectedProduct.id,
+        productData
+      });
+
       const { error } = await supabase
         .from('creator_products')
         .insert({
@@ -44,7 +50,12 @@ export const useProductSubmission = () => {
           is_published: false
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database error creating product:', error);
+        throw error;
+      }
+
+      console.log('✅ Product created successfully');
 
       toast({
         title: "Produit créé",
@@ -53,11 +64,17 @@ export const useProductSubmission = () => {
 
       return true;
     } catch (error: any) {
-      console.error('Error creating product:', error);
+      console.error('❌ Error creating product:', error);
+      
+      // ✅ CORRECTION : Message d'erreur utilisateur amélioré
+      const errorMessage = error?.message?.includes('duplicate') 
+        ? "Ce produit existe déjà. Veuillez modifier le nom ou les paramètres."
+        : "Erreur lors de la création du produit. Veuillez réessayer ou contacter le support.";
+      
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de créer le produit."
+        description: errorMessage
       });
       return false;
     } finally {

@@ -66,11 +66,11 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
 
       setProducts(mappedProducts);
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('❌ Error loading products:', error);
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Impossible de charger vos produits.',
+        description: 'Impossible de charger vos produits. Veuillez réessayer ou contacter le support.',
       });
     } finally {
       setIsLoading(false);
@@ -81,10 +81,14 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
     // Marquer temporairement l'onboarding comme terminé pour permettre l'accès au studio
     const markOnboardingTemp = async () => {
       try {
-        await supabase
+        console.log('🔄 Temporarily marking onboarding as completed for studio access');
+        
+        const { error } = await supabase
           .from('users')
           .update({ onboarding_completed: true })
           .eq('id', user?.id);
+          
+        if (error) throw error;
         
         // Ouvrir le studio dans un nouvel onglet pour éviter de perdre le contexte
         window.open('/studio', '_blank');
@@ -100,11 +104,11 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         }, 2000);
         
       } catch (error) {
-        console.error('Error updating onboarding status:', error);
+        console.error('❌ Error updating onboarding status:', error);
         toast({
           variant: 'destructive',
           title: 'Erreur',
-          description: 'Impossible d\'ouvrir le studio.',
+          description: 'Impossible d\'ouvrir le studio. Veuillez réessayer ou contacter le support.',
         });
       }
     };
