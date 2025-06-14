@@ -1,17 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import ProductSelector from './ProductSelector';
-import { SimpleDesignUploader } from './design-uploader/SimpleDesignUploader';
-import { DesignPreview } from './design-uploader/DesignPreview';
-import { MockupPreview } from './design-uploader/MockupPreview';
 import { parseDesignArea } from '@/types/designArea';
 import { calculateAutoPosition, getImageDimensions } from '@/utils/designPositioning';
 import type { PrintProduct } from '@/types/customProduct';
+import { ProductSelectionSection } from './simplified/ProductSelectionSection';
+import { DesignUploadSection } from './simplified/DesignUploadSection';
+import { MockupSection } from './simplified/MockupSection';
+import { ProductDetailsSection } from './simplified/ProductDetailsSection';
+import { ValidationFeedback } from './simplified/ValidationFeedback';
 
 interface SimplifiedProductCreationProps {
   printProducts: PrintProduct[];
@@ -153,10 +149,6 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     ? parseDesignArea(selectedProduct.product_templates.design_area)
     : undefined;
 
-  const finalPrice = selectedProduct 
-    ? selectedProduct.base_price * (1 + productData.margin_percentage / 100)
-    : 0;
-
   // CORRECTION VALIDATION : Simplifiée - seuls produit + design + nom français requis
   const canSubmit = !!(selectedProduct && designUrl && productData.name.trim());
 
@@ -170,132 +162,43 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 
   return (
     <div className="space-y-6">
-      <ProductSelector
-        onProductSelect={handleProductSelect}
-      />
+      <ProductSelectionSection onProductSelect={handleProductSelect} />
 
       {selectedProduct && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload du design</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SimpleDesignUploader onDesignUpload={handleDesignUpload} />
-                {designUrl && autoDesignPosition && (
-                  <div className="mt-2 text-sm text-green-600 bg-green-50 p-2 rounded">
-                    ✅ Design uploadé et positionné automatiquement dans la zone d'impression
-                    <div className="text-xs mt-1">
-                      Taille optimale calculée: {Math.round(autoDesignPosition.width)}×{Math.round(autoDesignPosition.height)}px
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <DesignPreview 
-              designUrl={designUrl} 
-              onRemove={handleDesignRemove} 
+            <DesignUploadSection
+              onDesignUpload={handleDesignUpload}
+              designUrl={designUrl}
+              autoDesignPosition={autoDesignPosition}
+              onDesignRemove={handleDesignRemove}
             />
           </div>
 
           <div className="space-y-6">
-            <MockupPreview
+            <MockupSection
               mockupUrl={selectedProduct.product_templates?.mockup_image_url}
               designUrl={designUrl}
               designArea={designArea}
               designPosition={autoDesignPosition}
             />
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Détails du produit</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nom du produit *</Label>
-                  <Input
-                    id="name"
-                    value={productData.name}
-                    onChange={(e) => setProductData({...productData, name: e.target.value})}
-                    placeholder="Mon super design"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Le nom en français sera automatiquement utilisé pour toutes les langues
-                  </p>
-                </div>
+            <ProductDetailsSection
+              selectedProduct={selectedProduct}
+              productData={productData}
+              setProductData={setProductData}
+              canSubmit={canSubmit}
+              onSubmit={handleSubmit}
+            />
 
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={productData.description}
-                    onChange={(e) => setProductData({...productData, description: e.target.value})}
-                    placeholder="Description du produit..."
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    La description en français sera automatiquement utilisée pour toutes les langues
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="margin">Marge créateur (%)</Label>
-                  <Input
-                    id="margin"
-                    type="number"
-                    value={productData.margin_percentage}
-                    onChange={(e) => setProductData({...productData, margin_percentage: Number(e.target.value)})}
-                    min="0"
-                    max="100"
-                  />
-                </div>
-
-                <div className="pt-4 border-t">
-                  <div className="flex justify-between text-sm">
-                    <span>Prix de base:</span>
-                    <span>{selectedProduct.base_price.toFixed(2)} €</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Marge ({productData.margin_percentage}%):</span>
-                    <span>+{(selectedProduct.base_price * productData.margin_percentage / 100).toFixed(2)} €</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                    <span>Prix final:</span>
-                    <span>{finalPrice.toFixed(2)} €</span>
-                  </div>
-                </div>
-
-                {/* Feedback de validation simplifié */}
-                {!canSubmit && (
-                  <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded">
-                    <div className="font-medium mb-1">Informations manquantes :</div>
-                    {!selectedProduct && <div>• Sélectionnez un produit</div>}
-                    {selectedProduct && !designUrl && <div>• Uploadez un design</div>}
-                    {selectedProduct && designUrl && !productData.name.trim() && <div>• Renseignez le nom du produit</div>}
-                  </div>
-                )}
-
-                {canSubmit && (
-                  <div className="text-sm text-green-600 bg-green-50 p-3 rounded">
-                    ✅ Prêt à créer ! Design automatiquement positionné dans la zone d'impression.
-                    {designArea && autoDesignPosition && (
-                      <div className="mt-1 text-xs">
-                        Zone: {designArea.width}×{designArea.height}px • Position: {Math.round(autoDesignPosition.scale * 100)}% de la taille originale
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <Button 
-                  onClick={handleSubmit}
-                  className="w-full"
-                  disabled={!canSubmit}
-                >
-                  {canSubmit ? 'Créer le produit' : 'Informations manquantes'}
-                </Button>
-              </CardContent>
-            </Card>
+            <ValidationFeedback
+              canSubmit={canSubmit}
+              selectedProduct={selectedProduct}
+              designUrl={designUrl}
+              productName={productData.name}
+              designArea={designArea}
+              autoDesignPosition={autoDesignPosition}
+            />
           </div>
         </div>
       )}
