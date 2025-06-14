@@ -80,8 +80,16 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ onProductSelect }) =>
   };
 
   const handleProductSelect = (product: PrintProduct) => {
+    console.log('🎯 Bouton "Sélectionner" cliqué - ProductSelector');
+    console.log('📦 Produit sélectionné:', product.name);
+    
     setSelectedProduct(product);
     onProductSelect(product);
+    
+    toast({
+      title: "Produit sélectionné",
+      description: `${product.name} est prêt pour la personnalisation.`
+    });
   };
 
   if (isLoading) {
@@ -124,7 +132,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ onProductSelect }) =>
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-primary/50'
               }`}
-              onClick={() => handleProductSelect(product)}
+              onClick={() => console.log('🎯 Div produit cliquée:', product.name)}
             >
               {product.images?.[0] && (
                 <img
@@ -139,15 +147,22 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ onProductSelect }) =>
                   {product.description}
                 </p>
               )}
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-3">
                 <Badge variant="secondary">{product.base_price}€</Badge>
                 <Badge variant="outline">{product.material}</Badge>
               </div>
-              {selectedProduct?.id === product.id && (
-                <Button size="sm" className="w-full mt-2">
-                  Sélectionné
-                </Button>
-              )}
+              <Button 
+                size="sm" 
+                className="w-full"
+                variant={selectedProduct?.id === product.id ? "default" : "outline"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('🎯 Event onClick bouton déclenché pour:', product.name);
+                  handleProductSelect(product);
+                }}
+              >
+                {selectedProduct?.id === product.id ? 'Sélectionné' : 'Sélectionner'}
+              </Button>
             </div>
           ))}
         </div>

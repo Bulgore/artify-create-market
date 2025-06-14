@@ -32,35 +32,44 @@ export const useCustomProductCreator = () => {
   };
 
   const handleProductCreate = async (productData: any) => {
-    console.log('🚀 Creating product with data:', productData);
+    console.log('🚀 useCustomProductCreator - handleProductCreate appelé avec:', productData);
     
-    const success = await submitProduct(
-      selectedProduct, 
-      productData.design_data.imageUrl, 
-      productData.design_data.position, 
-      {
-        name: productData.name,
-        description: productData.description,
-        margin_percentage: productData.creator_margin_percentage
+    try {
+      const success = await submitProduct(
+        selectedProduct, 
+        productData.design_data.imageUrl, 
+        productData.design_data.position, 
+        {
+          name: productData.name,
+          description: productData.description,
+          margin_percentage: productData.creator_margin_percentage
+        }
+      );
+      
+      if (success) {
+        console.log('✅ useCustomProductCreator - Produit créé avec succès');
+        // Reset form after successful submission
+        setSelectedProduct(null);
+        resetDesign();
+        setProductData({
+          name: '',
+          description: '',
+          margin_percentage: 20
+        });
+        return true;
+      } else {
+        console.log('❌ useCustomProductCreator - Échec de la création du produit');
+        return false;
       }
-    );
-    
-    if (success) {
-      // Reset form after successful submission
-      setSelectedProduct(null);
-      resetDesign();
-      setProductData({
-        name: '',
-        description: '',
-        margin_percentage: 20
-      });
+    } catch (error) {
+      console.error('❌ useCustomProductCreator - Erreur lors de la création:', error);
+      return false;
     }
-    
-    return success;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🚀 useCustomProductCreator - handleSubmit appelé');
     
     const success = await submitProduct(selectedProduct, designUrl, designPosition, productData);
     
@@ -80,6 +89,7 @@ export const useCustomProductCreator = () => {
 
   // When product selection changes, reset design
   const handleProductSelectWithReset = (productId: string) => {
+    console.log('🚀 useCustomProductCreator - handleProductSelectWithReset appelé avec:', productId);
     resetDesign();
     handleProductSelect(productId);
   };

@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Package, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { SimplifiedProductCreation } from '@/components/creator/SimplifiedProductCreation';
+import { useCustomProductCreator } from '@/hooks/useCustomProductCreator';
 
 interface Product {
   id: string;
@@ -27,6 +30,10 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showProductCreation, setShowProductCreation] = useState(false);
+  
+  // Utiliser le hook de création de produit
+  const { printProducts, handleProductCreate } = useCustomProductCreator();
 
   useEffect(() => {
     if (user) {
@@ -78,42 +85,28 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
   };
 
   const handleCreateProduct = () => {
-    // Marquer temporairement l'onboarding comme terminé pour permettre l'accès au studio
-    const markOnboardingTemp = async () => {
-      try {
-        console.log('🔄 Temporarily marking onboarding as completed for studio access');
-        
-        const { error } = await supabase
-          .from('users')
-          .update({ onboarding_completed: true })
-          .eq('id', user?.id);
-          
-        if (error) throw error;
-        
-        // Ouvrir le studio dans un nouvel onglet pour éviter de perdre le contexte
-        window.open('/studio', '_blank');
-        
-        toast({
-          title: 'Studio ouvert',
-          description: 'Le studio s\'est ouvert dans un nouvel onglet. Créez vos produits puis revenez ici.',
-        });
-        
-        // Rafraîchir les produits après quelques secondes
-        setTimeout(() => {
-          loadProducts();
-        }, 2000);
-        
-      } catch (error) {
-        console.error('❌ Error updating onboarding status:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Erreur',
-          description: 'Impossible d\'ouvrir le studio. Veuillez réessayer ou contacter le support.',
-        });
-      }
-    };
+    console.log('🎯 Bouton "Créer un produit" cliqué - ProductsStep');
+    setShowProductCreation(true);
+  };
 
-    markOnboardingTemp();
+  const handleProductCreated = async (productData: any) => {
+    console.log('🚀 Tentative de création de produit:', productData);
+    
+    const success = await handleProductCreate(productData);
+    
+    if (success) {
+      console.log('✅ Produit créé avec succès');
+      setShowProductCreation(false);
+      // Recharger les produits
+      await loadProducts();
+      
+      toast({
+        title: 'Produit créé',
+        description: 'Votre produit a été créé avec succès!'
+      });
+    } else {
+      console.log('❌ Échec de la création du produit');
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -227,10 +220,9 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         >
           <Plus className="h-4 w-4" />
           {products.length === 0 ? 'Créer mon premier produit' : 'Créer un nouveau produit'}
-          <ExternalLink className="h-4 w-4" />
         </Button>
         <p className="text-sm text-muted-foreground">
-          Le studio s'ouvrira dans un nouvel onglet pour créer vos produits
+          Une interface simple pour créer vos produits personnalisés
         </p>
         
         <Button
@@ -255,6 +247,19 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de création de produit */}
+      <Dialog open={showProductCreation} onOpenChange={setShowProductCreation}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau produit</DialogTitle>
+          </DialogHeader>
+          <SimplifiedProductCreation
+            printProducts={printProducts}
+            onProductCreate={handleProductCreated}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
