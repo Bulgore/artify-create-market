@@ -181,32 +181,32 @@ const UsersManagement = () => {
             setIsEditModalOpen(false);
             setSelectedUser(null);
           }}
-          onSave={fetchUsers}
+          onUserUpdated={fetchUsers}
         />
       )}
 
       {resetDialogUser && (
         <UserResetDialog
           user={resetDialogUser}
-          isOpen={!!resetDialogUser}
-          onClose={() => setResetDialogUser(null)}
           onConfirm={() => {
             handleResetUser(resetDialogUser);
             setResetDialogUser(null);
           }}
-        />
+        >
+          <div /> {/* Required children prop */}
+        </UserResetDialog>
       )}
 
       {deleteDialogUser && (
         <UserDeleteDialog
           user={deleteDialogUser}
-          isOpen={!!deleteDialogUser}
-          onClose={() => setDeleteDialogUser(null)}
           onConfirm={() => {
             handleDeleteUser(deleteDialogUser);
             setDeleteDialogUser(null);
           }}
-        />
+        >
+          <div /> {/* Required children prop */}
+        </UserDeleteDialog>
       )}
     </div>
   );
