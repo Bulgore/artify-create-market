@@ -43,16 +43,15 @@ export const logAdminAction = async (
   details: Record<string, any> = {}
 ): Promise<void> => {
   try {
-    const { error } = await supabase.rpc('log_admin_action', {
-      action_type: actionType,
-      target_table: targetTable,
-      target_id: targetId,
-      details: details
+    // For now, just log to console until the RPC function is available
+    console.log('Admin Action:', {
+      actionType,
+      targetTable,
+      targetId,
+      details,
+      timestamp: new Date().toISOString(),
+      adminId: (await supabase.auth.getUser()).data.user?.id
     });
-
-    if (error) {
-      console.error('Error logging admin action:', error);
-    }
   } catch (error) {
     console.error('Error in logAdminAction:', error);
   }

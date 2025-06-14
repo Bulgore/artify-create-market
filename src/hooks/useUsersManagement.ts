@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { validateUserRole, logAdminAction } from '@/utils/secureAuth';
+import { useUserActions } from '@/hooks/users/useUserActions';
 
 interface User {
   id: string;
@@ -21,12 +22,11 @@ export const useUsersManagement = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isResetting, setIsResetting] = useState<string | null>(null);
   const { isSuperAdmin } = useAuth();
+  const { isResetting, resetUser, deleteUser } = useUserActions();
 
   const fetchUsers = async () => {
     try {
-      // Validate super admin status server-side before fetching
       const isValidSuperAdmin = await validateUserRole('superAdmin');
       
       if (!isValidSuperAdmin) {
@@ -40,19 +40,16 @@ export const useUsersManagement = () => {
 
       setIsLoading(true);
       
-      // Get auth users (server-side validation will be done by RLS)
       const { data: authUsers, error: authError } = await supabase.rpc('get_auth_users_for_admin');
       
       if (authError) throw authError;
 
-      // Get profiles data
       const { data: profiles, error: profilesError } = await supabase
         .from('users')
         .select('*');
 
       if (profilesError) throw profilesError;
 
-      // Merge auth and profile data
       const mergedUsers = authUsers.map((authUser: any) => {
         const profile = profiles.find(p => p.id === authUser.id);
         return {
@@ -82,88 +79,16 @@ export const useUsersManagement = () => {
   };
 
   const handleResetUser = async (user: User) => {
-    try {
-      // Validate super admin status
-      const isValidSuperAdmin = await validateUserRole('superAdmin');
-      
-      if (!isValidSuperAdmin) {
-        toast({
-          variant: "destructive",
-          title: "Accès refusé",
-          description: "Action non autorisée.",
-        });
-        return;
-      }
-
-      setIsResetting(user.id);
-      
-      const { error } = await supabase.rpc('reset_user_account', { 
-        target_user_id: user.id 
-      });
-      
-      if (error) throw error;
-      
-      await logAdminAction('RESET_USER', 'users', user.id, { 
-        user_email: user.email,
-        previous_role: user.role 
-      });
-      
-      toast({
-        title: "Utilisateur réinitialisé",
-        description: `Le compte de ${user.email} a été réinitialisé.`,
-      });
-      
+    const result = await resetUser(user);
+    if (result.success) {
       fetchUsers();
-    } catch (error) {
-      console.error('Error resetting user:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de réinitialiser l'utilisateur.",
-      });
-    } finally {
-      setIsResetting(null);
     }
   };
 
   const handleDeleteUser = async (user: User) => {
-    try {
-      // Validate super admin status
-      const isValidSuperAdmin = await validateUserRole('superAdmin');
-      
-      if (!isValidSuperAdmin) {
-        toast({
-          variant: "destructive",
-          title: "Accès refusé",
-          description: "Action non autorisée.",
-        });
-        return;
-      }
-
-      const { error } = await supabase.rpc('delete_auth_user', { 
-        user_id: user.id 
-      });
-      
-      if (error) throw error;
-      
-      await logAdminAction('DELETE_USER', 'users', user.id, { 
-        user_email: user.email,
-        user_role: user.role 
-      });
-      
-      toast({
-        title: "Utilisateur supprimé",
-        description: `Le compte de ${user.email} a été supprimé.`,
-      });
-      
+    const result = await deleteUser(user);
+    if (result.success) {
       fetchUsers();
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de supprimer l'utilisateur.",
-      });
     }
   };
 
