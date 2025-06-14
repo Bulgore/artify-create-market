@@ -917,6 +917,7 @@ export type Database = {
           creator_level: Database["public"]["Enums"]["creator_level"] | null
           creator_status: Database["public"]["Enums"]["creator_status"] | null
           default_commission: number | null
+          email: string
           full_name: string | null
           full_name_en: string | null
           full_name_fr: string | null
@@ -947,6 +948,7 @@ export type Database = {
           creator_level?: Database["public"]["Enums"]["creator_level"] | null
           creator_status?: Database["public"]["Enums"]["creator_status"] | null
           default_commission?: number | null
+          email: string
           full_name?: string | null
           full_name_en?: string | null
           full_name_fr?: string | null
@@ -977,6 +979,7 @@ export type Database = {
           creator_level?: Database["public"]["Enums"]["creator_level"] | null
           creator_status?: Database["public"]["Enums"]["creator_status"] | null
           default_commission?: number | null
+          email?: string
           full_name?: string | null
           full_name_en?: string | null
           full_name_fr?: string | null

@@ -16,6 +16,8 @@ export interface CreatorFormData {
 
 export interface User {
   id: string;
+  // Email maintenant synchronisé depuis auth.users via trigger
+  email: string;
   // Nouveaux champs multilingues
   full_name_fr?: string | null;
   full_name_en?: string | null;
@@ -35,7 +37,6 @@ export interface User {
   is_public_profile: boolean;
   website_url: string | null;
   social_links: any;
-  email?: string;
   is_active?: boolean;
   creator_status?: string;
   creator_level?: string;
@@ -52,5 +53,6 @@ export interface User {
 export const mapUserWithCompatibility = (user: any): User => ({
   ...user,
   full_name: user.full_name ?? user.full_name_fr ?? '',
-  bio: user.bio ?? user.bio_fr ?? ''
+  bio: user.bio ?? user.bio_fr ?? '',
+  email: user.email || 'Email non disponible' // Fallback au cas où
 });
