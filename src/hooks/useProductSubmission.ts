@@ -4,6 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { PrintProduct, ProductData } from '@/types/customProduct';
+import { parseDesignArea } from '@/types/designArea';
 
 export const useProductSubmission = () => {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export const useProductSubmission = () => {
       productData
     });
 
-    // ✅ CORRECTION: Validation simplifiée - designPosition n'est plus requis
+    // ✅ CORRECTION: Validation ultra-simplifiée
     if (!selectedProduct || !selectedProduct.product_templates || !designUrl || !user) {
       console.log('❌ Validation failed:', {
         hasProduct: !!selectedProduct,
@@ -51,16 +52,25 @@ export const useProductSubmission = () => {
     setIsLoading(true);
 
     try {
-      // ✅ Générer une position automatique si manquante
-      const autoPosition = designPosition || {
-        x: 30,
-        y: 40, 
-        width: 40,
-        height: 20,
-        rotation: 0
-      };
+      // ✅ CORRECTION: Auto-générer position basée sur la zone d'impression
+      let finalPosition = designPosition;
+      
+      if (!finalPosition) {
+        console.log('🔧 Génération automatique de la position...');
+        const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
+        
+        finalPosition = {
+          x: designArea.x + (designArea.width * 0.1),
+          y: designArea.y + (designArea.height * 0.1),
+          width: designArea.width * 0.8,
+          height: designArea.height * 0.8,
+          rotation: 0
+        };
+        
+        console.log('🎯 Position auto-générée:', { designArea, finalPosition });
+      }
 
-      console.log('✅ All validations passed, creating product with auto position:', autoPosition);
+      console.log('✅ All validations passed, creating product with position:', finalPosition);
 
       const { error } = await supabase
         .from('creator_products')
@@ -72,7 +82,7 @@ export const useProductSubmission = () => {
           creator_margin_percentage: productData.margin_percentage,
           design_data: {
             design_image_url: designUrl,
-            position: autoPosition,
+            position: finalPosition,
             template_svg_url: selectedProduct.product_templates.svg_file_url
           },
           preview_url: selectedProduct.product_templates.mockup_image_url,
@@ -88,7 +98,7 @@ export const useProductSubmission = () => {
 
       toast({
         title: "Produit créé",
-        description: "Votre produit personnalisé a été créé avec succès."
+        description: "Votre produit personnalisé a été créé avec succès avec positionnement automatique."
       });
 
       return true;

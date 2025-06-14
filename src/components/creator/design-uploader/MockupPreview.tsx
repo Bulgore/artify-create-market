@@ -73,38 +73,71 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
     );
   }
 
-  // ✅ CORRECTION: Calcul de position centrée basé sur les dimensions réelles du conteneur
-  const getCenteredPosition = () => {
+  // ✅ CORRECTION: Utiliser les vraies dimensions de la zone d'impression pour centrer le design
+  const getDesignPositionInPrintArea = () => {
     if (!designArea) {
-      // Position par défaut centrée
+      console.warn('⚠️ Aucune zone d\'impression définie, utilisation position par défaut');
       return {
-        left: '30%',
-        top: '40%',
-        width: '40%',
-        height: '20%'
+        left: '25%',
+        top: '30%',
+        width: '50%',
+        height: '40%'
       };
     }
 
-    // Convertir les valeurs de design area en pourcentages du conteneur
-    const containerWidth = 100; // 100% du conteneur
-    const containerHeight = 100; // 100% du conteneur
+    console.log('📐 Calcul position avec zone d\'impression:', designArea);
+
+    // Convertir les coordonnées absolues de la zone d'impression en pourcentages du mockup
+    // Note: Ces valeurs devraient idéalement venir des dimensions réelles du mockup
+    const mockupWidth = 400; // Largeur du conteneur mockup
+    const mockupHeight = 400; // Hauteur du conteneur mockup
     
-    // Calculer la position centrée avec une taille optimale
-    const designWidth = Math.min(containerWidth * 0.4, 40); // 40% max du conteneur
-    const designHeight = Math.min(containerHeight * 0.3, 30); // 30% max du conteneur
+    // Position et taille de la zone d'impression en pourcentages
+    const printAreaLeft = (designArea.x / mockupWidth) * 100;
+    const printAreaTop = (designArea.y / mockupHeight) * 100;
+    const printAreaWidth = (designArea.width / mockupWidth) * 100;
+    const printAreaHeight = (designArea.height / mockupHeight) * 100;
     
-    const centerX = (containerWidth - designWidth) / 2;
-    const centerY = (containerHeight - designHeight) / 2 + 10; // Légèrement vers le haut
+    // Le design occupe 90% de la zone d'impression (marge de sécurité)
+    const designSizeRatio = 0.9;
+    const designWidth = printAreaWidth * designSizeRatio;
+    const designHeight = printAreaHeight * designSizeRatio;
     
+    // Centrer le design dans la zone d'impression
+    const designLeft = printAreaLeft + (printAreaWidth - designWidth) / 2;
+    const designTop = printAreaTop + (printAreaHeight - designHeight) / 2;
+
+    console.log('🎯 Position calculée:', {
+      printArea: { left: printAreaLeft, top: printAreaTop, width: printAreaWidth, height: printAreaHeight },
+      design: { left: designLeft, top: designTop, width: designWidth, height: designHeight }
+    });
+
     return {
-      left: `${centerX}%`,
-      top: `${centerY}%`,
+      left: `${designLeft}%`,
+      top: `${designTop}%`,
       width: `${designWidth}%`,
       height: `${designHeight}%`
     };
   };
 
-  const centeredStyle = getCenteredPosition();
+  const designStyle = getDesignPositionInPrintArea();
+
+  // Calculer la position de la zone d'impression pour l'affichage
+  const getPrintAreaStyle = () => {
+    if (!designArea) return null;
+    
+    const mockupWidth = 400;
+    const mockupHeight = 400;
+    
+    return {
+      left: `${(designArea.x / mockupWidth) * 100}%`,
+      top: `${(designArea.y / mockupHeight) * 100}%`,
+      width: `${(designArea.width / mockupWidth) * 100}%`,
+      height: `${(designArea.height / mockupHeight) * 100}%`
+    };
+  };
+
+  const printAreaStyle = getPrintAreaStyle();
   
   return (
     <Card>
@@ -135,11 +168,24 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
               />
             )}
             
-            {/* Design overlay - POSITION CENTRÉE AUTOMATIQUE */}
+            {/* Zone d'impression - Affichage du gabarit */}
+            {mockupLoaded && printAreaStyle && (
+              <div
+                className="absolute border-2 border-red-500 border-dashed bg-red-500 bg-opacity-10"
+                style={printAreaStyle}
+                title="Zone d'impression définie par l'administrateur"
+              >
+                <div className="absolute -top-6 left-0 text-xs text-red-600 bg-white px-1 rounded">
+                  Zone d'impression
+                </div>
+              </div>
+            )}
+            
+            {/* Design overlay - POSITION AUTOMATIQUE DANS LA ZONE D'IMPRESSION */}
             {designUrl && mockupLoaded && (
               <div
                 className="absolute"
-                style={centeredStyle}
+                style={designStyle}
               >
                 {designError ? (
                   <div className="w-full h-full bg-red-100 border-2 border-red-300 rounded flex items-center justify-center">
@@ -162,9 +208,12 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div>Mockup: {mockupLoaded ? '✅ Chargé' : mockupError ? '❌ Erreur' : '⏳ Chargement'}</div>
             {designUrl && (
-              <div>Design: {designLoaded ? '✅ Centré automatiquement' : designError ? '❌ Erreur' : '⏳ Positionnement auto'}</div>
+              <div>Design: {designLoaded ? '✅ Positionné automatiquement' : designError ? '❌ Erreur' : '⏳ Positionnement auto'}</div>
             )}
-            <div className="text-green-600">📍 Position: Centrée automatiquement</div>
+            {designArea && (
+              <div className="text-blue-600">📍 Zone d'impression: {designArea.width}x{designArea.height}px à ({designArea.x}, {designArea.y})</div>
+            )}
+            <div className="text-green-600">✨ Position: Centrée automatiquement dans la zone d'impression</div>
           </div>
         </div>
       </CardContent>
