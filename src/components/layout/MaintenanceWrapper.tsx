@@ -2,6 +2,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
+import { useAuth } from '@/contexts/AuthContext';
 import MaintenancePage from '@/components/MaintenancePage';
 
 interface MaintenanceWrapperProps {
@@ -10,11 +11,23 @@ interface MaintenanceWrapperProps {
 
 const MaintenanceWrapper = ({ children }: MaintenanceWrapperProps) => {
   const { isMaintenanceMode, isLoading } = useMaintenanceMode();
+  const { isSuperAdmin } = useAuth();
   const location = useLocation();
 
   // Pages toujours accessibles même en mode maintenance
   const alwaysAccessiblePages = ['/auth'];
-  const isAccessiblePage = alwaysAccessiblePages.includes(location.pathname);
+  
+  // Ajouter /admin pour les super admins
+  const adminPages = ['/admin'];
+  const isAccessiblePage = alwaysAccessiblePages.includes(location.pathname) ||
+    (isSuperAdmin() && adminPages.some(page => location.pathname.startsWith(page)));
+
+  console.log('🔍 MaintenanceWrapper check:', {
+    isMaintenanceMode,
+    currentPath: location.pathname,
+    isAccessiblePage,
+    isSuperAdmin: isSuperAdmin()
+  });
 
   if (isLoading) {
     return (
@@ -29,9 +42,11 @@ const MaintenanceWrapper = ({ children }: MaintenanceWrapperProps) => {
 
   // Si le mode maintenance est activé ET que la page n'est pas dans la liste des pages accessibles
   if (isMaintenanceMode && !isAccessiblePage) {
+    console.log('🚫 Blocking access due to maintenance mode');
     return <MaintenancePage />;
   }
 
+  console.log('✅ Allowing access to page');
   return <>{children}</>;
 };
 
