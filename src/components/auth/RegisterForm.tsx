@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +23,7 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps {
-  onSubmit: (data: RegisterFormValues) => Promise<void>;
+  onSubmit: (data: { email: string; password: string; fullName: string; role: string }) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -40,9 +39,19 @@ const RegisterForm = ({ onSubmit, isLoading }: RegisterFormProps) => {
     },
   });
 
+  const handleSubmit = async (data: RegisterFormValues) => {
+    // Transform the data to match the expected interface
+    await onSubmit({
+      email: data.email,
+      password: data.password,
+      fullName: data.fullName,
+      role: data.role
+    });
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="fullName"
