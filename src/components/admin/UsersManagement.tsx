@@ -47,6 +47,8 @@ const UsersManagement = () => {
         return 'bg-blue-100 text-blue-800';
       case 'imprimeur':
         return 'bg-green-100 text-green-800';
+      case 'créateur':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -94,79 +96,86 @@ const UsersManagement = () => {
                 {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
               </p>
               
-              {filteredUsers.map((user) => (
-                <Card key={user.id} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.avatar_url} />
-                        <AvatarFallback>
-                          {user.full_name ? user.full_name.charAt(0).toUpperCase() : '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">
-                            {user.full_name || 'Nom non défini'}
-                          </h3>
-                          <Badge className={getRoleBadgeColor(user.role)}>
-                            {user.role}
-                          </Badge>
-                          {user.is_super_admin && (
-                            <Badge variant="destructive">SUPER ADMIN</Badge>
+              {filteredUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Aucun utilisateur trouvé</p>
+                </div>
+              ) : (
+                filteredUsers.map((user) => (
+                  <Card key={user.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user.avatar_url} />
+                          <AvatarFallback>
+                            {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">
+                              {user.full_name || 'Nom non défini'}
+                            </h3>
+                            <Badge className={getRoleBadgeColor(user.role)}>
+                              {user.role}
+                            </Badge>
+                            {user.is_super_admin && (
+                              <Badge variant="destructive">SUPER ADMIN</Badge>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Mail className="h-3 w-3" />
+                            <span>{user.email || 'Email non disponible'}</span>
+                          </div>
+                          
+                          <p className="text-sm text-gray-500">
+                            Inscrit le {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                          </p>
+                          
+                          {user.creator_status && (
+                            <Badge variant="outline" className="text-xs">
+                              Statut créateur: {user.creator_status}
+                            </Badge>
                           )}
                         </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Modifier
+                        </Button>
                         
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Mail className="h-3 w-3" />
-                          <span>{user.email || 'Email non disponible'}</span>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setResetDialogUser(user)}
+                          disabled={isResetting === user.id}
+                        >
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          {isResetting === user.id ? 'Reset...' : 'Reset'}
+                        </Button>
                         
-                        <p className="text-sm text-gray-500">
-                          Inscrit le {new Date(user.created_at).toLocaleDateString('fr-FR')}
-                        </p>
-                        
-                        {user.creator_status && (
-                          <Badge variant="outline" className="text-xs">
-                            Statut créateur: {user.creator_status}
-                          </Badge>
-                        )}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setDeleteDialogUser(user)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Supprimer
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditUser(user)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Modifier
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setResetDialogUser(user)}
-                        disabled={isResetting === user.id}
-                      >
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        {isResetting === user.id ? 'Reset...' : 'Reset'}
-                      </Button>
-                      
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setDeleteDialogUser(user)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Supprimer
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))
+              )}
             </div>
           )}
         </CardContent>
@@ -193,7 +202,7 @@ const UsersManagement = () => {
             setResetDialogUser(null);
           }}
         >
-          <div /> {/* Required children prop */}
+          <div />
         </UserResetDialog>
       )}
 
@@ -205,7 +214,7 @@ const UsersManagement = () => {
             setDeleteDialogUser(null);
           }}
         >
-          <div /> {/* Required children prop */}
+          <div />
         </UserDeleteDialog>
       )}
     </div>
