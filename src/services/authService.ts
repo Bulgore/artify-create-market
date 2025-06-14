@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { validateEmail, sanitizeText } from '@/utils/inputValidation';
+import { validateEmail, sanitizeText, validatePassword, checkRateLimit } from '@/utils/secureValidation';
 
 export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
@@ -16,7 +16,6 @@ export const fetchUserRole = async (userId: string): Promise<string | null> => {
     
     if (error) {
       console.error('❌ Error fetching user role:', error);
-      // En cas d'erreur, retourner un rôle par défaut plutôt que null
       return 'créateur';
     }
     
@@ -25,7 +24,6 @@ export const fetchUserRole = async (userId: string): Promise<string | null> => {
     return role;
   } catch (error) {
     console.error('❌ Unexpected error fetching user role:', error);
-    // En cas d'erreur inattendue, retourner un rôle par défaut
     return 'créateur';
   }
 };
@@ -39,16 +37,16 @@ export const createUserProfile = async (
   try {
     console.log('👤 Creating user profile:', { userId, email, role });
     
-    // Validate and sanitize inputs
+    // Enhanced validation
     if (!validateEmail(email)) {
       throw new Error('Email invalide');
     }
     
     const sanitizedName = sanitizeText(fullName);
-    const validRoles = ['créateur', 'imprimeur', 'admin', 'superAdmin'];
+    const validRoles = ['créateur', 'imprimeur'];
     
     if (!validRoles.includes(role)) {
-      role = 'créateur'; // Default to creator for security
+      role = 'créateur'; // Force to default role for security
     }
     
     const { error } = await supabase
@@ -64,7 +62,7 @@ export const createUserProfile = async (
         bio_en: '',
         bio_ty: '',
         role: role,
-        is_super_admin: false, // Never set this to true via code
+        is_super_admin: false, // Never allow self-elevation
         creator_status: 'draft',
         creator_level: 'debutant',
         onboarding_completed: false,
@@ -94,6 +92,26 @@ export const signUpUser = async (
   role: string = 'créateur'
 ): Promise<void> => {
   try {
+    // Enhanced validation
+    if (!validateEmail(email)) {
+      throw new Error('Adresse email invalide');
+    }
+    
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.message);
+    }
+    
+    const sanitizedName = sanitizeText(fullName);
+    if (sanitizedName.length < 2) {
+      throw new Error('Le nom doit contenir au moins 2 caractères');
+    }
+    
+    // Rate limiting
+    if (!checkRateLimit(`signup_${email}`, 3, 15 * 60 * 1000)) {
+      throw new Error('Trop de tentatives d\'inscription. Veuillez réessayer dans 15 minutes.');
+    }
+    
     console.log('📝 Signing up user:', { email, role });
     
     const { data, error } = await supabase.auth.signUp({
@@ -101,8 +119,8 @@ export const signUpUser = async (
       password,
       options: {
         data: {
-          full_name: fullName,
-          role: role,
+          full_name: sanitizedName,
+          role: role === 'créateur' || role === 'imprimeur' ? role : 'créateur', // Strict role validation
         },
         emailRedirectTo: `${window.location.origin}/`
       }
@@ -128,6 +146,16 @@ export const signUpUser = async (
 
 export const signInUser = async (email: string, password: string): Promise<void> => {
   try {
+    // Enhanced validation
+    if (!validateEmail(email)) {
+      throw new Error('Adresse email invalide');
+    }
+    
+    // Rate limiting for login attempts
+    if (!checkRateLimit(`login_${email}`, 5, 15 * 60 * 1000)) {
+      throw new Error('Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.');
+    }
+    
     console.log('🔑 Signing in user:', email);
     
     const { data, error } = await supabase.auth.signInWithPassword({

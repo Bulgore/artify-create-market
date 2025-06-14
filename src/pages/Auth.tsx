@@ -12,7 +12,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
-import { Lock } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Adresse email invalide" }),
@@ -22,20 +21,13 @@ const loginSchema = z.object({
 const registerSchema = loginSchema.extend({
   fullName: z.string().min(2, { message: "Le nom doit contenir au moins 2 caractères" }),
   confirmPassword: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
-  role: z.enum(["créateur", "imprimeur", "admin", "superAdmin"], {
+  role: z.enum(["créateur", "imprimeur"], {
     required_error: "Veuillez sélectionner un rôle",
   }),
-  adminKey: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
-}).refine(
-  (data) => !(["admin", "superAdmin"].includes(data.role) && data.adminKey !== "superadmin123"),
-  {
-    message: "Clé d'administration invalide",
-    path: ["adminKey"],
-  }
-);
+});
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -46,7 +38,6 @@ const Auth: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const defaultTab = new URLSearchParams(location.search).get("tab") || "login";
-  const [showAdminKey, setShowAdminKey] = useState(false);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -64,7 +55,6 @@ const Auth: React.FC = () => {
       password: "",
       confirmPassword: "",
       role: "créateur",
-      adminKey: "",
     },
   });
 
@@ -79,6 +69,11 @@ const Auth: React.FC = () => {
       });
     } catch (error) {
       console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Erreur de connexion",
+        description: "Email ou mot de passe incorrect.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -92,19 +87,17 @@ const Auth: React.FC = () => {
         title: "Inscription réussie",
         description: "Veuillez vérifier votre email pour confirmer votre compte.",
       });
-      // Stay on auth page after signup, user needs to verify email
     } catch (error) {
       console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Erreur d'inscription",
+        description: "Une erreur est survenue lors de l'inscription.",
+      });
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Watch for role changes to show/hide admin key field
-  const selectedRole = registerForm.watch("role");
-  React.useEffect(() => {
-    setShowAdminKey(["admin", "superAdmin"].includes(selectedRole));
-  }, [selectedRole]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-artify-cream py-12">
@@ -212,46 +205,12 @@ const Auth: React.FC = () => {
                                 </FormControl>
                                 <FormLabel className="font-normal cursor-pointer">Imprimeur</FormLabel>
                               </FormItem>
-                              <FormItem className="flex items-center space-x-2 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value="admin" />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">Administrateur</FormLabel>
-                              </FormItem>
-                              <FormItem className="flex items-center space-x-2 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value="superAdmin" />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">Super Admin</FormLabel>
-                              </FormItem>
                             </RadioGroup>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    {showAdminKey && (
-                      <FormField
-                        control={registerForm.control}
-                        name="adminKey"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Clé d'administration</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Input 
-                                  type="password" 
-                                  placeholder="Entrez la clé d'administration" 
-                                  {...field} 
-                                />
-                                <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
                     <FormField
                       control={registerForm.control}
                       name="password"

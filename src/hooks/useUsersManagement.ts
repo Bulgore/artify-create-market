@@ -1,128 +1,80 @@
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { User } from "@/types/creator";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
+import { validateUserRole, logAdminAction } from '@/utils/secureAuth';
 
-interface AuthUser {
+interface User {
   id: string;
   email: string;
+  full_name: string;
+  role: string;
+  is_super_admin: boolean;
   created_at: string;
+  avatar_url?: string;
+  creator_status?: string;
 }
 
 export const useUsersManagement = () => {
-  const { isSuperAdmin } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isResetting, setIsResetting] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isSuperAdmin()) {
-      fetchUsers();
-    }
-  }, [isSuperAdmin]);
-
-  useEffect(() => {
-    const filtered = users.filter(user =>
-      (user.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.role || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredUsers(filtered);
-  }, [users, searchTerm]);
+  const { isSuperAdmin } = useAuth();
 
   const fetchUsers = async () => {
-    setIsLoading(true);
     try {
-      console.log('👥 Fetching users...');
+      // Validate super admin status server-side before fetching
+      const isValidSuperAdmin = await validateUserRole('superAdmin');
       
-      const { data: usersData, error: usersError } = await supabase
+      if (!isValidSuperAdmin) {
+        toast({
+          variant: "destructive",
+          title: "Accès refusé",
+          description: "Vous n'avez pas les droits pour accéder à cette section.",
+        });
+        return;
+      }
+
+      setIsLoading(true);
+      
+      // Get auth users (server-side validation will be done by RLS)
+      const { data: authUsers, error: authError } = await supabase.rpc('get_auth_users_for_admin');
+      
+      if (authError) throw authError;
+
+      // Get profiles data
+      const { data: profiles, error: profilesError } = await supabase
         .from('users')
-        .select(`
-          id,
-          full_name_fr,
-          full_name_en,
-          full_name_ty,
-          bio_fr,
-          bio_en,
-          bio_ty,
-          role,
-          is_super_admin,
-          is_public_profile,
-          creator_status,
-          creator_level,
-          default_commission,
-          avatar_url,
-          banner_url,
-          website_url,
-          social_links,
-          keywords,
-          products_count,
-          onboarding_completed,
-          created_at,
-          updated_at,
-          reviewed_at,
-          reviewed_by,
-          rejection_reason
-        `)
-        .order('created_at', { ascending: false });
+        .select('*');
 
-      if (usersError) {
-        console.error('❌ Error fetching users:', usersError);
-        throw usersError;
-      }
+      if (profilesError) throw profilesError;
 
-      console.log('✅ Users fetched:', usersData?.length || 0);
-
-      const { data: authUsersData, error: authError } = await supabase.rpc('get_auth_users_for_admin');
-
-      if (authError) {
-        console.warn('⚠️ Could not fetch auth users:', authError);
-      }
-
-      const authUsers: AuthUser[] = Array.isArray(authUsersData) ? authUsersData : [];
-
-      const mappedUsers = (usersData || []).map((user: any): User => {
-        const authUser = authUsers.find((au: AuthUser) => au.id === user.id);
-        
+      // Merge auth and profile data
+      const mergedUsers = authUsers.map((authUser: any) => {
+        const profile = profiles.find(p => p.id === authUser.id);
         return {
-          ...user,
-          full_name: user.full_name_fr || user.full_name_en || user.full_name_ty || authUser?.email || 'Utilisateur sans nom',
-          bio: user.bio_fr || user.bio_en || user.bio_ty || '',
-          role: user.role || 'créateur',
-          email: authUser?.email || '',
-          created_at: user.created_at || new Date().toISOString(),
-          updated_at: user.updated_at || new Date().toISOString(),
-          id: user.id || '',
-          is_super_admin: user.is_super_admin || false,
-          default_commission: user.default_commission || 15,
-          avatar_url: user.avatar_url || null,
-          is_public_profile: user.is_public_profile || false,
-          website_url: user.website_url || null,
-          social_links: user.social_links || {},
-          creator_status: user.creator_status || undefined,
-          creator_level: user.creator_level || undefined,
-          products_count: user.products_count || 0,
-          onboarding_completed: user.onboarding_completed || false,
-          banner_url: user.banner_url || null,
-          keywords: user.keywords || [],
-          reviewed_at: user.reviewed_at || null,
-          reviewed_by: user.reviewed_by || null,
-          rejection_reason: user.rejection_reason || null
+          ...authUser,
+          ...profile,
+          full_name: profile?.full_name || profile?.full_name_fr || 'Utilisateur',
+          role: profile?.role || 'créateur'
         };
       });
 
-      console.log('✅ Mapped users:', mappedUsers.length);
-      setUsers(mappedUsers);
-    } catch (error: any) {
-      console.error('❌ Error fetching users:', error);
+      setUsers(mergedUsers);
+      
+      await logAdminAction('VIEW_USERS', 'users', '', { 
+        user_count: mergedUsers.length 
+      });
+      
+    } catch (error) {
+      console.error('Error fetching users:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de charger les utilisateurs. Vérifiez vos permissions d'admin."
+        description: "Impossible de charger la liste des utilisateurs.",
       });
     } finally {
       setIsLoading(false);
@@ -130,31 +82,44 @@ export const useUsersManagement = () => {
   };
 
   const handleResetUser = async (user: User) => {
-    setIsResetting(user.id);
     try {
-      console.log('🔄 Resetting user account:', user.id);
+      // Validate super admin status
+      const isValidSuperAdmin = await validateUserRole('superAdmin');
       
-      const { data, error } = await supabase.rpc('reset_user_account', {
-        target_user_id: user.id
-      });
-
-      if (error) {
-        console.error('❌ Error resetting user:', error);
-        throw error;
+      if (!isValidSuperAdmin) {
+        toast({
+          variant: "destructive",
+          title: "Accès refusé",
+          description: "Action non autorisée.",
+        });
+        return;
       }
 
-      toast({
-        title: "Compte réinitialisé",
-        description: `Le compte de ${user.full_name || user.email} a été réinitialisé avec succès.`,
+      setIsResetting(user.id);
+      
+      const { error } = await supabase.rpc('reset_user_account', { 
+        target_user_id: user.id 
       });
-
+      
+      if (error) throw error;
+      
+      await logAdminAction('RESET_USER', 'users', user.id, { 
+        user_email: user.email,
+        previous_role: user.role 
+      });
+      
+      toast({
+        title: "Utilisateur réinitialisé",
+        description: `Le compte de ${user.email} a été réinitialisé.`,
+      });
+      
       fetchUsers();
-    } catch (error: any) {
-      console.error('❌ Error resetting user:', error);
+    } catch (error) {
+      console.error('Error resetting user:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de réinitialiser le compte utilisateur.",
+        description: "Impossible de réinitialiser l'utilisateur.",
       });
     } finally {
       setIsResetting(null);
@@ -163,34 +128,37 @@ export const useUsersManagement = () => {
 
   const handleDeleteUser = async (user: User) => {
     try {
-      console.log('🗑️ Deleting user:', user.id);
+      // Validate super admin status
+      const isValidSuperAdmin = await validateUserRole('superAdmin');
       
-      const { error: userError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', user.id);
-
-      if (userError) {
-        console.error('❌ Error deleting user profile:', userError);
-        throw userError;
+      if (!isValidSuperAdmin) {
+        toast({
+          variant: "destructive",
+          title: "Accès refusé",
+          description: "Action non autorisée.",
+        });
+        return;
       }
 
-      const { data: authResult, error: authError } = await supabase.rpc('delete_auth_user', {
-        user_id: user.id
+      const { error } = await supabase.rpc('delete_auth_user', { 
+        user_id: user.id 
       });
-
-      if (authError) {
-        console.warn('⚠️ Could not delete auth user:', authError);
-      }
-
+      
+      if (error) throw error;
+      
+      await logAdminAction('DELETE_USER', 'users', user.id, { 
+        user_email: user.email,
+        user_role: user.role 
+      });
+      
       toast({
         title: "Utilisateur supprimé",
-        description: `${user.full_name || user.email} a été supprimé avec succès.`,
+        description: `Le compte de ${user.email} a été supprimé.`,
       });
-
+      
       fetchUsers();
-    } catch (error: any) {
-      console.error('❌ Error deleting user:', error);
+    } catch (error) {
+      console.error('Error deleting user:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -198,6 +166,26 @@ export const useUsersManagement = () => {
       });
     }
   };
+
+  // Filter users based on search term
+  useEffect(() => {
+    if (!searchTerm) {
+      setFilteredUsers(users);
+      return;
+    }
+
+    const filtered = users.filter(user =>
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.role?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    setFilteredUsers(filtered);
+  }, [users, searchTerm]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   return {
     users,

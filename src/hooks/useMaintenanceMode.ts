@@ -1,20 +1,24 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { validateUserRole } from '@/utils/secureAuth';
 
 export const useMaintenanceMode = () => {
-  const { isSuperAdmin, userRole, loading } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [roleValidated, setRoleValidated] = useState(false);
 
   useEffect(() => {
-    const checkMaintenanceMode = () => {
+    const checkMaintenanceMode = async () => {
       try {
-        // Attendre que l'authentification soit complètement chargée
+        // Wait for auth to be fully loaded
         if (loading) {
           console.log('🔄 Auth still loading, waiting...');
           return;
         }
+
+        setIsLoading(true);
 
         const savedState = localStorage.getItem('maintenance_mode');
         const maintenanceActive = savedState === 'true';
@@ -22,30 +26,43 @@ export const useMaintenanceMode = () => {
         console.log('🔍 Checking maintenance mode:', { 
           maintenanceActive, 
           userRole, 
-          isSuperAdminResult: isSuperAdmin() 
+          hasUser: !!user 
         });
         
-        // Si c'est un super admin, on ne bloque jamais l'accès
-        if (isSuperAdmin()) {
-          console.log('✅ Super admin detected, bypassing maintenance mode');
-          setIsMaintenanceMode(false);
+        // If user is authenticated, validate their super admin status server-side
+        if (user && userRole === 'superAdmin') {
+          console.log('🔐 Validating super admin status server-side...');
+          const isValidSuperAdmin = await validateUserRole('superAdmin');
+          
+          if (isValidSuperAdmin) {
+            console.log('✅ Server-validated super admin, bypassing maintenance mode');
+            setIsMaintenanceMode(false);
+            setRoleValidated(true);
+          } else {
+            console.log('❌ Failed super admin validation, applying maintenance mode');
+            setIsMaintenanceMode(maintenanceActive);
+            setRoleValidated(false);
+          }
         } else {
-          console.log('👤 Regular user, applying maintenance mode:', maintenanceActive);
+          console.log('👤 Regular user or not authenticated, applying maintenance mode:', maintenanceActive);
           setIsMaintenanceMode(maintenanceActive);
+          setRoleValidated(false);
         }
       } catch (error) {
-        console.error('❌ Erreur lors de la vérification du mode maintenance:', error);
+        console.error('❌ Error checking maintenance mode:', error);
         setIsMaintenanceMode(false);
+        setRoleValidated(false);
       } finally {
         setIsLoading(false);
       }
     };
 
     checkMaintenanceMode();
-  }, [isSuperAdmin, userRole, loading]);
+  }, [user, userRole, loading]);
 
   return {
     isMaintenanceMode,
-    isLoading
+    isLoading,
+    roleValidated
   };
 };
