@@ -32,22 +32,35 @@ export const useCustomProductCreator = () => {
   };
 
   const handleProductCreate = async (productData: any) => {
-    console.log('🚀 useCustomProductCreator - handleProductCreate appelé avec:', productData);
+    console.log('🚀 useCustomProductCreator - handleProductCreate called with:', productData);
     
     try {
+      // ✅ CORRECTION: Handle simplified creation data structure
+      const designImageUrl = productData.design_data?.imageUrl || productData.imageUrl;
+      const designPosition = productData.design_data?.position || productData.position;
+      
+      const productInfo = {
+        name: productData.name,
+        description: productData.description || '',
+        margin_percentage: productData.creator_margin_percentage || productData.margin_percentage || 20
+      };
+
+      console.log('📊 Processed data for submission:', {
+        selectedProduct: selectedProduct?.name,
+        designImageUrl: !!designImageUrl,
+        designPosition,
+        productInfo
+      });
+
       const success = await submitProduct(
         selectedProduct, 
-        productData.design_data.imageUrl, 
-        productData.design_data.position, 
-        {
-          name: productData.name,
-          description: productData.description,
-          margin_percentage: productData.creator_margin_percentage
-        }
+        designImageUrl, 
+        designPosition, 
+        productInfo
       );
       
       if (success) {
-        console.log('✅ useCustomProductCreator - Produit créé avec succès');
+        console.log('✅ useCustomProductCreator - Product created successfully');
         // Reset form after successful submission
         setSelectedProduct(null);
         resetDesign();
@@ -58,18 +71,18 @@ export const useCustomProductCreator = () => {
         });
         return true;
       } else {
-        console.log('❌ useCustomProductCreator - Échec de la création du produit');
+        console.log('❌ useCustomProductCreator - Product creation failed');
         return false;
       }
     } catch (error) {
-      console.error('❌ useCustomProductCreator - Erreur lors de la création:', error);
+      console.error('❌ useCustomProductCreator - Error during creation:', error);
       return false;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🚀 useCustomProductCreator - handleSubmit appelé');
+    console.log('🚀 useCustomProductCreator - handleSubmit called');
     
     const success = await submitProduct(selectedProduct, designUrl, designPosition, productData);
     
@@ -89,7 +102,7 @@ export const useCustomProductCreator = () => {
 
   // When product selection changes, reset design
   const handleProductSelectWithReset = (productId: string) => {
-    console.log('🚀 useCustomProductCreator - handleProductSelectWithReset appelé avec:', productId);
+    console.log('🚀 useCustomProductCreator - handleProductSelectWithReset called with:', productId);
     resetDesign();
     handleProductSelect(productId);
   };
