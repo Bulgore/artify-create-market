@@ -6,15 +6,34 @@ import { useUserRole } from '@/hooks/useUserRole';
 import CreatorOnboarding from '@/components/creator/onboarding/CreatorOnboarding';
 
 const CreatorOnboardingPage = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin, isSuperAdmin } = useAuth();
   const { isCreator } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && (!user || !isCreator)) {
-      navigate('/auth');
+    if (!loading) {
+      // Pas d'utilisateur connecté -> redirection vers auth
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      // ⚠️ CORRECTION DU BUG : Les admins/super admins ne doivent pas être sur cette page
+      // Ils peuvent accéder directement à leur studio ou à l'admin
+      const isAdminUser = isAdmin() || isSuperAdmin();
+      if (isAdminUser) {
+        // Rediriger les admins vers l'interface admin au lieu de l'onboarding
+        navigate('/admin');
+        return;
+      }
+
+      // Seuls les créateurs non-admins doivent pouvoir accéder à l'onboarding
+      if (!isCreator) {
+        navigate('/auth');
+        return;
+      }
     }
-  }, [user, loading, isCreator, navigate]);
+  }, [user, loading, isCreator, isAdmin, isSuperAdmin, navigate]);
 
   if (loading) {
     return (
@@ -27,7 +46,9 @@ const CreatorOnboardingPage = () => {
     );
   }
 
-  if (!user || !isCreator) {
+  // Ne rien rendre si pas d'utilisateur ou si c'est un admin
+  const isAdminUser = isAdmin() || isSuperAdmin();
+  if (!user || !isCreator || isAdminUser) {
     return null;
   }
 

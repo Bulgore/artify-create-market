@@ -9,7 +9,7 @@ import PrinterStudio from '@/components/PrinterStudio';
 import { mapUserWithCompatibility } from '@/utils/userMapping';
 
 const Studio = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin, isSuperAdmin } = useAuth();
   const { isPrinter, isCreator } = useUserRole();
   const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<{ 
@@ -78,8 +78,12 @@ const Studio = () => {
     return null;
   }
 
-  // Redirection vers l'onboarding si nécessaire
-  if (isCreator && (!userProfile.onboarding_completed || !userProfile.full_name || !userProfile.bio || !userProfile.avatar_url)) {
+  // ⚠️ CORRECTION DU BUG : Exempter les admins et super admins de l'onboarding créateur
+  // Les admins/super admins ne doivent JAMAIS être redirigés vers l'onboarding
+  const isAdminUser = isAdmin() || isSuperAdmin();
+  
+  // Redirection vers l'onboarding UNIQUEMENT pour les créateurs non-admins
+  if (isCreator && !isAdminUser && (!userProfile.onboarding_completed || !userProfile.full_name || !userProfile.bio || !userProfile.avatar_url)) {
     navigate('/creator-onboarding');
     return null;
   }

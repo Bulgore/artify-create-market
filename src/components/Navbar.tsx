@@ -34,6 +34,10 @@ const Navbar = () => {
   };
 
   const getStudioLabel = () => {
+    // ⚠️ CORRECTION : Les admins/super admins peuvent aussi accéder au studio
+    const isAdminUser = isAdmin() || isSuperAdmin();
+    
+    if (isAdminUser) return 'Mon Studio Admin';
     if (isCreateur()) return 'Mon Studio Créateur';
     if (isImprimeur()) return 'Mon Studio Imprimeur';
     return 'Mon Studio';
@@ -77,8 +81,8 @@ const Navbar = () => {
             
             {user ? (
               <div className="flex items-center space-x-2">
-                {/* Bouton Studio pour créateurs/imprimeurs */}
-                {(isCreateur() || isImprimeur()) && (
+                {/* Bouton Studio pour créateurs/imprimeurs ET admins */}
+                {(isCreateur() || isImprimeur() || isAdmin() || isSuperAdmin()) && (
                   <Button variant="outline" asChild>
                     <Link to="/studio" className="flex items-center space-x-2">
                       <Palette className="h-4 w-4" />
@@ -117,8 +121,8 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
 
-                    {/* Studio pour créateurs/imprimeurs */}
-                    {(isCreateur() || isImprimeur()) && (
+                    {/* Studio pour créateurs/imprimeurs ET admins */}
+                    {(isCreateur() || isImprimeur() || isAdmin() || isSuperAdmin()) && (
                       <DropdownMenuItem asChild>
                         <Link to="/studio" className="flex items-center cursor-pointer">
                           <Palette className="mr-2 h-4 w-4" />
