@@ -66,7 +66,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
           
           setInitializing(false);
-          // Ne pas définir loading à false ici, attendre que le rôle soit chargé
         }
       } catch (error) {
         console.error('❌ Error initializing auth:', error);

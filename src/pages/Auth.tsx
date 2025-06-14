@@ -11,20 +11,40 @@ import RegisterForm from "@/components/auth/RegisterForm";
 
 const Auth: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const defaultTab = new URLSearchParams(location.search).get("tab") || "login";
+
+  const getRedirectPath = (role: string) => {
+    switch (role) {
+      case 'créateur':
+        return '/studio';
+      case 'imprimeur':
+        return '/studio';
+      case 'admin':
+      case 'superAdmin':
+        return '/admin';
+      default:
+        return '/';
+    }
+  };
 
   const onLoginSubmit = async (data: { email: string; password: string }) => {
     setIsLoading(true);
     try {
       await signIn(data.email, data.password);
-      navigate("/");
-      toast({
-        title: "Connexion réussie",
-        description: "Bienvenue sur Podsleek!",
-      });
+      
+      // Attendre un court délai pour que le rôle soit chargé
+      setTimeout(() => {
+        const redirectPath = getRedirectPath(userRole || 'créateur');
+        navigate(redirectPath);
+        toast({
+          title: "Connexion réussie",
+          description: "Bienvenue sur Podsleek!",
+        });
+      }, 500);
+      
     } catch (error) {
       console.error(error);
       toast({
