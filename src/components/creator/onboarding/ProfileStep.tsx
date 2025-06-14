@@ -7,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import ImageUploadSection from './ImageUploadSection';
 import BasicInfoSection from './BasicInfoSection';
 import SocialLinksSection from './SocialLinksSection';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface ProfileStepProps {
   onComplete: () => void;
@@ -23,6 +25,7 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
   } = useFileUpload();
   const { toast } = useToast();
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     loadExistingImages();
@@ -47,8 +50,21 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
     return errors.length === 0;
   };
 
+  const handleFileChangeWithErrorHandling = (file: File | null, type: 'avatar' | 'banner') => {
+    try {
+      setUploadError(null);
+      handleFileChange(file, type);
+    } catch (error) {
+      console.error('❌ File handling error:', error);
+      setUploadError(error instanceof Error ? error.message : 'Erreur lors du traitement du fichier');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Réinitialiser les erreurs
+    setUploadError(null);
     
     // Validation stricte des champs obligatoires
     if (!validateForm()) {
@@ -61,27 +77,38 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
     }
 
     setIsLoading(true);
+    
     try {
-      console.log('🔄 Uploading files and updating profile...');
-      const { avatarUrl, bannerUrl } = await uploadFiles();
+      console.log('🔄 Starting profile update process...');
       
-      // Vérification que l'avatar a bien été uploadé
-      if (!avatarUrl && !avatarPreview) {
-        throw new Error('L\'avatar est obligatoire');
+      // Upload des fichiers
+      const { avatarUrl, bannerUrl } = await uploadFiles();
+      console.log('✅ Files uploaded successfully:', { avatarUrl, bannerUrl });
+      
+      // Vérification que l'avatar a bien été uploadé ou existe déjà
+      if (!avatarUrl) {
+        throw new Error('L\'avatar est obligatoire et n\'a pas pu être uploadé');
       }
 
+      // Mise à jour du profil
       const success = await updateProfile(avatarUrl, bannerUrl);
       if (success) {
         console.log('✅ Profile updated successfully');
-        // Appeler onComplete seulement si la sauvegarde est réussie
+        toast({
+          title: 'Profil sauvegardé !',
+          description: 'Votre profil créateur a été sauvegardé avec succès.',
+        });
         onComplete();
       }
     } catch (error) {
-      console.error('❌ Error updating profile:', error);
+      console.error('❌ Error during profile update:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      
+      setUploadError(errorMessage);
       toast({
         variant: 'destructive',
         title: 'Erreur de sauvegarde',
-        description: 'Impossible de sauvegarder votre profil. Veuillez réessayer.',
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -109,20 +136,35 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Affichage des erreurs de validation */}
       {validationErrors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h4 className="text-red-800 font-medium mb-2">Veuillez corriger les erreurs suivantes :</h4>
-          <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-            {validationErrors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">Veuillez corriger les erreurs suivantes :</div>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Affichage des erreurs d'upload */}
+      {uploadError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {uploadError}
+          </AlertDescription>
+        </Alert>
       )}
 
       <ImageUploadSection
         avatarPreview={avatarPreview}
         bannerPreview={bannerPreview}
-        onFileChange={handleFileChange}
+        onFileChange={handleFileChangeWithErrorHandling}
       />
 
       <BasicInfoSection
@@ -136,14 +178,19 @@ const ProfileStep: React.FC<ProfileStepProps> = ({ onComplete }) => {
       />
 
       {/* Informations sur les champs obligatoires */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-blue-800 font-medium mb-2">📋 Champs obligatoires :</h4>
-        <ul className="text-blue-700 text-sm space-y-1">
-          <li>✓ Photo de profil</li>
-          <li>✓ Nom/Pseudo en français (minimum 2 caractères)</li>
-          <li>✓ Description de votre univers créatif en français (minimum 10 caractères)</li>
-        </ul>
-      </div>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          <div className="space-y-1">
+            <div className="font-medium">📋 Champs obligatoires :</div>
+            <ul className="text-sm space-y-1">
+              <li>✓ Photo de profil</li>
+              <li>✓ Nom/Pseudo en français (minimum 2 caractères)</li>
+              <li>✓ Description de votre univers créatif en français (minimum 10 caractères)</li>
+            </ul>
+          </div>
+        </AlertDescription>
+      </Alert>
 
       <Button
         type="submit"

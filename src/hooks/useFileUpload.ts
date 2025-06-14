@@ -11,21 +11,45 @@ export const useFileUpload = () => {
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
   const uploadFile = async (file: File, bucket: string, path: string) => {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, { upsert: true });
+    try {
+      console.log(`🔄 Uploading file to ${bucket}/${path}`);
+      
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, { upsert: true });
 
-    if (error) throw error;
+      if (error) {
+        console.error(`❌ Upload error for ${bucket}:`, error);
+        throw error;
+      }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(path);
+      console.log(`✅ File uploaded successfully to ${bucket}:`, data);
 
-    return publicUrl;
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(path);
+
+      console.log(`📄 Public URL generated:`, publicUrl);
+      return publicUrl;
+    } catch (error) {
+      console.error(`❌ Error in uploadFile for ${bucket}:`, error);
+      throw error;
+    }
   };
 
   const handleFileChange = (file: File | null, type: 'avatar' | 'banner') => {
     if (!file) return;
+
+    // Validation des fichiers
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error(`Le fichier est trop volumineux. Taille maximum : 5MB`);
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Format de fichier non supporté. Utilisez JPG, PNG ou WebP.');
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -41,50 +65,64 @@ export const useFileUpload = () => {
   };
 
   const uploadFiles = async () => {
-    if (!user) return { avatarUrl: null, bannerUrl: null };
+    if (!user) {
+      throw new Error('Utilisateur non connecté');
+    }
 
     let avatarUrl = avatarPreview;
     let bannerUrl = bannerPreview;
 
-    // Upload avatar if changed
-    if (avatarFile) {
-      avatarUrl = await uploadFile(
-        avatarFile,
-        'avatars',
-        `${user.id}/avatar.${avatarFile.name.split('.').pop()}`
-      );
-    }
+    try {
+      // Upload avatar if changed
+      if (avatarFile) {
+        const fileExtension = avatarFile.name.split('.').pop();
+        const avatarPath = `${user.id}/avatar.${fileExtension}`;
+        avatarUrl = await uploadFile(avatarFile, 'avatars', avatarPath);
+      }
 
-    // Upload banner if changed
-    if (bannerFile) {
-      bannerUrl = await uploadFile(
-        bannerFile,
-        'banners',
-        `${user.id}/banner.${bannerFile.name.split('.').pop()}`
-      );
-    }
+      // Upload banner if changed
+      if (bannerFile) {
+        const fileExtension = bannerFile.name.split('.').pop();
+        const bannerPath = `${user.id}/banner.${fileExtension}`;
+        bannerUrl = await uploadFile(bannerFile, 'banners', bannerPath);
+      }
 
-    return { avatarUrl, bannerUrl };
+      return { avatarUrl, bannerUrl };
+    } catch (error) {
+      console.error('❌ Error uploading files:', error);
+      throw error;
+    }
   };
 
   const loadExistingImages = async () => {
     if (!user) return;
 
     try {
+      console.log('🔄 Loading existing images for user:', user.id);
+      
       const { data, error } = await supabase
         .from('users')
         .select('avatar_url, banner_url')
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error loading images:', error);
+        return;
+      }
 
       if (data) {
-        if (data.avatar_url) setAvatarPreview(data.avatar_url);
-        if (data.banner_url) setBannerPreview(data.banner_url);
+        if (data.avatar_url) {
+          console.log('✅ Loaded existing avatar:', data.avatar_url);
+          setAvatarPreview(data.avatar_url);
+        }
+        if (data.banner_url) {
+          console.log('✅ Loaded existing banner:', data.banner_url);
+          setBannerPreview(data.banner_url);
+        }
       }
     } catch (error) {
-      console.error('Error loading images:', error);
+      console.error('❌ Error loading images:', error);
     }
   };
 
