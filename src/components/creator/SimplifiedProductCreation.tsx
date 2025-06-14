@@ -104,7 +104,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       autoPosition: !!autoDesignPosition
     });
 
-    // Validation ultra-simplifiée
+    // CORRECTION VALIDATION : Simplifiée au maximum - plus de vérification multilingue
     if (!selectedProduct) {
       console.log('❌ Aucun produit sélectionné');
       return;
@@ -115,6 +115,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       return;
     }
 
+    // SEUL LE NOM FRANÇAIS EST VÉRIFIÉ
     if (!productData.name.trim()) {
       console.log('❌ Nom du produit manquant');
       return;
@@ -156,7 +157,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     ? selectedProduct.base_price * (1 + productData.margin_percentage / 100)
     : 0;
 
-  // Validation simplifiée : produit + design + nom
+  // CORRECTION VALIDATION : Simplifiée - seuls produit + design + nom français requis
   const canSubmit = !!(selectedProduct && designUrl && productData.name.trim());
 
   console.log('🔍 État de validation du formulaire:', {
@@ -220,6 +221,9 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                     onChange={(e) => setProductData({...productData, name: e.target.value})}
                     placeholder="Mon super design"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Le nom en français sera automatiquement utilisé pour toutes les langues
+                  </p>
                 </div>
 
                 <div>
@@ -230,6 +234,9 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                     onChange={(e) => setProductData({...productData, description: e.target.value})}
                     placeholder="Description du produit..."
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    La description en français sera automatiquement utilisée pour toutes les langues
+                  </p>
                 </div>
 
                 <div>
@@ -259,7 +266,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                   </div>
                 </div>
 
-                {/* Feedback de validation */}
+                {/* Feedback de validation simplifié */}
                 {!canSubmit && (
                   <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded">
                     <div className="font-medium mb-1">Informations manquantes :</div>

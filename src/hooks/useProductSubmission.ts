@@ -24,7 +24,7 @@ export const useProductSubmission = () => {
       productData
     });
 
-    // Validation essentielle uniquement
+    // Validation essentielle uniquement - SEUL LE FRANÇAIS EST OBLIGATOIRE
     if (!selectedProduct || !selectedProduct.product_templates || !designUrl || !user) {
       console.log('❌ Validation failed:', {
         hasProduct: !!selectedProduct,
@@ -41,6 +41,7 @@ export const useProductSubmission = () => {
       return false;
     }
 
+    // CORRECTION : Vérifier uniquement le nom français (pas les autres langues)
     if (!productData.name?.trim()) {
       toast({
         variant: "destructive",
@@ -96,13 +97,19 @@ export const useProductSubmission = () => {
 
       console.log('✅ Validation réussie, création du produit avec position:', finalPosition);
 
+      // CORRECTION MULTILINGUE : Utiliser le français comme base et fallback
       const { error } = await supabase
         .from('creator_products')
         .insert({
           creator_id: user.id,
           print_product_id: selectedProduct.id,
-          name_fr: productData.name,
-          description_fr: productData.description,
+          // Champs multilingues avec fallback automatique sur le français
+          name_fr: productData.name.trim(),
+          name_en: productData.name.trim(), // Fallback sur français
+          name_ty: productData.name.trim(), // Fallback sur français
+          description_fr: productData.description?.trim() || '',
+          description_en: productData.description?.trim() || '', // Fallback sur français
+          description_ty: productData.description?.trim() || '', // Fallback sur français
           creator_margin_percentage: productData.margin_percentage,
           design_data: {
             design_image_url: designUrl,

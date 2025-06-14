@@ -35,12 +35,13 @@ export const useCustomProductCreator = () => {
     console.log('🚀 useCustomProductCreator - handleProductCreate called with:', productData);
     
     try {
-      // ✅ CORRECTION: Handle simplified creation data structure
+      // ✅ CORRECTION MULTILINGUE: Handle simplified creation data structure
       const designImageUrl = productData.design_data?.imageUrl || productData.imageUrl;
       const designPosition = productData.design_data?.position || productData.position;
       
+      // CORRECTION : Mapper le nom français sur toutes les langues automatiquement
       const productInfo = {
-        name: productData.name,
+        name: productData.name, // Seul le français est requis
         description: productData.description || '',
         margin_percentage: productData.creator_margin_percentage || productData.margin_percentage || 20
       };
