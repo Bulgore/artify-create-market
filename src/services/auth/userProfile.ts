@@ -27,7 +27,7 @@ export const createUserProfile = async (
       .from('users')
       .upsert({
         id: userId,
-        email: email, // Ajout de l'email requis
+        email: email, // Email sera synchronisé automatiquement via le trigger
         full_name: sanitizedName || email.split('@')[0],
         full_name_fr: sanitizedName || email.split('@')[0],
         full_name_en: sanitizedName || email.split('@')[0],

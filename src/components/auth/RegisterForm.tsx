@@ -1,144 +1,139 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
-const registerSchema = z.object({
-  fullName: z.string().min(2, { message: "Le nom doit contenir au moins 2 caractères" }),
-  email: z.string().email({ message: "Adresse email invalide" }),
-  password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
-  confirmPassword: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
-  role: z.enum(["créateur", "imprimeur"], {
-    required_error: "Veuillez sélectionner un rôle",
-  }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["confirmPassword"],
-});
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Eye, EyeOff } from "lucide-react";
+import { validateEmail, validatePassword, validateUsername } from "@/utils/secureValidation";
 
 interface RegisterFormProps {
-  onSubmit: (data: { email: string; password: string; fullName: string; role: string }) => Promise<void>;
+  onSubmit: (data: { email: string; password: string; fullName: string; role: string }) => void;
   isLoading: boolean;
 }
 
-const RegisterForm = ({ onSubmit, isLoading }: RegisterFormProps) => {
-  const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      email: "",
-      fullName: "",
-      password: "",
-      confirmPassword: "",
-      role: "créateur",
-    },
-  });
+const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>("créateur");
+  const { register, handleSubmit, formState: { errors }, watch } = useForm();
 
-  const handleSubmit = async (data: RegisterFormValues) => {
-    // Transform the data to match the expected interface
-    await onSubmit({
-      email: data.email,
-      password: data.password,
-      fullName: data.fullName,
-      role: data.role
-    });
+  const password = watch("password");
+
+  const handleFormSubmit = (data: any) => {
+    onSubmit({ ...data, role: selectedRole });
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="fullName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nom complet</FormLabel>
-              <FormControl>
-                <Input placeholder="Jean Dupont" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="fullName">Nom complet</Label>
+        <Input
+          id="fullName"
+          placeholder="Votre nom complet"
+          {...register("fullName", {
+            required: "Le nom est requis",
+            validate: (value) => {
+              const validation = validateUsername(value);
+              return validation.isValid || validation.message;
+            }
+          })}
+          className={errors.fullName ? "border-red-500" : ""}
         />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="exemple@email.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        {errors.fullName && (
+          <p className="text-sm text-red-500">{errors.fullName.message as string}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="votre@email.com"
+          {...register("email", {
+            required: "L'email est requis",
+            validate: (value) => validateEmail(value) || "Format d'email invalide"
+          })}
+          className={errors.email ? "border-red-500" : ""}
         />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Type de compte</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex flex-wrap gap-4"
-                >
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="créateur" />
-                    </FormControl>
-                    <FormLabel className="font-normal cursor-pointer">Créateur</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="imprimeur" />
-                    </FormControl>
-                    <FormLabel className="font-normal cursor-pointer">Imprimeur</FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Mot de passe</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirmer le mot de passe</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Inscription..." : "S'inscrire"}
-        </Button>
-      </form>
-    </Form>
+        {errors.email && (
+          <p className="text-sm text-red-500">{errors.email.message as string}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="password">Mot de passe</Label>
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Au moins 8 caractères avec majuscule, minuscule, chiffre et caractère spécial"
+            {...register("password", {
+              required: "Le mot de passe est requis",
+              validate: (value) => {
+                const validation = validatePassword(value);
+                return validation.isValid || validation.message;
+              }
+            })}
+            className={errors.password ? "border-red-500" : ""}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+        {errors.password && (
+          <p className="text-sm text-red-500">{errors.password.message as string}</p>
+        )}
+        
+        {/* Indicateur de force du mot de passe */}
+        {password && (
+          <div className="text-xs space-y-1">
+            <div className="flex gap-1">
+              <div className={`h-1 w-full rounded ${password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <div className={`h-1 w-full rounded ${/[A-Z]/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <div className={`h-1 w-full rounded ${/[a-z]/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <div className={`h-1 w-full rounded ${/\d/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <div className={`h-1 w-full rounded ${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+            </div>
+            <p className="text-gray-600">
+              Doit contenir: 8+ caractères, majuscule, minuscule, chiffre, caractère spécial
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="role">Je suis un(e)</Label>
+        <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionnez votre rôle" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="créateur">Créateur - Je veux vendre mes designs</SelectItem>
+            <SelectItem value="imprimeur">Imprimeur - Je veux imprimer des produits</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full bg-artify-orange hover:bg-artify-orange/90"
+        disabled={isLoading}
+      >
+        {isLoading ? "Création du compte..." : "Créer mon compte"}
+      </Button>
+    </form>
   );
 };
 

@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          target_id: string | null
+          target_table: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_logs_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_notifications: {
         Row: {
           created_at: string | null
@@ -647,6 +691,36 @@ export type Database = {
           },
         ]
       }
+      rate_limit_attempts: {
+        Row: {
+          attempt_count: number
+          attempt_type: string
+          blocked_until: string | null
+          first_attempt: string
+          id: string
+          identifier: string
+          last_attempt: string
+        }
+        Insert: {
+          attempt_count?: number
+          attempt_type: string
+          blocked_until?: string | null
+          first_attempt?: string
+          id?: string
+          identifier: string
+          last_attempt?: string
+        }
+        Update: {
+          attempt_count?: number
+          attempt_type?: string
+          blocked_until?: string | null
+          first_attempt?: string
+          id?: string
+          identifier?: string
+          last_attempt?: string
+        }
+        Relationships: []
+      }
       reusable_blocks: {
         Row: {
           button_text_en: string | null
@@ -1094,6 +1168,15 @@ export type Database = {
         Args: { user_email: string }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: {
+          identifier: string
+          attempt_type: string
+          max_attempts?: number
+          window_minutes?: number
+        }
+        Returns: boolean
+      }
       create_creator_notification: {
         Args: {
           creator_id: string
@@ -1118,6 +1201,21 @@ export type Database = {
       get_user_role: {
         Args: { user_id: string }
         Returns: string
+      }
+      log_admin_action: {
+        Args: {
+          action_type: string
+          target_table?: string
+          target_id?: string
+          details?: Json
+          ip_address?: unknown
+          user_agent?: string
+        }
+        Returns: string
+      }
+      promote_to_super_admin: {
+        Args: { target_user_id: string }
+        Returns: boolean
       }
       reset_user_account: {
         Args: { target_user_id: string }

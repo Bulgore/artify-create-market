@@ -43,16 +43,44 @@ export const logAdminAction = async (
   details: Record<string, any> = {}
 ): Promise<void> => {
   try {
-    // For now, just log to console until the RPC function is available
-    console.log('Admin Action:', {
-      actionType,
-      targetTable,
-      targetId,
-      details,
-      timestamp: new Date().toISOString(),
-      adminId: (await supabase.auth.getUser()).data.user?.id
+    // Utiliser la nouvelle fonction RPC pour logger les actions
+    const { error } = await supabase.rpc('log_admin_action', {
+      action_type: actionType,
+      target_table: targetTable,
+      target_id: targetId,
+      details: details
     });
+
+    if (error) {
+      console.error('Error logging admin action:', error);
+    } else {
+      console.log('✅ Admin action logged:', {
+        actionType,
+        targetTable,
+        targetId,
+        details
+      });
+    }
   } catch (error) {
     console.error('Error in logAdminAction:', error);
+  }
+};
+
+// Fonction pour promouvoir un utilisateur (côté admin)
+export const promoteUserToSuperAdmin = async (userId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc('promote_to_super_admin', {
+      target_user_id: userId
+    });
+
+    if (error) {
+      console.error('Error promoting user:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in promoteUserToSuperAdmin:', error);
+    throw error;
   }
 };

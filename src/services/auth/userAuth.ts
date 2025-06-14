@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { validateEmail, sanitizeText, validatePassword, checkRateLimit } from '@/utils/secureValidation';
+import { validateEmail, sanitizeText, validatePassword, checkRateLimit, getGenericAuthError } from '@/utils/secureValidation';
 
 export const signUpUser = async (
   email: string, 
@@ -25,7 +25,7 @@ export const signUpUser = async (
       throw new Error('Le nom doit contenir au moins 2 caractères');
     }
     
-    // Rate limiting
+    // Rate limiting côté client
     if (!checkRateLimit(`signup_${email}`, 3, 15 * 60 * 1000)) {
       throw new Error('Trop de tentatives d\'inscription. Veuillez réessayer dans 15 minutes.');
     }
@@ -44,7 +44,11 @@ export const signUpUser = async (
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      // Messages d'erreur génériques pour éviter l'énumération d'utilisateurs
+      console.error("❌ Erreur lors de l'inscription:", error);
+      throw new Error(getGenericAuthError('signup'));
+    }
     
     console.log('✅ User signed up successfully');
     toast({
@@ -56,7 +60,7 @@ export const signUpUser = async (
     toast({
       variant: "destructive",
       title: "Erreur d'inscription",
-      description: error.message || "Une erreur est survenue lors de l'inscription.",
+      description: error.message || getGenericAuthError('signup'),
     });
     throw error;
   }
@@ -66,10 +70,10 @@ export const signInUser = async (email: string, password: string): Promise<void>
   try {
     // Enhanced validation
     if (!validateEmail(email)) {
-      throw new Error('Adresse email invalide');
+      throw new Error(getGenericAuthError('login'));
     }
     
-    // Rate limiting for login attempts
+    // Rate limiting côté client
     if (!checkRateLimit(`login_${email}`, 5, 15 * 60 * 1000)) {
       throw new Error('Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.');
     }
@@ -81,7 +85,11 @@ export const signInUser = async (email: string, password: string): Promise<void>
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      // Message d'erreur générique pour éviter l'énumération d'utilisateurs
+      console.error("❌ Erreur lors de la connexion:", error);
+      throw new Error(getGenericAuthError('login'));
+    }
     
     console.log('✅ User signed in successfully');
     toast({
@@ -93,7 +101,7 @@ export const signInUser = async (email: string, password: string): Promise<void>
     toast({
       variant: "destructive",
       title: "Erreur de connexion",
-      description: error.message || "Email ou mot de passe incorrect.",
+      description: error.message || getGenericAuthError('login'),
     });
     throw error;
   }
@@ -116,7 +124,7 @@ export const signOutUser = async (): Promise<void> => {
     toast({
       variant: "destructive",
       title: "Erreur de déconnexion",
-      description: error.message || "Une erreur est survenue lors de la déconnexion.",
+      description: error.message || getGenericAuthError('general'),
     });
     throw error;
   }
