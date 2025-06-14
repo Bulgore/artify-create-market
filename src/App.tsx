@@ -47,6 +47,7 @@ function App() {
                   <Route path="/studio" element={<Studio />} />
                   <Route path="/printers" element={<Printers />} />
                   <Route path="/onboarding" element={<CreatorOnboardingPage />} />
+                  <Route path="/creator-onboarding" element={<CreatorOnboardingPage />} />
                   <Route path="/builder" element={<BuilderPage />} />
                   <Route path="/page/:slug" element={<CustomPage />} />
                   <Route path="/terms" element={<Terms />} />
