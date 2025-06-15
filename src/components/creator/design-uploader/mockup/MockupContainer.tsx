@@ -40,7 +40,7 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
   const containerHeight = 300;
 
   return (
-    <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
+    <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden border border-gray-300">
       {mockupError ? (
         <div className="w-full h-full flex items-center justify-center text-red-500">
           <div className="text-center">
@@ -56,18 +56,20 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
         />
       )}
       
-      {/* Affichage du template SVG en arrière-plan si disponible */}
+      {/* Affichage du template SVG en arrière-plan si disponible - NOUVELLE VERSION AMÉLIORÉE */}
       {mockupLoaded && svgTemplateUrl && (
-        <div className="absolute inset-0 pointer-events-none opacity-30">
+        <div className="absolute inset-0 pointer-events-none opacity-25 z-5">
           <SVGDisplay 
             svgUrl={svgTemplateUrl}
             className="w-full h-full"
             showError={false}
+            onLoad={() => console.log('✅ SVG template affiché en arrière-plan')}
+            onError={() => console.log('⚠️ SVG template non affiché (non bloquant)')}
           />
         </div>
       )}
       
-      {/* Zone d'impression - Gabarit visible */}
+      {/* Zone d'impression - Gabarit visible AVEC coordonnées EXACTES */}
       {mockupLoaded && designArea && (
         <PrintAreaOverlay
           designArea={designArea}
@@ -76,11 +78,11 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
         />
       )}
       
-      {/* Design positionné automatiquement */}
+      {/* Design positionné automatiquement avec coordonnées EXACTES */}
       {designUrl && autoPosition && (
         designError ? (
           <div
-            className="absolute w-full h-full bg-red-100 border-2 border-red-300 rounded flex items-center justify-center"
+            className="absolute bg-red-100 border-2 border-red-300 rounded flex items-center justify-center z-10"
             style={{
               left: `${(autoPosition.x / containerWidth) * 100}%`,
               top: `${(autoPosition.y / containerHeight) * 100}%`,
@@ -88,7 +90,7 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
               height: `${(autoPosition.height / containerHeight) * 100}%`
             }}
           >
-            <span className="text-red-500 text-xs">❌ Design</span>
+            <span className="text-red-500 text-xs">❌ Erreur design</span>
           </div>
         ) : (
           <DesignOverlay
@@ -100,6 +102,15 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
             onError={onDesignError}
           />
         )
+      )}
+      
+      {/* Informations de debug pour vérification */}
+      {designArea && autoPosition && (
+        <div className="absolute bottom-2 left-2 text-xs bg-black bg-opacity-75 text-white px-2 py-1 rounded z-20">
+          Zone: {Math.round(designArea.width)}×{Math.round(designArea.height)} | 
+          Design: {Math.round(autoPosition.width)}×{Math.round(autoPosition.height)} | 
+          Échelle: {Math.round(autoPosition.scale * 100)}%
+        </div>
       )}
     </div>
   );

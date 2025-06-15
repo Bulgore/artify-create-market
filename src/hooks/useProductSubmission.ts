@@ -17,32 +17,47 @@ export const useProductSubmission = () => {
     designPosition: any,
     productData: ProductData
   ) => {
-    console.log('🚀 useProductSubmission - handleSubmit called with:', {
+    console.log('🚀 useProductSubmission - handleSubmit avec validation SIMPLE:', {
       selectedProduct: selectedProduct?.name,
       designUrl: !!designUrl,
       designPosition,
       productData
     });
 
-    // Validation SIMPLE - seulement les champs ESSENTIELS
-    if (!selectedProduct || !selectedProduct.product_templates || !designUrl || !user) {
-      console.log('❌ Validation failed:', {
-        hasProduct: !!selectedProduct,
-        hasTemplate: !!selectedProduct?.product_templates,
-        hasDesign: !!designUrl,
-        hasUser: !!user
-      });
-
+    // Validation SIMPLE et CLAIRE - seulement les 3 champs ESSENTIELS
+    if (!selectedProduct || !selectedProduct.product_templates) {
+      console.log('❌ Produit manquant ou sans template');
       toast({
         variant: "destructive",
-        title: "Informations manquantes",
-        description: "Veuillez sélectionner un produit et uploader un design."
+        title: "Produit manquant",
+        description: "Veuillez sélectionner un produit."
+      });
+      return false;
+    }
+
+    if (!designUrl) {
+      console.log('❌ Design manquant');
+      toast({
+        variant: "destructive",
+        title: "Design manquant",
+        description: "Veuillez uploader un design."
+      });
+      return false;
+    }
+
+    if (!user) {
+      console.log('❌ Utilisateur non connecté');
+      toast({
+        variant: "destructive",
+        title: "Erreur d'authentification",
+        description: "Vous devez être connecté."
       });
       return false;
     }
 
     // Vérifier UNIQUEMENT le nom (champ obligatoire minimal)
     if (!productData.name?.trim()) {
+      console.log('❌ Nom du produit manquant');
       toast({
         variant: "destructive",
         title: "Nom manquant",
@@ -51,18 +66,23 @@ export const useProductSubmission = () => {
       return false;
     }
 
+    console.log('✅ Validation SIMPLE réussie - création du produit avec positionnement automatique PROFESSIONNEL');
+
     setIsLoading(true);
 
     try {
       let finalPosition = designPosition;
       
-      // Si aucune position fournie, calculer automatiquement (non bloquant)
+      // Calcul automatique PROFESSIONNEL de la position si non fournie
       if (!finalPosition) {
-        console.log('🔧 Calcul automatique de la position...');
+        console.log('🔧 Calcul automatique PROFESSIONNEL de la position avec coordonnées EXACTES...');
         
         try {
           const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
+          console.log('📐 Zone d\'impression EXACTE récupérée:', designArea);
+          
           const designDimensions = await getImageDimensions(designUrl);
+          console.log('📏 Dimensions design récupérées:', designDimensions);
           
           const autoPosition = calculateAutoPosition(designDimensions, designArea);
           
@@ -75,10 +95,10 @@ export const useProductSubmission = () => {
             scale: autoPosition.scale
           };
           
-          console.log('✅ Position auto-calculée avec précision:', finalPosition);
+          console.log('✅ Position auto-calculée avec PRÉCISION PROFESSIONNELLE:', finalPosition);
           
         } catch (error) {
-          console.error('❌ Erreur calcul automatique:', error);
+          console.error('❌ Erreur calcul automatique PROFESSIONNEL:', error);
           
           // Fallback sécurisé - ne pas faire échouer la création
           const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
@@ -95,21 +115,21 @@ export const useProductSubmission = () => {
         }
       }
 
-      console.log('✅ Validation réussie, création du produit avec position:', finalPosition);
+      console.log('✅ Validation SIMPLE réussie, création du produit avec position EXACTE:', finalPosition);
 
-      // Insertion avec FALLBACK multilingue automatique
+      // Insertion avec champs SIMPLES - pas de blocage multi-langue
       const { error } = await supabase
         .from('creator_products')
         .insert({
           creator_id: user.id,
           print_product_id: selectedProduct.id,
-          // Champs multilingues avec fallback automatique
+          // Champs SIMPLES avec une seule langue (FR par défaut)
           name_fr: productData.name.trim(),
-          name_en: productData.name.trim(), // Auto-fallback
-          name_ty: productData.name.trim(), // Auto-fallback
+          name_en: productData.name.trim(), // Fallback automatique
+          name_ty: productData.name.trim(), // Fallback automatique
           description_fr: productData.description?.trim() || '',
-          description_en: productData.description?.trim() || '', // Auto-fallback
-          description_ty: productData.description?.trim() || '', // Auto-fallback
+          description_en: productData.description?.trim() || '', // Fallback automatique
+          description_ty: productData.description?.trim() || '', // Fallback automatique
           creator_margin_percentage: productData.margin_percentage,
           design_data: {
             design_image_url: designUrl,
@@ -121,20 +141,20 @@ export const useProductSubmission = () => {
         });
 
       if (error) {
-        console.error('❌ Database error creating product:', error);
+        console.error('❌ Erreur base de données lors de la création:', error);
         throw error;
       }
 
-      console.log('✅ Product created successfully');
+      console.log('✅ Produit créé avec succès avec positionnement automatique PROFESSIONNEL');
 
       toast({
-        title: "Produit créé",
-        description: "Votre produit personnalisé a été créé avec succès avec positionnement automatique professionnel."
+        title: "Produit créé avec succès",
+        description: "Votre produit personnalisé a été créé avec positionnement automatique professionnel selon la zone définie par l'admin."
       });
 
       return true;
     } catch (error: any) {
-      console.error('❌ Error creating product:', error);
+      console.error('❌ Erreur lors de la création du produit:', error);
       
       const errorMessage = error?.message?.includes('duplicate') 
         ? "Ce produit existe déjà. Veuillez modifier le nom ou les paramètres."
