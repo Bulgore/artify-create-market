@@ -1,6 +1,7 @@
 
 import React from 'react';
-import type { PrintProduct, DesignArea } from '@/types/customProduct';
+import type { PrintProduct } from '@/types/customProduct';
+import type { DesignArea } from '@/types/designArea';
 
 interface ValidationFeedbackProps {
   canSubmit: boolean;
