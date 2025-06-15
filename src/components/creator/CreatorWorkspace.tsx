@@ -20,7 +20,8 @@ interface Design {
   description?: string;
   preview_url: string;
   is_published: boolean;
-  creator_margin: number;
+  // Use the new correct column name
+  creator_margin_percentage: number;
 }
 
 const CreatorWorkspace: React.FC = () => {
@@ -44,7 +45,7 @@ const CreatorWorkspace: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('creator_products')
-        .select('id, name_fr, description_fr, preview_url, is_published, creator_margin')
+        .select('id, name_fr, description_fr, preview_url, is_published, creator_margin_percentage')
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -57,7 +58,8 @@ const CreatorWorkspace: React.FC = () => {
         description: design.description_fr ?? design.description ?? '',
         preview_url: design.preview_url,
         is_published: design.is_published ?? false,
-        creator_margin: design.creator_margin ?? 20
+        // Use the new correct key
+        creator_margin_percentage: design.creator_margin_percentage ?? 20
       }));
 
       setDesigns(mappedDesigns);

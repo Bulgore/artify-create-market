@@ -11,7 +11,7 @@ interface Design {
   description?: string;
   preview_url: string;
   is_published: boolean;
-  creator_margin: number;
+  creator_margin_percentage: number;
 }
 
 interface DesignListProps {
@@ -83,7 +83,7 @@ const DesignList: React.FC<DesignListProps> = ({
             <p className="text-sm text-gray-600 mb-2 line-clamp-2">{design.description}</p>
             <div className="flex justify-between items-center">
               <span className="font-medium text-[#33C3F0]">
-                Marge: {design.creator_margin}%
+                Marge: {design.creator_margin_percentage}%
               </span>
               <span className={`text-xs px-2 py-1 rounded-full ${
                 design.is_published 
@@ -122,3 +122,4 @@ const DesignList: React.FC<DesignListProps> = ({
 };
 
 export default DesignList;
+
