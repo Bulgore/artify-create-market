@@ -22,10 +22,17 @@ const Studio = () => {
   const [countLoading, setCountLoading] = useState(false);
 
   useEffect(() => {
+    if (!loading && user) {
+      // Si super admin, on redirige automatiquement vers /admin
+      if (isSuperAdmin && isSuperAdmin()) {
+        navigate('/admin');
+        return;
+      }
+    }
     if (!loading && !user) {
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isSuperAdmin]);
 
   useEffect(() => {
     if (user && isCreator) {
