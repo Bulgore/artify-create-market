@@ -8,6 +8,7 @@ import { MockupSection } from './simplified/MockupSection';
 import { ProductCreationForm } from './simplified/ProductCreationForm';
 import { useDesignPositioning } from '@/hooks/useDesignPositioning';
 import { useProductData } from '@/hooks/useProductData';
+import { useProductSubmission } from '@/hooks/useProductSubmission';
 
 interface SimplifiedProductCreationProps {
   printProducts: PrintProduct[];
@@ -23,9 +24,18 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   
   const { autoDesignPosition, calculateDesignPosition, resetDesignPosition } = useDesignPositioning();
   const { productData, setProductData, resetProductData } = useProductData();
+  const { isLoading, handleSubmit } = useProductSubmission();
+
+  console.log('🎯 SimplifiedProductCreation render state:', {
+    selectedProduct: selectedProduct?.name,
+    selectedProductId: selectedProduct?.id,
+    designUrl: !!designUrl,
+    productName: productData.name,
+    autoPositionExists: !!autoDesignPosition
+  });
 
   const handleProductSelect = (product: PrintProduct | null) => {
-    console.log('🎯 Produit sélectionné:', product?.name);
+    console.log('🎯 Produit sélectionné dans SimplifiedProductCreation:', product?.name);
     setSelectedProduct(product);
     
     // Reset design quand on change de produit
@@ -47,8 +57,13 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     resetDesignPosition();
   };
 
-  const handleSubmit = () => {
-    console.log('🚀 SimplifiedProductCreation - handleSubmit avec validation SIMPLE');
+  const handleProductSubmit = async () => {
+    console.log('🚀 SimplifiedProductCreation - handleProductSubmit AVEC PRODUIT EXPLICITE');
+    console.log('📦 Produit à soumettre:', {
+      id: selectedProduct?.id,
+      name: selectedProduct?.name,
+      hasTemplates: !!selectedProduct?.product_templates
+    });
     
     // Validation SIMPLE et CLAIRE - uniquement les 3 champs ESSENTIELS
     if (!selectedProduct) {
@@ -81,22 +96,30 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       };
     }
 
-    console.log('✅ Validation SIMPLE réussie - création avec position EXACTE:', finalPosition);
+    console.log('✅ Validation SIMPLE réussie - soumission avec PRODUIT EXPLICITE:', {
+      selectedProduct: selectedProduct.name,
+      selectedProductId: selectedProduct.id,
+      designUrl: designUrl.substring(0, 50),
+      productName: productData.name,
+      finalPosition
+    });
 
-    const finalProductData = {
-      print_product_id: selectedProduct.id,
-      design_data: {
-        imageUrl: designUrl,
-        position: finalPosition
-      },
-      name: productData.name,
-      description: productData.description,
-      creator_margin_percentage: productData.margin_percentage,
-      preview_url: designUrl
-    };
+    // Appeler directement useProductSubmission avec tous les paramètres requis
+    const success = await handleSubmit(
+      selectedProduct,  // Passer l'objet complet, pas undefined
+      designUrl,
+      finalPosition,
+      productData
+    );
 
-    console.log('🚀 Données finales pour création avec positionnement PROFESSIONNEL EXACT:', finalProductData);
-    onProductCreate(finalProductData);
+    if (success) {
+      console.log('✅ Produit créé avec succès');
+      // Réinitialiser le formulaire
+      setSelectedProduct(null);
+      setDesignUrl('');
+      resetDesignPosition();
+      resetProductData();
+    }
   };
 
   const designArea = selectedProduct?.product_templates 
@@ -134,7 +157,8 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
               productData={productData}
               setProductData={setProductData}
               autoDesignPosition={autoDesignPosition}
-              onSubmit={handleSubmit}
+              onSubmit={handleProductSubmit}
+              isLoading={isLoading}
             />
           </div>
         </div>

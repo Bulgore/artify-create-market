@@ -18,6 +18,7 @@ interface ProductCreationFormProps {
   setProductData: (data: ProductData) => void;
   autoDesignPosition: any;
   onSubmit: () => void;
+  isLoading: boolean;
 }
 
 export const ProductCreationForm: React.FC<ProductCreationFormProps> = ({
@@ -26,20 +27,21 @@ export const ProductCreationForm: React.FC<ProductCreationFormProps> = ({
   productData,
   setProductData,
   autoDesignPosition,
-  onSubmit
+  onSubmit,
+  isLoading
 }) => {
   const designArea = selectedProduct?.product_templates 
     ? parseDesignArea(selectedProduct.product_templates.design_area)
     : undefined;
 
-  // Validation STRICTE et EXPLICITE
+  // Validation STRICTE et EXPLICITE avec logs détaillés
   const hasProduct = !!(selectedProduct && selectedProduct.id);
   const hasDesign = !!(designUrl && designUrl.trim() !== '');
   const hasName = !!(productData.name && productData.name.trim() !== '');
   
   const canSubmit = hasProduct && hasDesign && hasName;
 
-  console.log('🔍 ProductCreationForm - État de validation DÉTAILLÉ:', {
+  console.log('🔍 ProductCreationForm - VALIDATION DÉTAILLÉE:', {
     selectedProductExists: !!selectedProduct,
     selectedProductId: selectedProduct?.id,
     selectedProductName: selectedProduct?.name,
@@ -54,7 +56,8 @@ export const ProductCreationForm: React.FC<ProductCreationFormProps> = ({
     hasDesign,
     hasName,
     canSubmit,
-    autoPositionExists: !!autoDesignPosition
+    autoPositionExists: !!autoDesignPosition,
+    isLoading
   });
 
   return (
@@ -63,7 +66,7 @@ export const ProductCreationForm: React.FC<ProductCreationFormProps> = ({
         selectedProduct={selectedProduct}
         productData={productData}
         setProductData={setProductData}
-        canSubmit={canSubmit}
+        canSubmit={canSubmit && !isLoading}
         onSubmit={onSubmit}
       />
 
@@ -76,16 +79,20 @@ export const ProductCreationForm: React.FC<ProductCreationFormProps> = ({
         autoDesignPosition={autoDesignPosition}
       />
       
-      {/* Debug panel pour développement (à retirer en production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-gray-100 p-3 rounded text-xs font-mono">
-          <div className="font-bold mb-2">Debug - État du formulaire:</div>
-          <div>✓ Produit: {hasProduct ? 'OUI' : 'NON'} ({selectedProduct?.id || 'NULL'})</div>
-          <div>✓ Design: {hasDesign ? 'OUI' : 'NON'} ({designUrl?.length || 0} chars)</div>
-          <div>✓ Nom: {hasName ? 'OUI' : 'NON'} ("{productData.name}")</div>
-          <div className="font-bold mt-1">Validation finale: {canSubmit ? 'SUCCÈS' : 'ÉCHEC'}</div>
+      {/* Debug panel TOUJOURS VISIBLE pour debugging */}
+      <div className="bg-blue-50 border border-blue-200 p-4 rounded text-xs font-mono">
+        <div className="font-bold mb-2 text-blue-800">🔍 Debug - État COMPLET du formulaire:</div>
+        <div className="space-y-1 text-blue-700">
+          <div>✓ Produit: {hasProduct ? '✅ OUI' : '❌ NON'} ({selectedProduct?.id || 'NULL'})</div>
+          <div>✓ Design: {hasDesign ? '✅ OUI' : '❌ NON'} ({designUrl?.length || 0} chars)</div>
+          <div>✓ Nom: {hasName ? '✅ OUI' : '❌ NON'} ("{productData.name}")</div>
+          <div>✓ Auto-position: {autoDesignPosition ? '✅ OUI' : '❌ NON'}</div>
+          <div>✓ Loading: {isLoading ? '⏳ OUI' : '❌ NON'}</div>
+          <div className="font-bold mt-2 text-lg">
+            🎯 Validation finale: {canSubmit ? '✅ SUCCÈS' : '❌ ÉCHEC'}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

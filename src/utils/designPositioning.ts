@@ -12,12 +12,13 @@ export interface AutoPositionResult {
 /**
  * Calcule le positionnement automatique PROFESSIONNEL d'un design dans une zone d'impression
  * Utilise la logique "contain" stricte : le design s'affiche entièrement, au plus grand possible, centré
+ * AMÉLIORATION: Assure un minimum de 25% d'utilisation de la zone pour éviter les designs trop petits
  */
 export const calculateAutoPosition = (
   designDimensions: { width: number; height: number },
   printArea: DesignArea
 ): AutoPositionResult => {
-  console.log('🎯 Calcul position automatique PROFESSIONNEL:', { 
+  console.log('🎯 Calcul position automatique PROFESSIONNEL AMÉLIORÉ:', { 
     designDimensions, 
     printArea 
   });
@@ -38,20 +39,38 @@ export const calculateAutoPosition = (
   const scaleY = printArea.height / designDimensions.height;
   
   // 2. Prendre la plus petite échelle pour garantir que tout rentre (jamais de débordement)
-  const scale = Math.min(scaleX, scaleY);
+  let scale = Math.min(scaleX, scaleY);
   
-  console.log('📊 Calculs d\'échelle:', {
-    scaleX: scaleX.toFixed(3),
-    scaleY: scaleY.toFixed(3),
-    scaleFinal: scale.toFixed(3),
+  // 3. AMÉLIORATION: Assurer un minimum de 25% d'utilisation de la zone d'impression
+  // Si le design est trop petit par rapport à la zone, on l'agrandit jusqu'à 25% minimum
+  const minUsageRatio = 0.25;
+  const currentUsageX = (designDimensions.width * scale) / printArea.width;
+  const currentUsageY = (designDimensions.height * scale) / printArea.height;
+  const currentUsage = Math.max(currentUsageX, currentUsageY);
+  
+  if (currentUsage < minUsageRatio) {
+    const boostFactor = minUsageRatio / currentUsage;
+    scale = scale * boostFactor;
+    console.log('📈 Design trop petit, agrandissement appliqué:', {
+      usageOriginale: Math.round(currentUsage * 100) + '%',
+      usageAmelioree: Math.round(minUsageRatio * 100) + '%',
+      facteurBoost: boostFactor.toFixed(2)
+    });
+  }
+  
+  console.log('📊 Calculs d\'échelle AMÉLIORÉS:', {
+    scaleX: scaleX.toFixed(4),
+    scaleY: scaleY.toFixed(4),
+    scaleBase: Math.min(scaleX, scaleY).toFixed(4),
+    scaleFinal: scale.toFixed(4),
     pourcentage: Math.round(scale * 100) + '%'
   });
   
-  // 3. Nouvelles dimensions du design après mise à l'échelle
+  // 4. Nouvelles dimensions du design après mise à l'échelle
   const scaledWidth = designDimensions.width * scale;
   const scaledHeight = designDimensions.height * scale;
   
-  // 4. Centrer EXACTEMENT le design dans la zone d'impression
+  // 5. Centrer EXACTEMENT le design dans la zone d'impression
   const posX = printArea.x + (printArea.width - scaledWidth) / 2;
   const posY = printArea.y + (printArea.height - scaledHeight) / 2;
   
@@ -63,7 +82,7 @@ export const calculateAutoPosition = (
     scale
   };
   
-  // Vérifications de qualité
+  // Vérifications de qualité AMÉLIORÉES
   const verification = {
     designRentreCompletement: 
       posX >= printArea.x && 
@@ -73,10 +92,11 @@ export const calculateAutoPosition = (
     designEstCentre: 
       Math.abs((posX - printArea.x) - (printArea.x + printArea.width - posX - scaledWidth)) < 1 &&
       Math.abs((posY - printArea.y) - (printArea.y + printArea.height - posY - scaledHeight)) < 1,
-    utilisationOptimale: scale > 0.5 // Le design utilise au moins 50% de l'espace disponible
+    utilisationProfessionnelle: scale >= minUsageRatio,
+    pourcentageUtilisation: Math.round(Math.max(scaledWidth / printArea.width, scaledHeight / printArea.height) * 100)
   };
   
-  console.log('✅ Position PROFESSIONNELLE calculée:', {
+  console.log('✅ Position PROFESSIONNELLE AMÉLIORÉE calculée:', {
     designOriginal: designDimensions,
     zoneImpression: printArea,
     facteurEchelle: scale,
@@ -88,6 +108,10 @@ export const calculateAutoPosition = (
   
   if (!verification.designRentreCompletement) {
     console.warn('⚠️ Le design ne rentre pas complètement dans la zone !');
+  }
+  
+  if (!verification.utilisationProfessionnelle) {
+    console.warn('⚠️ Utilisation de la zone d\'impression trop faible (<25%) !');
   }
   
   return result;

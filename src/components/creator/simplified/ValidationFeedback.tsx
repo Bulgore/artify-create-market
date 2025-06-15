@@ -20,8 +20,8 @@ export const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({
   designArea,
   autoDesignPosition
 }) => {
-  // Debug logging to identify validation issues
-  console.log('🔍 ValidationFeedback Debug:', {
+  // Debug logging DÉTAILLÉ pour identifier les problèmes de validation
+  console.log('🔍 ValidationFeedback Debug COMPLET:', {
     canSubmit,
     hasSelectedProduct: !!selectedProduct,
     selectedProductId: selectedProduct?.id,
@@ -31,7 +31,8 @@ export const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({
     hasProductName: !!productName,
     productNameTrimmed: productName?.trim(),
     hasDesignArea: !!designArea,
-    hasAutoPosition: !!autoDesignPosition
+    hasAutoPosition: !!autoDesignPosition,
+    autoPositionScale: autoDesignPosition?.scale
   });
 
   if (!canSubmit) {
@@ -39,38 +40,44 @@ export const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({
     
     if (!selectedProduct) {
       missingItems.push("❌ Sélectionnez un produit");
+      console.log('❌ Validation échouée: Pas de produit sélectionné');
     } else {
-      console.log('✅ Produit sélectionné:', selectedProduct.name);
+      console.log('✅ Produit sélectionné:', selectedProduct.name, 'ID:', selectedProduct.id);
     }
     
     if (!designUrl || designUrl.trim() === '') {
       missingItems.push("❌ Uploadez votre design");
+      console.log('❌ Validation échouée: Pas de design uploadé');
     } else {
       console.log('✅ Design présent:', designUrl.substring(0, 50));
     }
     
     if (!productName || productName.trim() === '') {
       missingItems.push("❌ Renseignez le nom du produit");
+      console.log('❌ Validation échouée: Pas de nom de produit');
     } else {
       console.log('✅ Nom du produit:', productName);
     }
 
     return (
-      <div className="text-sm text-amber-600 bg-amber-50 p-4 rounded border border-amber-200">
-        <div className="font-medium mb-2">⚠️ Informations requises pour créer le produit :</div>
-        <div className="space-y-1">
+      <div className="text-sm text-red-600 bg-red-50 p-4 rounded border border-red-300">
+        <div className="font-medium mb-2">🚫 ERREURS DE VALIDATION - Informations manquantes :</div>
+        <div className="space-y-2">
           {missingItems.map((item, index) => (
-            <div key={index} className="flex items-center gap-2">{item}</div>
+            <div key={index} className="flex items-center gap-2 font-medium">{item}</div>
           ))}
         </div>
-        <div className="mt-3 text-xs text-amber-700 bg-amber-100 p-2 rounded">
-          <strong>Note:</strong> Seuls ces 3 champs sont obligatoires. Le positionnement se fait automatiquement.
+        <div className="mt-4 text-xs text-red-700 bg-red-100 p-3 rounded border">
+          <strong>Instructions:</strong> Seuls ces 3 champs sont obligatoires. Le positionnement se fait automatiquement une fois tous les champs remplis.
         </div>
-        {/* Debug info for developers */}
-        <div className="mt-2 text-xs text-gray-500 border-t pt-2">
-          <div>Debug: Produit ID = {selectedProduct?.id || 'NULL'}</div>
-          <div>Debug: Design = {designUrl ? 'PRÉSENT' : 'MANQUANT'}</div>
-          <div>Debug: Nom = {productName ? 'PRÉSENT' : 'MANQUANT'}</div>
+        {/* Debug info DÉTAILLÉ pour développeurs */}
+        <div className="mt-3 text-xs text-gray-600 bg-white p-3 rounded border">
+          <div className="font-bold text-red-600 mb-1">🐛 DEBUG VALIDATION:</div>
+          <div>Produit ID = {selectedProduct?.id || 'NULL'}</div>
+          <div>Produit nom = {selectedProduct?.name || 'NULL'}</div>
+          <div>Design = {designUrl ? `PRÉSENT (${designUrl.length} chars)` : 'MANQUANT'}</div>
+          <div>Nom = {productName ? `PRÉSENT ("${productName}")` : 'MANQUANT'}</div>
+          <div>Auto-position = {autoDesignPosition ? `PRÉSENT (échelle: ${Math.round(autoDesignPosition.scale * 100)}%)` : 'MANQUANT'}</div>
         </div>
       </div>
     );
@@ -87,12 +94,13 @@ export const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({
       
       {designArea && autoDesignPosition && (
         <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-          <div className="font-medium text-blue-700 mb-1">🎯 Positionnement automatique appliqué</div>
+          <div className="font-medium text-blue-700 mb-1">🎯 Positionnement automatique PROFESSIONNEL appliqué</div>
           <div className="text-xs text-blue-600 space-y-1">
-            <div>📐 Zone d'impression: {designArea.width}×{designArea.height}px</div>
-            <div>🔍 Design agrandi à {Math.round(autoDesignPosition.scale * 100)}% (maximum possible)</div>
+            <div>📐 Zone d'impression: {Math.round(designArea.width)}×{Math.round(designArea.height)}px</div>
+            <div>🔍 Design agrandi à {Math.round(autoDesignPosition.scale * 100)}% (optimal pour visibilité)</div>
             <div>📍 Position centrée: ({Math.round(autoDesignPosition.x)}, {Math.round(autoDesignPosition.y)})</div>
-            <div className="font-medium text-purple-600">🚫 Aucune modification manuelle nécessaire</div>
+            <div>📏 Taille finale: {Math.round(autoDesignPosition.width)}×{Math.round(autoDesignPosition.height)}px</div>
+            <div className="font-medium text-purple-600">🚫 Positionnement automatique - Aucune modification manuelle nécessaire</div>
           </div>
         </div>
       )}
