@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -116,7 +115,7 @@ const Studio = () => {
 
   const isAdminUser = isAdmin() || isSuperAdmin();
 
-  // Debug output for ALL gating conditions
+  // ---- Essential debug logs for gating ----
   const gatingSummary = {
     isCreator,
     isAdminUser,
@@ -133,9 +132,9 @@ const Studio = () => {
   if (!userProfile.avatar_url) gatingSummary.missing_fields.push('avatar_url');
   if (typeof creatorProductsCount === 'number' && creatorProductsCount < 3) gatingSummary.missing_fields.push('creatorProductsCount (<3)');
 
-  console.log('[DEBUG][Studio] re-evaluate access: ', gatingSummary);
+  console.log('[DEBUG][Studio] Evaluate access:', gatingSummary);
 
-  // Gating logic (standard, no bypass/force unlock anymore)
+  // ---- Standard gating: reach Studio when ALL requirements met. No bypass shortcuts. ----
   const requiresCreatorOnboarding =
     isCreator &&
     !isAdminUser &&
@@ -148,8 +147,7 @@ const Studio = () => {
     );
 
   if (requiresCreatorOnboarding) {
-    // LOG WHY you are redirected for maximum clarity
-    console.warn('[DEBUG][Studio] Redirecting to onboarding - Missing:', gatingSummary.missing_fields);
+    console.warn('[DEBUG][Studio] Redirecting to onboarding — Missing:', gatingSummary.missing_fields);
     navigate('/creator-onboarding');
     return null;
   }
@@ -157,7 +155,7 @@ const Studio = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-8">
-        {isPrinter ? <PrinterStudio /> : <CreatorStudio />}
+        <CreatorStudio />
       </div>
     </div>
   );

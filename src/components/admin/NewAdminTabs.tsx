@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UsersManagement from "./UsersManagement";
@@ -10,12 +9,14 @@ import ContentManagement from "./content/ContentManagement";
 import MenuManagement from "./content/MenuManagement";
 import BlocksManagement from "./content/BlocksManagement";
 import TechnicalDocumentation from "./TechnicalDocumentation";
+import CreatorProductsOverview from "./products/CreatorProductsOverview";
 
 const NewAdminTabs = () => {
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="flex flex-wrap justify-between md:grid md:grid-cols-5 mb-6">
+      <TabsList className="flex flex-wrap justify-between md:grid md:grid-cols-6 mb-6">
         <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+        <TabsTrigger value="creator-products">Produits créateurs</TabsTrigger>
         <TabsTrigger value="pricing">Prix et Marges</TabsTrigger>
         <TabsTrigger value="statistics">Statistiques</TabsTrigger>
         <TabsTrigger value="settings">Paramètres</TabsTrigger>
@@ -26,6 +27,10 @@ const NewAdminTabs = () => {
         <UsersManagement />
       </TabsContent>
       
+      <TabsContent value="creator-products" className="w-full">
+        <CreatorProductsOverview />
+      </TabsContent>
+
       <TabsContent value="pricing" className="w-full">
         <PricingManagement />
       </TabsContent>
