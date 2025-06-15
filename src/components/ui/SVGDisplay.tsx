@@ -42,49 +42,43 @@ export const SVGDisplay: React.FC<SVGDisplayProps> = ({
         return response.text();
       })
       .then(svgText => {
-        // Validate SVG content
+        // Basic SVG validation
         if (!svgText.includes('<svg')) {
-          throw new Error('Invalid SVG content');
+          throw new Error('Invalid SVG content - no <svg> tag found');
         }
         
-        // Process SVG to ensure proper full display
+        console.log('✅ SVG content loaded, length:', svgText.length);
+        
+        // Minimal processing for reliable display
         let processedSvg = svgText;
         
-        // Remove fixed width/height attributes that might constrain the display
-        processedSvg = processedSvg.replace(/\s(width|height)=["'][^"']*["']/g, '');
-        
-        // Ensure proper viewBox for full display
+        // Ensure the SVG has proper viewBox and dimensions for full display
         if (!processedSvg.includes('viewBox=')) {
-          // Try to extract original dimensions and create appropriate viewBox
-          const originalWidthMatch = svgText.match(/width=["']([^"']+)["']/);
-          const originalHeightMatch = svgText.match(/height=["']([^"']+)["']/);
+          // If no viewBox, try to extract width/height and create one
+          const widthMatch = svgText.match(/width=["']([^"']+)["']/);
+          const heightMatch = svgText.match(/height=["']([^"']+)["']/);
           
-          if (originalWidthMatch && originalHeightMatch) {
-            const width = parseFloat(originalWidthMatch[1]);
-            const height = parseFloat(originalHeightMatch[1]);
+          if (widthMatch && heightMatch) {
+            const width = parseFloat(widthMatch[1]);
+            const height = parseFloat(heightMatch[1]);
             if (!isNaN(width) && !isNaN(height)) {
               processedSvg = processedSvg.replace(
                 '<svg',
                 `<svg viewBox="0 0 ${width} ${height}"`
               );
+              console.log('✅ Added viewBox:', `0 0 ${width} ${height}`);
             }
           }
         }
         
-        // Ensure preserveAspectRatio for proper full scaling
+        // Ensure proper scaling behavior
         processedSvg = processedSvg.replace(/preserveAspectRatio=["'][^"']*["']/g, '');
         processedSvg = processedSvg.replace(
           '<svg',
           '<svg preserveAspectRatio="xMidYMid meet"'
         );
         
-        // Add CSS to ensure full display
-        processedSvg = processedSvg.replace(
-          '<svg',
-          '<svg style="width: 100%; height: 100%; max-width: 100%; max-height: 100%;"'
-        );
-        
-        console.log('✅ SVG processed for full display');
+        console.log('✅ SVG processed successfully');
         setSvgContent(processedSvg);
         setLoadError(false);
         setIsLoading(false);
@@ -116,23 +110,22 @@ export const SVGDisplay: React.FC<SVGDisplayProps> = ({
           <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
           <p className="text-sm text-red-600">Erreur chargement SVG</p>
           <p className="text-xs text-red-500 mt-1">{svgUrl.substring(0, 40)}...</p>
+          <div className="mt-2 text-xs text-gray-600">
+            <p>Vérifiez que le fichier SVG est valide</p>
+          </div>
         </div>
       </div>
     ) : null;
   }
 
   return (
-    <div 
-      className={`${className} w-full h-full overflow-hidden`}
-      style={{ minHeight: '300px', maxHeight: '600px' }}
-    >
+    <div className={`${className} w-full h-full`}>
       <div 
         className="w-full h-full"
         dangerouslySetInnerHTML={{ __html: svgContent }}
         style={{ 
-          display: 'block',
-          width: '100%',
-          height: '100%'
+          minHeight: '300px',
+          maxHeight: '100%'
         }}
       />
     </div>

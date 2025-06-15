@@ -11,56 +11,84 @@ export interface AutoPositionResult {
 
 /**
  * Calcule le positionnement automatique PROFESSIONNEL d'un design dans une zone d'impression
- * Logique "contain" exacte : le design s'affiche entièrement, au plus grand possible, centré
- * EXACTEMENT comme sur Printful/Printify - utilise les coordonnées EXACTES de la zone d'impression
+ * Utilise la logique "contain" stricte : le design s'affiche entièrement, au plus grand possible, centré
  */
 export const calculateAutoPosition = (
   designDimensions: { width: number; height: number },
   printArea: DesignArea
 ): AutoPositionResult => {
-  console.log('🎯 Calcul position automatique PROFESSIONNEL avec coordonnées EXACTES:', { 
+  console.log('🎯 Calcul position automatique PROFESSIONNEL:', { 
     designDimensions, 
     printArea 
   });
 
-  // 1. Calculer le facteur d'agrandissement maximal pour que le design rentre entièrement
-  // Utiliser les dimensions EXACTES de la zone d'impression définie par l'admin
+  // Validation des données d'entrée
+  if (!designDimensions.width || !designDimensions.height || designDimensions.width <= 0 || designDimensions.height <= 0) {
+    console.error('❌ Dimensions du design invalides:', designDimensions);
+    throw new Error('Dimensions du design invalides');
+  }
+
+  if (!printArea.width || !printArea.height || printArea.width <= 0 || printArea.height <= 0) {
+    console.error('❌ Zone d\'impression invalide:', printArea);
+    throw new Error('Zone d\'impression invalide');
+  }
+
+  // 1. Calculer le facteur d'agrandissement maximal (logique "contain" stricte)
   const scaleX = printArea.width / designDimensions.width;
   const scaleY = printArea.height / designDimensions.height;
   
-  // 2. Prendre la plus petite échelle pour garantir que tout rentre (logique "contain")
-  const scale = Math.min(scaleX, scaleY, 1); // Ne jamais agrandir au-delà de 100%
+  // 2. Prendre la plus petite échelle pour garantir que tout rentre (jamais de débordement)
+  const scale = Math.min(scaleX, scaleY);
   
-  // 3. Nouvelles dimensions du design après mise à l'échelle MAXIMALE
-  const newWidth = designDimensions.width * scale;
-  const newHeight = designDimensions.height * scale;
+  console.log('📊 Calculs d\'échelle:', {
+    scaleX: scaleX.toFixed(3),
+    scaleY: scaleY.toFixed(3),
+    scaleFinal: scale.toFixed(3),
+    pourcentage: Math.round(scale * 100) + '%'
+  });
   
-  // 4. Centrer EXACTEMENT le design dans la zone d'impression définie par l'admin
-  // Utiliser les coordonnées EXACTES x,y de la zone d'impression
-  const posX = printArea.x + (printArea.width - newWidth) / 2;
-  const posY = printArea.y + (printArea.height - newHeight) / 2;
+  // 3. Nouvelles dimensions du design après mise à l'échelle
+  const scaledWidth = designDimensions.width * scale;
+  const scaledHeight = designDimensions.height * scale;
+  
+  // 4. Centrer EXACTEMENT le design dans la zone d'impression
+  const posX = printArea.x + (printArea.width - scaledWidth) / 2;
+  const posY = printArea.y + (printArea.height - scaledHeight) / 2;
   
   const result = {
     x: posX,
     y: posY,
-    width: newWidth,
-    height: newHeight,
+    width: scaledWidth,
+    height: scaledHeight,
     scale
   };
   
-  console.log('✅ Position PROFESSIONNELLE calculée avec coordonnées EXACTES:', {
+  // Vérifications de qualité
+  const verification = {
+    designRentreCompletement: 
+      posX >= printArea.x && 
+      posY >= printArea.y && 
+      posX + scaledWidth <= printArea.x + printArea.width && 
+      posY + scaledHeight <= printArea.y + printArea.height,
+    designEstCentre: 
+      Math.abs((posX - printArea.x) - (printArea.x + printArea.width - posX - scaledWidth)) < 1 &&
+      Math.abs((posY - printArea.y) - (printArea.y + printArea.height - posY - scaledHeight)) < 1,
+    utilisationOptimale: scale > 0.5 // Le design utilise au moins 50% de l'espace disponible
+  };
+  
+  console.log('✅ Position PROFESSIONNELLE calculée:', {
     designOriginal: designDimensions,
-    zoneImpressionExacte: printArea,
+    zoneImpression: printArea,
     facteurEchelle: scale,
-    nouvelleTaille: { width: newWidth, height: newHeight },
-    positionExacteCentree: { x: posX, y: posY },
+    nouvelleTaille: { width: scaledWidth, height: scaledHeight },
+    positionCentree: { x: posX, y: posY },
     pourcentageAgrandissement: Math.round(scale * 100) + '%',
-    verification: {
-      designFitsDansZone: newWidth <= printArea.width && newHeight <= printArea.height,
-      designEstCentre: Math.abs((posX - printArea.x) - (printArea.x + printArea.width - posX - newWidth)) < 1,
-      dimensionsFinales: `${Math.round(newWidth)}×${Math.round(newHeight)}px dans zone ${printArea.width}×${printArea.height}px`
-    }
+    verification
   });
+  
+  if (!verification.designRentreCompletement) {
+    console.warn('⚠️ Le design ne rentre pas complètement dans la zone !');
+  }
   
   return result;
 };
@@ -70,25 +98,38 @@ export const calculateAutoPosition = (
  */
 export const getImageDimensions = (imageUrl: string): Promise<{ width: number; height: number }> => {
   return new Promise((resolve, reject) => {
+    console.log('📐 Chargement dimensions pour:', imageUrl.substring(0, 50) + '...');
+    
     const img = new Image();
     img.crossOrigin = 'anonymous';
     
+    const timeout = setTimeout(() => {
+      console.error('❌ Timeout lors du chargement de l\'image');
+      reject(new Error('Timeout lors du chargement de l\'image'));
+    }, 10000); // 10 secondes de timeout
+    
     img.onload = () => {
-      console.log('📐 Dimensions EXACTES du design récupérées:', {
-        url: imageUrl.substring(0, 50) + '...',
-        largeurExacte: img.naturalWidth,
-        hauteurExacte: img.naturalHeight
-      });
+      clearTimeout(timeout);
       
-      resolve({
+      const dimensions = {
         width: img.naturalWidth,
         height: img.naturalHeight
-      });
+      };
+      
+      console.log('✅ Dimensions récupérées:', dimensions);
+      
+      if (dimensions.width <= 0 || dimensions.height <= 0) {
+        reject(new Error('Dimensions d\'image invalides'));
+        return;
+      }
+      
+      resolve(dimensions);
     };
     
-    img.onerror = () => {
-      console.error('❌ Impossible de charger l\'image pour obtenir ses dimensions EXACTES');
-      reject(new Error('Impossible de charger l\'image'));
+    img.onerror = (error) => {
+      clearTimeout(timeout);
+      console.error('❌ Erreur lors du chargement de l\'image:', error);
+      reject(new Error('Impossible de charger l\'image pour obtenir ses dimensions'));
     };
     
     img.src = imageUrl;
