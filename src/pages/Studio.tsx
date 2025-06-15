@@ -19,6 +19,8 @@ const Studio = () => {
     bio?: string;
     avatar_url?: string;
   }>({});
+  const [creatorProductsCount, setCreatorProductsCount] = useState<number | null>(null);
+  const [countLoading, setCountLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -29,6 +31,7 @@ const Studio = () => {
   useEffect(() => {
     if (user && isCreator) {
       fetchUserProfile();
+      fetchCreatorProductsCount();
     }
   }, [user, isCreator]);
 
@@ -63,7 +66,32 @@ const Studio = () => {
     }
   };
 
-  if (loading) {
+  // NEW: Fetch the number of products in creator_products for the current user
+  const fetchCreatorProductsCount = async () => {
+    if (!user) return;
+    setCountLoading(true);
+    try {
+      const { count, error } = await supabase
+        .from('creator_products')
+        .select('id', { count: 'exact', head: true })
+        .eq('creator_id', user.id);
+
+      if (error) {
+        console.error('Error fetching creator products count:', error);
+        setCreatorProductsCount(null);
+        return;
+      }
+
+      setCreatorProductsCount(count ?? 0);
+    } catch (error) {
+      console.error('Error fetching creator products count:', error);
+      setCreatorProductsCount(null);
+    } finally {
+      setCountLoading(false);
+    }
+  };
+
+  if (loading || countLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -81,9 +109,22 @@ const Studio = () => {
   // ⚠️ CORRECTION DU BUG : Exempter les admins et super admins de l'onboarding créateur
   // Les admins/super admins ne doivent JAMAIS être redirigés vers l'onboarding
   const isAdminUser = isAdmin() || isSuperAdmin();
-  
+
+  // NEW: Validation using number of own products in creator_products
   // Redirection vers l'onboarding UNIQUEMENT pour les créateurs non-admins
-  if (isCreator && !isAdminUser && (!userProfile.onboarding_completed || !userProfile.full_name || !userProfile.bio || !userProfile.avatar_url)) {
+  // Exige au moins 3 produits créés (creator_products)
+  const requiresCreatorOnboarding =
+    isCreator &&
+    !isAdminUser &&
+    (
+      !userProfile.onboarding_completed ||
+      !userProfile.full_name ||
+      !userProfile.bio ||
+      !userProfile.avatar_url ||
+      (typeof creatorProductsCount === 'number' && creatorProductsCount < 3)
+    );
+
+  if (requiresCreatorOnboarding) {
     navigate('/creator-onboarding');
     return null;
   }
