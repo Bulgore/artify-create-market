@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { parseDesignArea } from '@/types/designArea';
-import { calculateAutoPosition, getImageDimensions } from '@/utils/designPositioning';
 import type { PrintProduct } from '@/types/customProduct';
 import { ProductSelectionSection } from './simplified/ProductSelectionSection';
-import { DesignUploadSection } from './simplified/DesignUploadSection';
+import { DesignUploadHandler } from './simplified/DesignUploadHandler';
 import { MockupSection } from './simplified/MockupSection';
-import { ProductDetailsSection } from './simplified/ProductDetailsSection';
-import { ValidationFeedback } from './simplified/ValidationFeedback';
+import { ProductCreationForm } from './simplified/ProductCreationForm';
+import { useDesignPositioning } from '@/hooks/useDesignPositioning';
+import { useProductData } from '@/hooks/useProductData';
 
 interface SimplifiedProductCreationProps {
   printProducts: PrintProduct[];
@@ -20,12 +20,9 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<PrintProduct | null>(null);
   const [designUrl, setDesignUrl] = useState('');
-  const [autoDesignPosition, setAutoDesignPosition] = useState<any>(null);
-  const [productData, setProductData] = useState({
-    name: '',
-    description: '',
-    margin_percentage: 20
-  });
+  
+  const { autoDesignPosition, calculateDesignPosition, resetDesignPosition } = useDesignPositioning();
+  const { productData, setProductData, resetProductData } = useProductData();
 
   const handleProductSelect = (product: PrintProduct | null) => {
     console.log('🎯 Produit sélectionné:', product?.name);
@@ -33,71 +30,21 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     
     // Reset design quand on change de produit
     setDesignUrl('');
-    setAutoDesignPosition(null);
+    resetDesignPosition();
+    resetProductData();
   };
 
   const handleDesignUpload = async (url: string) => {
     console.log('📷 Design uploadé:', url);
     setDesignUrl(url);
-    setAutoDesignPosition(null);
+    resetDesignPosition();
     
-    if (selectedProduct?.product_templates) {
-      try {
-        const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
-        console.log('🎯 Zone d\'impression EXACTE définie par admin:', designArea);
-        
-        const designDimensions = await getImageDimensions(url);
-        console.log('📐 Dimensions RÉELLES du design uploadé:', designDimensions);
-        
-        const autoPosition = calculateAutoPosition(designDimensions, designArea);
-        
-        const finalPosition = {
-          x: autoPosition.x,
-          y: autoPosition.y,
-          width: autoPosition.width,
-          height: autoPosition.height,
-          rotation: 0,
-          scale: autoPosition.scale
-        };
-        
-        console.log('✅ Position automatique PROFESSIONNELLE avec coordonnées EXACTES:', {
-          zoneImpressionAdmin: designArea,
-          designOriginal: designDimensions,
-          positionFinaleExacte: finalPosition,
-          agrandissementMaximal: Math.round(autoPosition.scale * 100) + '%',
-          verificationCentrage: {
-            centreX: finalPosition.x + finalPosition.width / 2,
-            centreZoneX: designArea.x + designArea.width / 2,
-            centreY: finalPosition.y + finalPosition.height / 2,
-            centreZoneY: designArea.y + designArea.height / 2
-          }
-        });
-        
-        setAutoDesignPosition(finalPosition);
-        
-      } catch (error) {
-        console.error('❌ Erreur calcul position automatique PROFESSIONNELLE:', error);
-        
-        // Fallback centré dans la zone admin
-        const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
-        const fallbackPosition = {
-          x: designArea.x + (designArea.width * 0.1),
-          y: designArea.y + (designArea.height * 0.1),
-          width: designArea.width * 0.8,
-          height: designArea.height * 0.8,
-          rotation: 0,
-          scale: 0.8
-        };
-        
-        console.log('⚠️ Utilisation position fallback CENTRÉE dans zone admin:', fallbackPosition);
-        setAutoDesignPosition(fallbackPosition);
-      }
-    }
+    await calculateDesignPosition(url, selectedProduct);
   };
 
   const handleDesignRemove = () => {
     setDesignUrl('');
-    setAutoDesignPosition(null);
+    resetDesignPosition();
   };
 
   const handleSubmit = () => {
@@ -156,17 +103,6 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     ? parseDesignArea(selectedProduct.product_templates.design_area)
     : undefined;
 
-  // Validation SIMPLE : produit + design + nom (position automatique non bloquante)
-  const canSubmit = !!(selectedProduct && designUrl && productData.name.trim());
-
-  console.log('🔍 État de validation SIMPLE et CLAIRE:', {
-    hasProduct: !!selectedProduct,
-    hasDesign: !!designUrl,
-    hasName: !!productData.name.trim(),
-    canSubmit,
-    autoPositionStatus: autoDesignPosition ? 'Calculée avec précision' : 'En attente (non bloquant)'
-  });
-
   return (
     <div className="space-y-6">
       <ProductSelectionSection onProductSelect={handleProductSelect} />
@@ -174,10 +110,11 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       {selectedProduct && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
-            <DesignUploadSection
-              onDesignUpload={handleDesignUpload}
+            <DesignUploadHandler
+              selectedProduct={selectedProduct}
               designUrl={designUrl}
               autoDesignPosition={autoDesignPosition}
+              onDesignUpload={handleDesignUpload}
               onDesignRemove={handleDesignRemove}
             />
           </div>
@@ -191,21 +128,13 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
               svgTemplateUrl={selectedProduct.product_templates?.svg_file_url}
             />
 
-            <ProductDetailsSection
-              selectedProduct={selectedProduct}
-              productData={productData}
-              setProductData={setProductData}
-              canSubmit={canSubmit}
-              onSubmit={handleSubmit}
-            />
-
-            <ValidationFeedback
-              canSubmit={canSubmit}
+            <ProductCreationForm
               selectedProduct={selectedProduct}
               designUrl={designUrl}
-              productName={productData.name}
-              designArea={designArea}
+              productData={productData}
+              setProductData={setProductData}
               autoDesignPosition={autoDesignPosition}
+              onSubmit={handleSubmit}
             />
           </div>
         </div>
