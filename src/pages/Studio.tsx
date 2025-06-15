@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -21,6 +20,11 @@ const Studio = () => {
   }>({});
   const [creatorProductsCount, setCreatorProductsCount] = useState<number | null>(null);
   const [countLoading, setCountLoading] = useState(false);
+
+  // FORCE-UNLOCK: Your user UUID
+  const FORCE_UNLOCK_ID = '360bcff2-fa75-4fac-87fa-0be5d7c3184c';
+
+  const forceBypass = user && user.id === FORCE_UNLOCK_ID;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -116,7 +120,12 @@ const Studio = () => {
 
   const isAdminUser = isAdmin() || isSuperAdmin();
 
-  // LOGIC DEBUG: Show all gating/trigger values
+  // Debug output for bypass mode
+  if (forceBypass) {
+    console.warn('[DEBUG][Studio] FORCE-UNLOCK mode enabled for this user (bypass onboarding gating)');
+  }
+
+  // LOGIC DEBUG: Show all gating/trigger values (still run for all users, including bypass, for logging)
   console.log('[DEBUG][Studio] re-evaluate access: ', {
     isCreator,
     isAdminUser,
@@ -125,6 +134,7 @@ const Studio = () => {
     bio: userProfile.bio,
     avatar_url: userProfile.avatar_url,
     creatorProductsCount,
+    forceBypass,
     needsOnboarding: isCreator &&
       !isAdminUser &&
       (
@@ -136,10 +146,11 @@ const Studio = () => {
       )
   });
 
-  // Redirection condition
+  // Redirection condition -- apply only if not forceBypass for your UUID
   const requiresCreatorOnboarding =
     isCreator &&
     !isAdminUser &&
+    !forceBypass &&
     (
       !userProfile.onboarding_completed ||
       !userProfile.full_name ||
@@ -155,6 +166,13 @@ const Studio = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {forceBypass && (
+        <div className="bg-yellow-100 text-yellow-900 px-4 py-3 border-l-4 border-yellow-500 mb-6">
+          <strong>Debug/Safe Mode — Bypass Active:</strong>
+          {" "}
+          Vous êtes en mode développeur : la règle d'accès à l'onboarding est forçée OFF pour votre utilisateur (UUID: <code>{FORCE_UNLOCK_ID}</code>).
+        </div>
+      )}
       <div className="container mx-auto py-8">
         {isPrinter ? <PrinterStudio /> : <CreatorStudio />}
       </div>
