@@ -31,7 +31,7 @@ export const MockupStatusInfo: React.FC<MockupStatusInfoProps> = ({
         <div className="flex items-center gap-2">
           <span>Design:</span>
           <span className={autoPosition ? 'text-green-600' : 'text-yellow-600'}>
-            {autoPosition ? '✅ Positionné automatiquement' : '⏳ Calcul position...'}
+            {autoPosition ? '✅ Positionné automatiquement (PROFESSIONNEL)' : '⏳ Calcul position...'}
           </span>
         </div>
       )}
@@ -43,9 +43,15 @@ export const MockupStatusInfo: React.FC<MockupStatusInfoProps> = ({
       )}
       
       {autoPosition && (
-        <div className="text-green-600">
-          ✨ Position calculée: {Math.round(autoPosition.width)}×{Math.round(autoPosition.height)}px 
-          (échelle: {Math.round(autoPosition.scale * 100)}%)
+        <div className="text-green-600 font-medium">
+          ✨ Position OPTIMALE: {Math.round(autoPosition.width)}×{Math.round(autoPosition.height)}px 
+          (agrandissement: {Math.round(autoPosition.scale * 100)}% - centré automatiquement)
+        </div>
+      )}
+      
+      {autoPosition && (
+        <div className="text-purple-600 text-xs">
+          🚫 Positionnement automatique - Aucune manipulation manuelle possible (standard professionnel)
         </div>
       )}
     </div>

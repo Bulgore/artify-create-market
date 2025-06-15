@@ -10,39 +10,48 @@ export interface AutoPositionResult {
 }
 
 /**
- * Calcule le positionnement automatique d'un design dans une zone d'impression
- * Logique "contain" : le design s'affiche entièrement, au plus grand possible
+ * Calcule le positionnement automatique PROFESSIONNEL d'un design dans une zone d'impression
+ * Logique "contain" : le design s'affiche entièrement, au plus grand possible, centré
+ * EXACTEMENT comme sur Printful/Printify
  */
 export const calculateAutoPosition = (
   designDimensions: { width: number; height: number },
   printArea: DesignArea
 ): AutoPositionResult => {
-  console.log('🎯 Calcul position automatique:', { designDimensions, printArea });
+  console.log('🎯 Calcul position automatique PROFESSIONNEL:', { designDimensions, printArea });
 
-  // Calculer le ratio de mise à l'échelle pour que le design rentre entièrement
+  // 1. Calculer le facteur d'agrandissement maximal pour que le design rentre entièrement
   const scaleX = printArea.width / designDimensions.width;
   const scaleY = printArea.height / designDimensions.height;
   
-  // Prendre la plus petite échelle pour garantir que tout rentre (logique "contain")
+  // 2. Prendre la plus petite échelle pour garantir que tout rentre (logique "contain")
   const scale = Math.min(scaleX, scaleY);
   
-  // Nouvelles dimensions du design après mise à l'échelle
-  const scaledWidth = designDimensions.width * scale;
-  const scaledHeight = designDimensions.height * scale;
+  // 3. Nouvelles dimensions du design après mise à l'échelle MAXIMALE
+  const newWidth = designDimensions.width * scale;
+  const newHeight = designDimensions.height * scale;
   
-  // Centrer le design dans la zone d'impression
-  const x = printArea.x + (printArea.width - scaledWidth) / 2;
-  const y = printArea.y + (printArea.height - scaledHeight) / 2;
+  // 4. Centrer EXACTEMENT le design dans la zone d'impression
+  const posX = printArea.x + (printArea.width - newWidth) / 2;
+  const posY = printArea.y + (printArea.height - newHeight) / 2;
   
   const result = {
-    x,
-    y,
-    width: scaledWidth,
-    height: scaledHeight,
+    x: posX,
+    y: posY,
+    width: newWidth,
+    height: newHeight,
     scale
   };
   
-  console.log('✅ Position calculée:', result);
+  console.log('✅ Position PROFESSIONNELLE calculée:', {
+    designOriginal: designDimensions,
+    zoneImpression: printArea,
+    facteurEchelle: scale,
+    nouvelleTaille: { width: newWidth, height: newHeight },
+    positionCentree: { x: posX, y: posY },
+    pourcentageAgrandissement: Math.round(scale * 100) + '%'
+  });
+  
   return result;
 };
 
@@ -55,6 +64,12 @@ export const getImageDimensions = (imageUrl: string): Promise<{ width: number; h
     img.crossOrigin = 'anonymous';
     
     img.onload = () => {
+      console.log('📐 Dimensions du design récupérées:', {
+        url: imageUrl.substring(0, 50) + '...',
+        largeur: img.naturalWidth,
+        hauteur: img.naturalHeight
+      });
+      
       resolve({
         width: img.naturalWidth,
         height: img.naturalHeight
@@ -62,6 +77,7 @@ export const getImageDimensions = (imageUrl: string): Promise<{ width: number; h
     };
     
     img.onerror = () => {
+      console.error('❌ Impossible de charger l\'image pour obtenir ses dimensions');
       reject(new Error('Impossible de charger l\'image'));
     };
     

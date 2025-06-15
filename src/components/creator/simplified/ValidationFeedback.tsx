@@ -23,20 +23,24 @@ export const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({
   if (!canSubmit) {
     return (
       <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded">
-        <div className="font-medium mb-1">Informations manquantes :</div>
+        <div className="font-medium mb-1">Informations manquantes pour validation :</div>
         {!selectedProduct && <div>• Sélectionnez un produit</div>}
         {selectedProduct && !designUrl && <div>• Uploadez un design</div>}
         {selectedProduct && designUrl && !productName.trim() && <div>• Renseignez le nom du produit</div>}
+        {selectedProduct && designUrl && productName.trim() && !autoDesignPosition && <div>• Position automatique en cours de calcul...</div>}
       </div>
     );
   }
 
   return (
     <div className="text-sm text-green-600 bg-green-50 p-3 rounded">
-      ✅ Prêt à créer ! Design automatiquement positionné dans la zone d'impression.
+      <div className="font-medium mb-1">✅ Prêt à créer ! Positionnement automatique PROFESSIONNEL appliqué</div>
       {designArea && autoDesignPosition && (
-        <div className="mt-1 text-xs">
-          Zone: {designArea.width}×{designArea.height}px • Position: {Math.round(autoDesignPosition.scale * 100)}% de la taille originale
+        <div className="mt-2 space-y-1 text-xs">
+          <div>📏 Zone d'impression: {designArea.width}×{designArea.height}px</div>
+          <div>🎯 Design agrandi au maximum: {Math.round(autoDesignPosition.scale * 100)}% de la taille originale</div>
+          <div>📍 Position centrée automatiquement: ({Math.round(autoDesignPosition.x)}, {Math.round(autoDesignPosition.y)})</div>
+          <div className="text-purple-600 font-medium">🚫 Aucune manipulation manuelle - Standard professionnel respecté</div>
         </div>
       )}
     </div>

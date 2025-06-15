@@ -39,21 +39,22 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   const handleDesignUpload = async (url: string) => {
     console.log('📷 Design uploaded:', url);
     setDesignUrl(url);
+    setAutoDesignPosition(null); // Reset position immediately
     
-    // Calculer automatiquement la position optimale
+    // Calculer automatiquement la position PROFESSIONNELLE optimale
     if (selectedProduct?.product_templates) {
       try {
         const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
-        console.log('🎯 Zone d\'impression:', designArea);
+        console.log('🎯 Zone d\'impression EXACTE:', designArea);
         
-        // Obtenir les dimensions réelles du design
+        // Obtenir les dimensions RÉELLES du design
         const designDimensions = await getImageDimensions(url);
-        console.log('📐 Dimensions du design:', designDimensions);
+        console.log('📐 Dimensions RÉELLES du design:', designDimensions);
         
-        // Calculer la position automatique (logique "contain")
+        // Calculer la position automatique PROFESSIONNELLE (logique "contain" + centrage)
         const autoPosition = calculateAutoPosition(designDimensions, designArea);
         
-        // Convertir en format attendu par le backend
+        // Convertir en format attendu par le backend avec les valeurs EXACTES
         const finalPosition = {
           x: autoPosition.x,
           y: autoPosition.y,
@@ -63,13 +64,19 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
           scale: autoPosition.scale
         };
         
-        console.log('✅ Position automatique générée:', finalPosition);
+        console.log('✅ Position automatique PROFESSIONNELLE générée:', {
+          zoneImpression: designArea,
+          designOriginal: designDimensions,
+          positionFinale: finalPosition,
+          agrandissement: Math.round(autoPosition.scale * 100) + '%'
+        });
+        
         setAutoDesignPosition(finalPosition);
         
       } catch (error) {
-        console.error('❌ Erreur calcul position automatique:', error);
+        console.error('❌ Erreur calcul position automatique PROFESSIONNELLE:', error);
         
-        // Fallback avec position par défaut
+        // Fallback avec position centrée dans la zone
         const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
         const fallbackPosition = {
           x: designArea.x + (designArea.width * 0.1),
@@ -80,7 +87,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
           scale: 0.8
         };
         
-        console.log('⚠️ Utilisation position fallback:', fallbackPosition);
+        console.log('⚠️ Utilisation position fallback CENTRÉE:', fallbackPosition);
         setAutoDesignPosition(fallbackPosition);
       }
     }
@@ -93,14 +100,15 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 
   const handleSubmit = () => {
     console.log('🚀 SimplifiedProductCreation - handleSubmit called');
-    console.log('📊 État de validation:', {
+    console.log('📊 État de validation PROFESSIONNEL:', {
       selectedProduct: selectedProduct?.name,
       designUrl: !!designUrl,
       productName: productData.name.trim(),
-      autoPosition: !!autoDesignPosition
+      autoPosition: !!autoDesignPosition,
+      positionDetails: autoDesignPosition
     });
 
-    // CORRECTION VALIDATION : Simplifiée au maximum - plus de vérification multilingue
+    // Validation STRICTE mais CLAIRE
     if (!selectedProduct) {
       console.log('❌ Aucun produit sélectionné');
       return;
@@ -111,29 +119,23 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       return;
     }
 
-    // SEUL LE NOM FRANÇAIS EST VÉRIFIÉ
     if (!productData.name.trim()) {
       console.log('❌ Nom du produit manquant');
       return;
     }
 
-    // Position automatique disponible ou fallback
-    const finalPosition = autoDesignPosition || {
-      x: 50,
-      y: 50,
-      width: 200,
-      height: 200,
-      rotation: 0,
-      scale: 1
-    };
+    if (!autoDesignPosition) {
+      console.log('❌ Position automatique non calculée');
+      return;
+    }
 
-    console.log('✅ Validation réussie, création du produit avec position:', finalPosition);
+    console.log('✅ Validation PROFESSIONNELLE réussie, création du produit avec position OPTIMALE:', autoDesignPosition);
 
     const finalProductData = {
       print_product_id: selectedProduct.id,
       design_data: {
         imageUrl: designUrl,
-        position: finalPosition
+        position: autoDesignPosition
       },
       name: productData.name,
       description: productData.description,
@@ -141,7 +143,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       preview_url: designUrl
     };
 
-    console.log('🚀 Données finales pour création:', finalProductData);
+    console.log('🚀 Données finales pour création avec positionnement PROFESSIONNEL:', finalProductData);
     onProductCreate(finalProductData);
   };
 
@@ -149,15 +151,16 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     ? parseDesignArea(selectedProduct.product_templates.design_area)
     : undefined;
 
-  // CORRECTION VALIDATION : Simplifiée - seuls produit + design + nom français requis
-  const canSubmit = !!(selectedProduct && designUrl && productData.name.trim());
+  // Validation STRICTE : produit + design + nom + position calculée
+  const canSubmit = !!(selectedProduct && designUrl && productData.name.trim() && autoDesignPosition);
 
-  console.log('🔍 État de validation du formulaire:', {
+  console.log('🔍 État de validation PROFESSIONNEL du formulaire:', {
     hasProduct: !!selectedProduct,
     hasDesign: !!designUrl,
     hasName: !!productData.name.trim(),
     hasAutoPosition: !!autoDesignPosition,
-    canSubmit
+    canSubmit,
+    positionCalculated: autoDesignPosition ? 'Position PROFESSIONNELLE calculée' : 'Position en attente'
   });
 
   return (
