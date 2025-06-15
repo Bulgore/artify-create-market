@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +19,6 @@ interface Design {
   description?: string;
   preview_url: string;
   is_published: boolean;
-  // Use the new correct column name
   creator_margin_percentage: number;
 }
 
@@ -33,7 +31,7 @@ const CreatorWorkspace: React.FC = () => {
   const { printProducts, handleProductCreate } = useCustomProductCreator();
 
   useEffect(() => {
-    if (user && activeTab === 'designs') {
+    if (user && (activeTab === 'products' || activeTab === 'designs')) {
       loadDesigns();
     }
   }, [user, activeTab]);
@@ -58,7 +56,6 @@ const CreatorWorkspace: React.FC = () => {
         description: design.description_fr ?? design.description ?? '',
         preview_url: design.preview_url,
         is_published: design.is_published ?? false,
-        // Use the new correct key
         creator_margin_percentage: design.creator_margin_percentage ?? 20
       }));
 
@@ -68,7 +65,7 @@ const CreatorWorkspace: React.FC = () => {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Impossible de charger vos designs.'
+        description: 'Impossible de charger vos produits.'
       });
     } finally {
       setIsLoadingDesigns(false);
@@ -76,24 +73,17 @@ const CreatorWorkspace: React.FC = () => {
   };
 
   const handleCreateProduct = () => {
-    console.log('🎯 Bouton "Créer un produit" cliqué - CreatorWorkspace');
     setShowProductCreation(true);
   };
 
   const handleProductCreated = async (productData: any) => {
-    console.log('🚀 Tentative de création de produit depuis CreatorWorkspace:', productData);
-    
     const success = await handleProductCreate(productData);
-    
     if (success) {
-      console.log('✅ Produit créé avec succès depuis CreatorWorkspace');
       setShowProductCreation(false);
-      // Recharger les designs si on est sur l'onglet designs
-      if (activeTab === 'designs') {
+      // Refresh both product and design tabs if currently active
+      if (activeTab === 'products' || activeTab === 'designs') {
         await loadDesigns();
       }
-    } else {
-      console.log('❌ Échec de la création du produit depuis CreatorWorkspace');
     }
   };
 
@@ -135,21 +125,28 @@ const CreatorWorkspace: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
+        {/* NEW: Mes produits = all creator_products by the user */}
         <TabsContent value="products" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Mes produits créés
+                Mes produits en boutique
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                Gérez vos produits personnalisés et suivez leurs performances.
+                Voici tous les produits que vous vendez dans votre boutique. Ajoutez-en pour débloquer les fonctionnalités avancées.
               </p>
-              <Button onClick={handleCreateProduct}>
-                Créer mon premier produit
-              </Button>
+              {isLoadingDesigns ? (
+                <div className="py-8 text-center">Chargement de vos produits...</div>
+              ) : (
+                <DesignList 
+                  designs={designs}
+                  onDesignUpdated={handleDesignUpdated}
+                  onCreateDesign={handleCreateDesign}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -168,16 +165,30 @@ const CreatorWorkspace: React.FC = () => {
           </Card>
         </TabsContent>
 
+        {/* Optionally, keep "Mes designs" for assets/drafts/features */}
         <TabsContent value="designs" className="space-y-6">
-          {isLoadingDesigns ? (
-            <div className="text-center py-8">Chargement de vos designs...</div>
-          ) : (
-            <DesignList 
-              designs={designs}
-              onDesignUpdated={handleDesignUpdated}
-              onCreateDesign={handleCreateDesign}
-            />
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Mes designs (brouillons, ressources)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Cette vue peut être utilisée pour retrouver vos brouillons ou gérer vos actifs design.
+              </p>
+              {isLoadingDesigns ? (
+                <div className="py-8 text-center">Chargement des designs...</div>
+              ) : (
+                <DesignList
+                  designs={designs}
+                  onDesignUpdated={handleDesignUpdated}
+                  onCreateDesign={handleCreateDesign}
+                />
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="sales" className="space-y-6">
