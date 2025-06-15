@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -20,11 +21,6 @@ const Studio = () => {
   }>({});
   const [creatorProductsCount, setCreatorProductsCount] = useState<number | null>(null);
   const [countLoading, setCountLoading] = useState(false);
-
-  // FORCE-UNLOCK: Your user UUID
-  const FORCE_UNLOCK_ID = '360bcff2-fa75-4fac-87fa-0be5d7c3184c';
-
-  const forceBypass = user && user.id === FORCE_UNLOCK_ID;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -120,13 +116,8 @@ const Studio = () => {
 
   const isAdminUser = isAdmin() || isSuperAdmin();
 
-  // Debug output for bypass mode
-  if (forceBypass) {
-    console.warn('[DEBUG][Studio] FORCE-UNLOCK mode enabled for this user (bypass onboarding gating)');
-  }
-
-  // LOGIC DEBUG: Show all gating/trigger values (still run for all users, including bypass, for logging)
-  console.log('[DEBUG][Studio] re-evaluate access: ', {
+  // Debug output for ALL gating conditions
+  const gatingSummary = {
     isCreator,
     isAdminUser,
     onboarding_completed: userProfile.onboarding_completed,
@@ -134,23 +125,20 @@ const Studio = () => {
     bio: userProfile.bio,
     avatar_url: userProfile.avatar_url,
     creatorProductsCount,
-    forceBypass,
-    needsOnboarding: isCreator &&
-      !isAdminUser &&
-      (
-        !userProfile.onboarding_completed ||
-        !userProfile.full_name ||
-        !userProfile.bio ||
-        !userProfile.avatar_url ||
-        (typeof creatorProductsCount === 'number' && creatorProductsCount < 3)
-      )
-  });
+    missing_fields: []
+  };
+  if (!userProfile.onboarding_completed) gatingSummary.missing_fields.push('onboarding_completed');
+  if (!userProfile.full_name) gatingSummary.missing_fields.push('full_name');
+  if (!userProfile.bio) gatingSummary.missing_fields.push('bio');
+  if (!userProfile.avatar_url) gatingSummary.missing_fields.push('avatar_url');
+  if (typeof creatorProductsCount === 'number' && creatorProductsCount < 3) gatingSummary.missing_fields.push('creatorProductsCount (<3)');
 
-  // Redirection condition -- apply only if not forceBypass for your UUID
+  console.log('[DEBUG][Studio] re-evaluate access: ', gatingSummary);
+
+  // Gating logic (standard, no bypass/force unlock anymore)
   const requiresCreatorOnboarding =
     isCreator &&
     !isAdminUser &&
-    !forceBypass &&
     (
       !userProfile.onboarding_completed ||
       !userProfile.full_name ||
@@ -160,19 +148,14 @@ const Studio = () => {
     );
 
   if (requiresCreatorOnboarding) {
+    // LOG WHY you are redirected for maximum clarity
+    console.warn('[DEBUG][Studio] Redirecting to onboarding - Missing:', gatingSummary.missing_fields);
     navigate('/creator-onboarding');
     return null;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {forceBypass && (
-        <div className="bg-yellow-100 text-yellow-900 px-4 py-3 border-l-4 border-yellow-500 mb-6">
-          <strong>Debug/Safe Mode — Bypass Active:</strong>
-          {" "}
-          Vous êtes en mode développeur : la règle d'accès à l'onboarding est forçée OFF pour votre utilisateur (UUID: <code>{FORCE_UNLOCK_ID}</code>).
-        </div>
-      )}
       <div className="container mx-auto py-8">
         {isPrinter ? <PrinterStudio /> : <CreatorStudio />}
       </div>
