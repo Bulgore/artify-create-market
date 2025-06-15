@@ -24,7 +24,7 @@ export const useProductSubmission = () => {
       productData
     });
 
-    // Validation essentielle uniquement - SEUL LE FRANÇAIS EST OBLIGATOIRE
+    // Validation SIMPLE - seulement les champs ESSENTIELS
     if (!selectedProduct || !selectedProduct.product_templates || !designUrl || !user) {
       console.log('❌ Validation failed:', {
         hasProduct: !!selectedProduct,
@@ -41,7 +41,7 @@ export const useProductSubmission = () => {
       return false;
     }
 
-    // CORRECTION : Vérifier uniquement le nom français (pas les autres langues)
+    // Vérifier UNIQUEMENT le nom (champ obligatoire minimal)
     if (!productData.name?.trim()) {
       toast({
         variant: "destructive",
@@ -56,7 +56,7 @@ export const useProductSubmission = () => {
     try {
       let finalPosition = designPosition;
       
-      // Si aucune position fournie, calculer automatiquement
+      // Si aucune position fournie, calculer automatiquement (non bloquant)
       if (!finalPosition) {
         console.log('🔧 Calcul automatique de la position...');
         
@@ -80,7 +80,7 @@ export const useProductSubmission = () => {
         } catch (error) {
           console.error('❌ Erreur calcul automatique:', error);
           
-          // Fallback sécurisé
+          // Fallback sécurisé - ne pas faire échouer la création
           const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
           finalPosition = {
             x: designArea.x + (designArea.width * 0.1),
@@ -91,25 +91,25 @@ export const useProductSubmission = () => {
             scale: 0.8
           };
           
-          console.log('⚠️ Position fallback utilisée:', finalPosition);
+          console.log('⚠️ Position fallback utilisée (non bloquant):', finalPosition);
         }
       }
 
       console.log('✅ Validation réussie, création du produit avec position:', finalPosition);
 
-      // CORRECTION MULTILINGUE : Utiliser le français comme base et fallback
+      // Insertion avec FALLBACK multilingue automatique
       const { error } = await supabase
         .from('creator_products')
         .insert({
           creator_id: user.id,
           print_product_id: selectedProduct.id,
-          // Champs multilingues avec fallback automatique sur le français
+          // Champs multilingues avec fallback automatique
           name_fr: productData.name.trim(),
-          name_en: productData.name.trim(), // Fallback sur français
-          name_ty: productData.name.trim(), // Fallback sur français
+          name_en: productData.name.trim(), // Auto-fallback
+          name_ty: productData.name.trim(), // Auto-fallback
           description_fr: productData.description?.trim() || '',
-          description_en: productData.description?.trim() || '', // Fallback sur français
-          description_ty: productData.description?.trim() || '', // Fallback sur français
+          description_en: productData.description?.trim() || '', // Auto-fallback
+          description_ty: productData.description?.trim() || '', // Auto-fallback
           creator_margin_percentage: productData.margin_percentage,
           design_data: {
             design_image_url: designUrl,

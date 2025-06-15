@@ -8,13 +8,15 @@ interface MockupSectionProps {
   designUrl?: string;
   designArea?: DesignArea;
   designPosition?: any;
+  svgTemplateUrl?: string;
 }
 
 export const MockupSection: React.FC<MockupSectionProps> = ({
   mockupUrl,
   designUrl,
   designArea,
-  designPosition
+  designPosition,
+  svgTemplateUrl
 }) => {
   return (
     <MockupPreview
@@ -22,6 +24,7 @@ export const MockupSection: React.FC<MockupSectionProps> = ({
       designUrl={designUrl}
       designArea={designArea}
       designPosition={designPosition}
+      svgTemplateUrl={svgTemplateUrl}
     />
   );
 };

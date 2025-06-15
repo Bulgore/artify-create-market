@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { MousePointer, Info, RotateCcw } from 'lucide-react';
 import { usePrintArea } from '@/hooks/usePrintArea';
+import { SVGDisplay } from '@/components/ui/SVGDisplay';
 import { PrintArea } from '@/types/printArea';
 
 interface PrintAreaSelectorProps {
@@ -61,7 +62,6 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
 
   const handleTabChange = (value: string) => {
     console.log('Tab changed to:', value);
-    // Force redraw when switching tabs
     setTimeout(() => {
       if (value === 'svg' && svgImageLoaded) {
         forceRedraw('svg');
@@ -106,24 +106,25 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                   </Button>
                 </div>
                 {svgUrl ? (
-                  <div className="border border-gray-300 rounded overflow-hidden bg-white">
-                    {svgImageLoaded ? (
+                  <div className="border border-gray-300 rounded overflow-hidden bg-white relative">
+                    <SVGDisplay 
+                      svgUrl={svgUrl}
+                      className="max-w-full max-h-96 mx-auto block"
+                      onLoad={() => console.log('SVG template loaded')}
+                      onError={() => console.error('SVG template failed to load')}
+                    />
+                    
+                    {/* Canvas pour l'interaction par-dessus le SVG */}
+                    {svgImageLoaded && (
                       <canvas
                         ref={svgCanvasRef}
-                        className="cursor-move max-w-full block mx-auto"
+                        className="absolute top-0 left-0 cursor-move"
                         onMouseDown={(e) => handleCanvasMouseDown(e, 'svg')}
                         onMouseMove={handleCanvasMouseMove}
                         onMouseUp={handleCanvasMouseUp}
                         onMouseLeave={handleCanvasMouseUp}
                         style={{ maxHeight: '400px' }}
                       />
-                    ) : (
-                      <div className="h-48 flex items-center justify-center text-gray-500">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                          <p>Chargement de l'image SVG...</p>
-                        </div>
-                      </div>
                     )}
                   </div>
                 ) : (

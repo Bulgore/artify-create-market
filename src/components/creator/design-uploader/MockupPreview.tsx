@@ -12,13 +12,15 @@ interface MockupPreviewProps {
   designUrl?: string;
   designArea?: DesignArea;
   designPosition?: any;
+  svgTemplateUrl?: string;
 }
 
 export const MockupPreview: React.FC<MockupPreviewProps> = ({
   mockupUrl,
   designUrl,
   designArea,
-  designPosition
+  designPosition,
+  svgTemplateUrl
 }) => {
   const [mockupLoaded, setMockupLoaded] = useState(false);
   const [designLoaded, setDesignLoaded] = useState(false);
@@ -31,9 +33,10 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
       mockupUrl: mockupUrl?.substring(0, 50) + '...',
       designUrl: designUrl?.substring(0, 50) + '...',
       designArea,
-      designPosition
+      designPosition,
+      svgTemplateUrl: svgTemplateUrl?.substring(0, 50) + '...'
     });
-  }, [mockupUrl, designUrl, designArea, designPosition]);
+  }, [mockupUrl, designUrl, designArea, designPosition, svgTemplateUrl]);
 
   // Calculer la position automatique quand le design et la zone sont disponibles
   useEffect(() => {
@@ -112,6 +115,7 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
             designError={designError}
             designArea={designArea}
             autoPosition={autoPosition}
+            svgTemplateUrl={svgTemplateUrl}
             onMockupLoad={handleMockupLoad}
             onMockupError={handleMockupError}
             onDesignLoad={handleDesignLoad}

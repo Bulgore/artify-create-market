@@ -31,7 +31,6 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     console.log('🎯 Product selected:', product?.name);
     setSelectedProduct(product);
     
-    // Reset design and position when product changes
     setDesignUrl('');
     setAutoDesignPosition(null);
   };
@@ -39,22 +38,18 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   const handleDesignUpload = async (url: string) => {
     console.log('📷 Design uploaded:', url);
     setDesignUrl(url);
-    setAutoDesignPosition(null); // Reset position immediately
+    setAutoDesignPosition(null);
     
-    // Calculer automatiquement la position PROFESSIONNELLE optimale
     if (selectedProduct?.product_templates) {
       try {
         const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
         console.log('🎯 Zone d\'impression EXACTE:', designArea);
         
-        // Obtenir les dimensions RÉELLES du design
         const designDimensions = await getImageDimensions(url);
         console.log('📐 Dimensions RÉELLES du design:', designDimensions);
         
-        // Calculer la position automatique PROFESSIONNELLE (logique "contain" + centrage)
         const autoPosition = calculateAutoPosition(designDimensions, designArea);
         
-        // Convertir en format attendu par le backend avec les valeurs EXACTES
         const finalPosition = {
           x: autoPosition.x,
           y: autoPosition.y,
@@ -76,7 +71,6 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       } catch (error) {
         console.error('❌ Erreur calcul position automatique PROFESSIONNELLE:', error);
         
-        // Fallback avec position centrée dans la zone
         const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
         const fallbackPosition = {
           x: designArea.x + (designArea.width * 0.1),
@@ -100,15 +94,8 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 
   const handleSubmit = () => {
     console.log('🚀 SimplifiedProductCreation - handleSubmit called');
-    console.log('📊 État de validation PROFESSIONNEL:', {
-      selectedProduct: selectedProduct?.name,
-      designUrl: !!designUrl,
-      productName: productData.name.trim(),
-      autoPosition: !!autoDesignPosition,
-      positionDetails: autoDesignPosition
-    });
-
-    // Validation STRICTE mais CLAIRE
+    
+    // Validation SIMPLE et CLAIRE - seulement les champs essentiels
     if (!selectedProduct) {
       console.log('❌ Aucun produit sélectionné');
       return;
@@ -124,18 +111,28 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       return;
     }
 
-    if (!autoDesignPosition) {
-      console.log('❌ Position automatique non calculée');
-      return;
+    // Position automatique - pas de validation bloquante
+    let finalPosition = autoDesignPosition;
+    if (!finalPosition) {
+      console.log('⚠️ Position automatique manquante, utilisation fallback');
+      const designArea = parseDesignArea(selectedProduct.product_templates?.design_area || '{}');
+      finalPosition = {
+        x: designArea.x + (designArea.width * 0.1),
+        y: designArea.y + (designArea.height * 0.1),
+        width: designArea.width * 0.8,
+        height: designArea.height * 0.8,
+        rotation: 0,
+        scale: 0.8
+      };
     }
 
-    console.log('✅ Validation PROFESSIONNELLE réussie, création du produit avec position OPTIMALE:', autoDesignPosition);
+    console.log('✅ Validation PROFESSIONNELLE réussie, création du produit avec position OPTIMALE:', finalPosition);
 
     const finalProductData = {
       print_product_id: selectedProduct.id,
       design_data: {
         imageUrl: designUrl,
-        position: autoDesignPosition
+        position: finalPosition
       },
       name: productData.name,
       description: productData.description,
@@ -151,16 +148,15 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     ? parseDesignArea(selectedProduct.product_templates.design_area)
     : undefined;
 
-  // Validation STRICTE : produit + design + nom + position calculée
-  const canSubmit = !!(selectedProduct && designUrl && productData.name.trim() && autoDesignPosition);
+  // Validation SIMPLE : produit + design + nom (position optionnelle)
+  const canSubmit = !!(selectedProduct && designUrl && productData.name.trim());
 
-  console.log('🔍 État de validation PROFESSIONNEL du formulaire:', {
+  console.log('🔍 État de validation SIMPLIFIÉ:', {
     hasProduct: !!selectedProduct,
     hasDesign: !!designUrl,
     hasName: !!productData.name.trim(),
-    hasAutoPosition: !!autoDesignPosition,
     canSubmit,
-    positionCalculated: autoDesignPosition ? 'Position PROFESSIONNELLE calculée' : 'Position en attente'
+    autoPositionStatus: autoDesignPosition ? 'Calculée' : 'En attente (non bloquant)'
   });
 
   return (
@@ -184,6 +180,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
               designUrl={designUrl}
               designArea={designArea}
               designPosition={autoDesignPosition}
+              svgTemplateUrl={selectedProduct.product_templates?.svg_file_url}
             />
 
             <ProductDetailsSection

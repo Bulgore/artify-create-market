@@ -3,6 +3,7 @@ import React from 'react';
 import { MockupImage } from './MockupImage';
 import { PrintAreaOverlay } from './PrintAreaOverlay';
 import { DesignOverlay } from './DesignOverlay';
+import { SVGDisplay } from '@/components/ui/SVGDisplay';
 import type { DesignArea } from '@/types/designArea';
 import type { AutoPositionResult } from '@/utils/designPositioning';
 
@@ -14,6 +15,7 @@ interface MockupContainerProps {
   designError: boolean;
   designArea?: DesignArea;
   autoPosition?: AutoPositionResult;
+  svgTemplateUrl?: string;
   onMockupLoad: () => void;
   onMockupError: () => void;
   onDesignLoad: () => void;
@@ -28,6 +30,7 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
   designError,
   designArea,
   autoPosition,
+  svgTemplateUrl,
   onMockupLoad,
   onMockupError,
   onDesignLoad,
@@ -51,6 +54,17 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
           onLoad={onMockupLoad}
           onError={onMockupError}
         />
+      )}
+      
+      {/* Affichage du template SVG en arrière-plan si disponible */}
+      {mockupLoaded && svgTemplateUrl && (
+        <div className="absolute inset-0 pointer-events-none opacity-30">
+          <SVGDisplay 
+            svgUrl={svgTemplateUrl}
+            className="w-full h-full"
+            showError={false}
+          />
+        </div>
       )}
       
       {/* Zone d'impression - Gabarit visible */}
