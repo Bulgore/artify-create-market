@@ -60,13 +60,19 @@ const Studio = () => {
           bio: mappedData.bio,
           avatar_url: data.avatar_url
         });
+        // Debug output
+        console.log('[DEBUG][Studio] User profile fetched:', {
+          onboarding_completed: !!data.onboarding_completed,
+          full_name: mappedData.full_name,
+          bio: mappedData.bio,
+          avatar_url: data.avatar_url,
+        });
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
   };
 
-  // NEW: Fetch the number of products in creator_products for the current user
   const fetchCreatorProductsCount = async () => {
     if (!user) return;
     setCountLoading(true);
@@ -83,6 +89,8 @@ const Studio = () => {
       }
 
       setCreatorProductsCount(count ?? 0);
+      // Debug output
+      console.log('[DEBUG][Studio] creatorProductsCount:', count ?? 0);
     } catch (error) {
       console.error('Error fetching creator products count:', error);
       setCreatorProductsCount(null);
@@ -106,13 +114,29 @@ const Studio = () => {
     return null;
   }
 
-  // ⚠️ CORRECTION DU BUG : Exempter les admins et super admins de l'onboarding créateur
-  // Les admins/super admins ne doivent JAMAIS être redirigés vers l'onboarding
   const isAdminUser = isAdmin() || isSuperAdmin();
 
-  // NEW: Validation using number of own products in creator_products
-  // Redirection vers l'onboarding UNIQUEMENT pour les créateurs non-admins
-  // Exige au moins 3 produits créés (creator_products)
+  // LOGIC DEBUG: Show all gating/trigger values
+  console.log('[DEBUG][Studio] re-evaluate access: ', {
+    isCreator,
+    isAdminUser,
+    onboarding_completed: userProfile.onboarding_completed,
+    full_name: userProfile.full_name,
+    bio: userProfile.bio,
+    avatar_url: userProfile.avatar_url,
+    creatorProductsCount,
+    needsOnboarding: isCreator &&
+      !isAdminUser &&
+      (
+        !userProfile.onboarding_completed ||
+        !userProfile.full_name ||
+        !userProfile.bio ||
+        !userProfile.avatar_url ||
+        (typeof creatorProductsCount === 'number' && creatorProductsCount < 3)
+      )
+  });
+
+  // Redirection condition
   const requiresCreatorOnboarding =
     isCreator &&
     !isAdminUser &&
