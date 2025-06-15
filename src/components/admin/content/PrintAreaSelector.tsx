@@ -106,29 +106,34 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                   </Button>
                 </div>
                 {svgUrl ? (
-                  <div className="border border-gray-300 rounded overflow-hidden bg-white relative">
-                    <SVGDisplay 
-                      svgUrl={svgUrl}
-                      className="max-w-full max-h-96 mx-auto block"
-                      onLoad={() => console.log('SVG template loaded')}
-                      onError={() => console.error('SVG template failed to load')}
-                    />
-                    
-                    {/* Canvas pour l'interaction par-dessus le SVG */}
-                    {svgImageLoaded && (
-                      <canvas
-                        ref={svgCanvasRef}
-                        className="absolute top-0 left-0 cursor-move"
-                        onMouseDown={(e) => handleCanvasMouseDown(e, 'svg')}
-                        onMouseMove={handleCanvasMouseMove}
-                        onMouseUp={handleCanvasMouseUp}
-                        onMouseLeave={handleCanvasMouseUp}
-                        style={{ maxHeight: '400px' }}
+                  <div className="border border-gray-300 rounded overflow-hidden bg-white relative" style={{ minHeight: '400px', maxHeight: '600px' }}>
+                    <div className="w-full h-full relative">
+                      <SVGDisplay 
+                        svgUrl={svgUrl}
+                        className="w-full h-full"
+                        onLoad={() => {
+                          console.log('SVG template loaded for print area selection');
+                          setTimeout(() => forceRedraw('svg'), 100);
+                        }}
+                        onError={() => console.error('SVG template failed to load')}
                       />
-                    )}
+                      
+                      {/* Canvas pour l'interaction par-dessus le SVG */}
+                      {svgImageLoaded && (
+                        <canvas
+                          ref={svgCanvasRef}
+                          className="absolute top-0 left-0 cursor-move w-full h-full"
+                          onMouseDown={(e) => handleCanvasMouseDown(e, 'svg')}
+                          onMouseMove={handleCanvasMouseMove}
+                          onMouseUp={handleCanvasMouseUp}
+                          onMouseLeave={handleCanvasMouseUp}
+                          style={{ minHeight: '400px' }}
+                        />
+                      )}
+                    </div>
                   </div>
                 ) : (
-                  <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500 bg-gray-50">
+                  <div className="h-96 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500 bg-gray-50">
                     Aucun fichier SVG sélectionné
                   </div>
                 )}
@@ -182,6 +187,13 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     />
                   </div>
                 </div>
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                  <p className="text-sm text-green-700 font-medium">Zone d'impression actuelle:</p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Position: ({Math.round(currentSvgArea.x)}, {Math.round(currentSvgArea.y)}) | 
+                    Taille: {Math.round(currentSvgArea.width)}×{Math.round(currentSvgArea.height)}px
+                  </p>
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -211,10 +223,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                         onMouseMove={handleCanvasMouseMove}
                         onMouseUp={handleCanvasMouseUp}
                         onMouseLeave={handleCanvasMouseUp}
-                        style={{ maxHeight: '400px' }}
+                        style={{ maxHeight: '500px' }}
                       />
                     ) : (
-                      <div className="h-48 flex items-center justify-center text-gray-500">
+                      <div className="h-96 flex items-center justify-center text-gray-500">
                         <div className="text-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
                           <p>Chargement de l'image mockup...</p>
@@ -223,7 +235,7 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="h-48 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500 bg-gray-50">
+                  <div className="h-96 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500 bg-gray-50">
                     Aucune image mockup sélectionnée
                   </div>
                 )}

@@ -29,7 +29,7 @@ export const calculateAutoPosition = (
   const scaleY = printArea.height / designDimensions.height;
   
   // 2. Prendre la plus petite échelle pour garantir que tout rentre (logique "contain")
-  const scale = Math.min(scaleX, scaleY);
+  const scale = Math.min(scaleX, scaleY, 1); // Ne jamais agrandir au-delà de 100%
   
   // 3. Nouvelles dimensions du design après mise à l'échelle MAXIMALE
   const newWidth = designDimensions.width * scale;
@@ -57,7 +57,8 @@ export const calculateAutoPosition = (
     pourcentageAgrandissement: Math.round(scale * 100) + '%',
     verification: {
       designFitsDansZone: newWidth <= printArea.width && newHeight <= printArea.height,
-      designEstCentre: Math.abs((posX - printArea.x) - (printArea.x + printArea.width - posX - newWidth)) < 1
+      designEstCentre: Math.abs((posX - printArea.x) - (printArea.x + printArea.width - posX - newWidth)) < 1,
+      dimensionsFinales: `${Math.round(newWidth)}×${Math.round(newHeight)}px dans zone ${printArea.width}×${printArea.height}px`
     }
   });
   

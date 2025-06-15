@@ -24,23 +24,33 @@ export const useProductSubmission = () => {
       productData
     });
 
-    // Validation SIMPLE et CLAIRE - seulement les 3 champs ESSENTIELS
+    // Validation SIMPLE - SEULEMENT 3 champs essentiels
     if (!selectedProduct || !selectedProduct.product_templates) {
       console.log('❌ Produit manquant ou sans template');
       toast({
         variant: "destructive",
-        title: "Produit manquant",
+        title: "Produit requis",
         description: "Veuillez sélectionner un produit."
       });
       return false;
     }
 
-    if (!designUrl) {
+    if (!designUrl || designUrl.trim() === '') {
       console.log('❌ Design manquant');
       toast({
         variant: "destructive",
-        title: "Design manquant",
+        title: "Design requis",
         description: "Veuillez uploader un design."
+      });
+      return false;
+    }
+
+    if (!productData.name || productData.name.trim() === '') {
+      console.log('❌ Nom du produit manquant');
+      toast({
+        variant: "destructive",
+        title: "Nom requis",
+        description: "Veuillez renseigner le nom du produit."
       });
       return false;
     }
@@ -55,25 +65,14 @@ export const useProductSubmission = () => {
       return false;
     }
 
-    // Vérifier UNIQUEMENT le nom (champ obligatoire minimal)
-    if (!productData.name?.trim()) {
-      console.log('❌ Nom du produit manquant');
-      toast({
-        variant: "destructive",
-        title: "Nom manquant",
-        description: "Veuillez renseigner le nom du produit."
-      });
-      return false;
-    }
-
-    console.log('✅ Validation SIMPLE réussie - création du produit avec positionnement automatique PROFESSIONNEL');
+    console.log('✅ Validation SIMPLE réussie - 3 champs OK, création du produit');
 
     setIsLoading(true);
 
     try {
       let finalPosition = designPosition;
       
-      // Calcul automatique PROFESSIONNEL de la position si non fournie
+      // Calcul automatique PROFESSIONNEL de la position
       if (!finalPosition) {
         console.log('🔧 Calcul automatique PROFESSIONNEL de la position avec coordonnées EXACTES...');
         
@@ -115,22 +114,22 @@ export const useProductSubmission = () => {
         }
       }
 
-      console.log('✅ Validation SIMPLE réussie, création du produit avec position EXACTE:', finalPosition);
+      console.log('✅ Création du produit avec position EXACTE:', finalPosition);
 
-      // Insertion avec champs SIMPLES - pas de blocage multi-langue
+      // Insertion SIMPLE sans blocage multi-langue
       const { error } = await supabase
         .from('creator_products')
         .insert({
           creator_id: user.id,
           print_product_id: selectedProduct.id,
-          // Champs SIMPLES avec une seule langue (FR par défaut)
+          // Champs SIMPLES - une seule langue principale
           name_fr: productData.name.trim(),
-          name_en: productData.name.trim(), // Fallback automatique
-          name_ty: productData.name.trim(), // Fallback automatique
+          name_en: productData.name.trim(), // Auto-fallback
+          name_ty: productData.name.trim(), // Auto-fallback
           description_fr: productData.description?.trim() || '',
-          description_en: productData.description?.trim() || '', // Fallback automatique
-          description_ty: productData.description?.trim() || '', // Fallback automatique
-          creator_margin_percentage: productData.margin_percentage,
+          description_en: productData.description?.trim() || '', // Auto-fallback
+          description_ty: productData.description?.trim() || '', // Auto-fallback
+          creator_margin_percentage: productData.margin_percentage || 20,
           design_data: {
             design_image_url: designUrl,
             position: finalPosition,
@@ -149,20 +148,24 @@ export const useProductSubmission = () => {
 
       toast({
         title: "Produit créé avec succès",
-        description: "Votre produit personnalisé a été créé avec positionnement automatique professionnel selon la zone définie par l'admin."
+        description: `Votre produit "${productData.name}" a été créé avec positionnement automatique professionnel.`
       });
 
       return true;
     } catch (error: any) {
       console.error('❌ Erreur lors de la création du produit:', error);
       
-      const errorMessage = error?.message?.includes('duplicate') 
-        ? "Ce produit existe déjà. Veuillez modifier le nom ou les paramètres."
-        : "Erreur lors de la création du produit. Veuillez réessayer.";
+      let errorMessage = "Erreur lors de la création du produit. Veuillez réessayer.";
+      
+      if (error?.message?.includes('duplicate')) {
+        errorMessage = "Ce nom de produit existe déjà. Veuillez choisir un autre nom.";
+      } else if (error?.message?.includes('foreign key')) {
+        errorMessage = "Erreur de configuration du produit. Contactez l'administrateur.";
+      }
       
       toast({
         variant: "destructive",
-        title: "Erreur",
+        title: "Erreur de création",
         description: errorMessage
       });
       return false;
