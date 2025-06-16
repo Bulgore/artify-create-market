@@ -119,7 +119,7 @@ export const SVGDisplay: React.FC<SVGDisplayProps> = ({
   }
 
   return (
-    <div className={`${className} w-full h-full`}>
+    <div className={className}>
       <div 
         className="w-full h-full"
         dangerouslySetInnerHTML={{ __html: svgContent }}

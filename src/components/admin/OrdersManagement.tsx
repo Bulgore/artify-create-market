@@ -19,11 +19,11 @@ interface Order {
     name_fr: string;
     creator_id: string;
     print_product_id: string;
-  };
+  } | null;
   users?: {
     full_name_fr: string;
     email: string;
-  };
+  } | null;
 }
 
 const OrdersManagement = () => {
@@ -56,7 +56,20 @@ const OrdersManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      
+      // Map the data to ensure type safety
+      const mappedData: Order[] = (data || []).map(order => ({
+        id: order.id,
+        status: order.status,
+        total_price: order.total_price,
+        quantity: order.quantity,
+        size: order.size,
+        created_at: order.created_at,
+        creator_products: order.creator_products,
+        users: order.users
+      }));
+      
+      setOrders(mappedData);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
