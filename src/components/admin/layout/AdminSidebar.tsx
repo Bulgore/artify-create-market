@@ -14,19 +14,13 @@ import {
 } from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, 
-  FileText, 
-  Package, 
-  Menu,
-  Palette,
-  Images,
-  Calendar,
-  Wrench,
-  Layers,
-  LifeBuoy,
-  LogOut,
-  Zap,
+  Package,
+  ShoppingCart,
+  Users,
   File,
-  Users
+  Settings,
+  LogOut,
+  Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -39,35 +33,19 @@ interface AdminSidebarProps {
 const AdminSidebar = ({ activeSection, setActiveSection, onSignOut }: AdminSidebarProps) => {
   const sidebarSections = [
     {
-      title: "Contenu",
+      title: "Gestion Produits",
       items: [
-        { id: "pages", name: "Pages", icon: FileText },
-        { id: "products", name: "Produits", icon: Package },
-        { id: "blocks", name: "Blocs", icon: Layers },
-        { id: "templates", name: "Gabarits", icon: File }
+        { id: "templates", name: "Gabarits", icon: File },
+        { id: "creator-products", name: "Produits Personnalisés", icon: Package },
+        { id: "orders", name: "Commandes", icon: ShoppingCart }
       ]
     },
     {
-      title: "Apparence", 
+      title: "Configuration", 
       items: [
-        { id: "menu", name: "Menu principal", icon: Menu },
-        { id: "footer", name: "Pied de page", icon: LifeBuoy },
-        { id: "theme", name: "Thème du site", icon: Palette }
-      ]
-    },
-    {
-      title: "Outils",
-      items: [
-        { id: "media", name: "Médias", icon: Images },
-        { id: "calendar", name: "Calendrier", icon: Calendar },
-        { id: "automation", name: "Automatisations", icon: Zap },
-        { id: "maintenance", name: "Maintenance", icon: Wrench }
-      ]
-    },
-    {
-      title: "Administration",
-      items: [
-        { id: "users", name: "Utilisateurs", icon: Users }
+        { id: "printer-mapping", name: "Mapping Imprimeurs", icon: Truck },
+        { id: "users", name: "Utilisateurs", icon: Users },
+        { id: "settings", name: "Paramètres", icon: Settings }
       ]
     }
   ];
@@ -75,7 +53,7 @@ const AdminSidebar = ({ activeSection, setActiveSection, onSignOut }: AdminSideb
   return (
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="p-4">
-        <h2 className="text-lg font-semibold text-gray-900">Administration</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Podsleek Admin V2</h2>
       </SidebarHeader>
 
       <SidebarContent>
