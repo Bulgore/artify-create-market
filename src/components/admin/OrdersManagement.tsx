@@ -15,11 +15,7 @@ interface Order {
   quantity: number;
   size: string;
   created_at: string;
-  creator_products?: {
-    name_fr: string;
-    creator_id: string;
-    print_product_id: string;
-  } | null;
+  print_product_id?: string;
   users?: {
     full_name_fr: string;
     email: string;
@@ -39,15 +35,18 @@ const OrdersManagement = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
+      
+      // Requête simplifiée pour éviter les erreurs de relation
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          *,
-          creator_products (
-            name_fr,
-            creator_id,
-            print_product_id
-          ),
+          id,
+          status,
+          total_price,
+          quantity,
+          size,
+          created_at,
+          print_product_id,
           users (
             full_name_fr,
             email
@@ -57,19 +56,7 @@ const OrdersManagement = () => {
 
       if (error) throw error;
       
-      // Map the data to ensure type safety
-      const mappedData: Order[] = (data || []).map(order => ({
-        id: order.id,
-        status: order.status,
-        total_price: order.total_price,
-        quantity: order.quantity,
-        size: order.size,
-        created_at: order.created_at,
-        creator_products: order.creator_products,
-        users: order.users
-      }));
-      
-      setOrders(mappedData);
+      setOrders(data || []);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       toast({
@@ -96,7 +83,6 @@ const OrdersManagement = () => {
   };
 
   const filteredOrders = orders.filter(order =>
-    order.creator_products?.name_fr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.users?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -144,13 +130,10 @@ const OrdersManagement = () => {
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-medium">
-                          {order.creator_products?.name_fr || "Produit supprimé"}
-                        </h3>
+                        <h3 className="font-medium">Commande #{order.id.slice(0, 8)}...</h3>
                         {getStatusBadge(order.status)}
                       </div>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p><span className="font-medium">Commande:</span> #{order.id.slice(0, 8)}...</p>
                         <p><span className="font-medium">Client:</span> {order.users?.email || "N/A"}</p>
                         <p><span className="font-medium">Quantité:</span> {order.quantity} × {order.size}</p>
                         <p><span className="font-medium">Date:</span> {new Date(order.created_at).toLocaleDateString('fr-FR')}</p>

@@ -1,49 +1,61 @@
 
 import React from "react";
-import { motion } from "framer-motion";
-import TemplatesManagement from "@/components/admin/TemplatesManagement";
-import CreatorProductsOverview from "@/components/admin/products/CreatorProductsOverview";
-import OrdersManagement from "@/components/admin/OrdersManagement";
-import PrinterMappingManagement from "@/components/admin/PrinterMappingManagement";
-import UsersManagement from "@/components/admin/UsersManagement";
-import SiteSettings from "@/components/admin/SiteSettings";
-import AdminDashboard from "@/components/admin/AdminDashboard";
+import AdminDashboard from "../AdminDashboard";
+import TemplatesManagement from "../TemplatesManagement";
+import OrdersManagement from "../OrdersManagement";
+import PrinterMappingManagement from "../PrinterMappingManagement";
+import OrderAutomation from "../automation/OrderAutomation";
+import CreatorProductsOverview from "../products/CreatorProductsOverview";
+import UsersManagement from "../UsersManagement";
+import SiteSettings from "../SiteSettings";
+import MediaManagement from "../MediaManagement";
+import ContentManagement from "../content/ContentManagement";
+import PagesManagement from "../PagesManagement";
+import StatisticsPanel from "../StatisticsPanel";
+import TechnicalDocumentation from "../TechnicalDocumentation";
 
 interface AdminMainContentProps {
-  activeSection: string;
+  activeTab: string;
 }
 
-const AdminMainContent = ({ activeSection }: AdminMainContentProps) => {
-  const renderMainContent = () => {
-    switch (activeSection) {
+const AdminMainContent: React.FC<AdminMainContentProps> = ({ activeTab }) => {
+  const renderContent = () => {
+    switch (activeTab) {
       case "dashboard":
         return <AdminDashboard />;
-      case "templates":
+      case "gabarits":
         return <TemplatesManagement />;
-      case "creator-products":
+      case "produits":
         return <CreatorProductsOverview />;
-      case "orders":
+      case "commandes":
         return <OrdersManagement />;
-      case "printer-mapping":
+      case "mapping":
         return <PrinterMappingManagement />;
-      case "users":
+      case "automatisation":
+        return <OrderAutomation />;
+      case "utilisateurs":
         return <UsersManagement />;
-      case "settings":
+      case "parametres":
         return <SiteSettings />;
+      case "media":
+        return <MediaManagement />;
+      case "contenu":
+        return <ContentManagement />;
+      case "pages":
+        return <PagesManagement />;
+      case "statistiques":
+        return <StatisticsPanel />;
+      case "documentation":
+        return <TechnicalDocumentation />;
       default:
         return <AdminDashboard />;
     }
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="p-6"
-    >
-      {renderMainContent()}
-    </motion.div>
+    <div className="flex-1 p-6 bg-gray-50 min-h-screen">
+      {renderContent()}
+    </div>
   );
 };
 
