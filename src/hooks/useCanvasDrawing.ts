@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { PrintArea, ViewType } from '@/types/printArea';
 
 interface UseCanvasDrawingProps {
@@ -22,107 +22,91 @@ export const useCanvasDrawing = ({
   const svgCanvasRef = useRef<HTMLCanvasElement>(null);
   const mockupCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const drawCanvas = (type: ViewType) => {
-    console.log(`Drawing canvas for ${type}`);
-    const canvas = type === 'svg' ? svgCanvasRef.current : mockupCanvasRef.current;
-    const image = type === 'svg' ? svgImageRef.current : mockupImageRef.current;
-    const area = type === 'svg' ? printArea : (mockupPrintArea || { x: 50, y: 50, width: 200, height: 200 });
-    const imageLoaded = type === 'svg' ? svgImageLoaded : mockupImageLoaded;
-
-    if (!canvas || !image || !imageLoaded) {
-      console.log(`Canvas drawing skipped for ${type}:`, { 
-        canvas: !!canvas, 
-        image: !!image, 
-        imageLoaded 
-      });
-      return;
-    }
-
+  // Fonction pour dessiner la zone d'impression
+  const drawPrintArea = useCallback((
+    canvas: HTMLCanvasElement,
+    image: HTMLImageElement,
+    area: PrintArea
+  ) => {
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      console.error('Could not get canvas context');
-      return;
+    if (!ctx) return;
+
+    // Configurer le canvas aux dimensions de l'image
+    canvas.width = image.width;
+    canvas.height = image.height;
+    
+    // Nettoyer le canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Dessiner la zone d'impression
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(area.x, area.y, area.width, area.height);
+    
+    // Dessiner un overlay semi-transparent en dehors de la zone
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Découper la zone d'impression (rendre transparente)
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillRect(area.x, area.y, area.width, area.height);
+    
+    // Restaurer le mode de composition
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // Redessiner le contour de la zone
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.strokeRect(area.x, area.y, area.width, area.height);
+    
+    // Dessiner la poignée de redimensionnement
+    const handleSize = 8;
+    const handleX = area.x + area.width - handleSize / 2;
+    const handleY = area.y + area.height - handleSize / 2;
+    
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(handleX, handleY, handleSize, handleSize);
+    
+    // Contour blanc pour la poignée
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(handleX, handleY, handleSize, handleSize);
+  }, []);
+
+  // Fonction pour forcer le redessin
+  const forceRedraw = useCallback((type: ViewType) => {
+    if (type === 'svg' && svgCanvasRef.current && svgImageRef.current && svgImageLoaded) {
+      drawPrintArea(svgCanvasRef.current, svgImageRef.current, printArea);
+    } else if (type === 'mockup' && mockupCanvasRef.current && mockupImageRef.current && mockupImageLoaded && mockupPrintArea) {
+      drawPrintArea(mockupCanvasRef.current, mockupImageRef.current, mockupPrintArea);
     }
+  }, [drawPrintArea, svgImageLoaded, mockupImageLoaded, printArea, mockupPrintArea]);
 
-    try {
-      // Set canvas size to fit the container while maintaining aspect ratio
-      const maxWidth = 400;
-      const maxHeight = 400;
-      const scale = Math.min(maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
-      
-      const newWidth = image.naturalWidth * scale;
-      const newHeight = image.naturalHeight * scale;
-      
-      // Always resize canvas to ensure it's visible
-      canvas.width = newWidth;
-      canvas.height = newHeight;
-      canvas.style.width = `${newWidth}px`;
-      canvas.style.height = `${newHeight}px`;
-
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the image
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-      
-      // Draw the print area overlay
-      ctx.strokeStyle = '#33C3F0';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
-      ctx.strokeRect(
-        area.x * scale,
-        area.y * scale,
-        area.width * scale,
-        area.height * scale
-      );
-
-      // Draw corner handle for resizing
-      const handleSize = 8;
-      ctx.fillStyle = '#33C3F0';
-      ctx.setLineDash([]);
-      ctx.fillRect(
-        (area.x + area.width) * scale - handleSize / 2,
-        (area.y + area.height) * scale - handleSize / 2,
-        handleSize,
-        handleSize
-      );
-      
-      console.log(`Canvas drawn successfully for ${type}`, {
-        imageSize: { width: image.naturalWidth, height: image.naturalHeight },
-        canvasSize: { width: canvas.width, height: canvas.height },
-        scale,
-        area
-      });
-    } catch (error) {
-      console.error(`Error drawing ${type} canvas:`, error);
-    }
-  };
-
-  // Force redraw function for manual triggering
-  const forceRedraw = (type: ViewType) => {
-    console.log(`Force redrawing ${type} canvas`);
-    setTimeout(() => drawCanvas(type), 100);
-  };
-
-  // Redraw canvas when areas change
+  // Effet pour redessiner la zone SVG
   useEffect(() => {
-    if (svgImageLoaded && svgImageRef.current) {
-      console.log('Redrawing SVG canvas due to area change');
-      drawCanvas('svg');
+    if (svgCanvasRef.current && svgImageRef.current && svgImageLoaded) {
+      const timeoutId = setTimeout(() => {
+        forceRedraw('svg');
+      }, 100);
+      return () => clearTimeout(timeoutId);
     }
-  }, [printArea, svgImageLoaded]);
+  }, [svgImageLoaded, printArea, forceRedraw]);
 
+  // Effet pour redessiner la zone mockup
   useEffect(() => {
-    if (mockupImageLoaded && mockupImageRef.current) {
-      console.log('Redrawing mockup canvas due to area change');
-      drawCanvas('mockup');
+    if (mockupCanvasRef.current && mockupImageRef.current && mockupImageLoaded && mockupPrintArea) {
+      const timeoutId = setTimeout(() => {
+        forceRedraw('mockup');
+      }, 100);
+      return () => clearTimeout(timeoutId);
     }
-  }, [mockupPrintArea, mockupImageLoaded]);
+  }, [mockupImageLoaded, mockupPrintArea, forceRedraw]);
 
   return {
     svgCanvasRef,
     mockupCanvasRef,
-    drawCanvas,
     forceRedraw
   };
 };

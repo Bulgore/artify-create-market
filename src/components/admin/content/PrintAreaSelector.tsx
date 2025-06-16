@@ -68,7 +68,7 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
       } else if (value === 'mockup' && mockupImageLoaded) {
         forceRedraw('mockup');
       }
-    }, 50);
+    }, 100);
   };
 
   return (
@@ -106,19 +106,19 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                   </Button>
                 </div>
                 {svgUrl ? (
-                  <div className="border border-gray-300 rounded overflow-hidden bg-white relative" style={{ minHeight: '400px', maxHeight: '600px' }}>
-                    <div className="w-full h-full relative">
+                  <div className="border border-gray-300 rounded overflow-hidden bg-white relative">
+                    <div className="w-full relative" style={{ minHeight: '400px', maxHeight: '600px' }}>
                       <SVGDisplay 
                         svgUrl={svgUrl}
-                        className="w-full h-full"
+                        className="w-full h-full block"
+                        style={{ minHeight: '400px' }}
                         onLoad={() => {
                           console.log('SVG template loaded for print area selection');
-                          setTimeout(() => forceRedraw('svg'), 100);
+                          setTimeout(() => forceRedraw('svg'), 150);
                         }}
                         onError={() => console.error('SVG template failed to load')}
                       />
                       
-                      {/* Canvas pour l'interaction par-dessus le SVG */}
                       {svgImageLoaded && (
                         <canvas
                           ref={svgCanvasRef}
@@ -127,7 +127,10 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                           onMouseMove={handleCanvasMouseMove}
                           onMouseUp={handleCanvasMouseUp}
                           onMouseLeave={handleCanvasMouseUp}
-                          style={{ minHeight: '400px' }}
+                          style={{ 
+                            minHeight: '400px',
+                            pointerEvents: 'auto'
+                          }}
                         />
                       )}
                     </div>
@@ -288,6 +291,13 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                       step="0.01"
                     />
                   </div>
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-sm text-blue-700 font-medium">Zone d'aperçu actuelle:</p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Position: ({Math.round(currentMockupArea.x)}, {Math.round(currentMockupArea.y)}) | 
+                    Taille: {Math.round(currentMockupArea.width)}×{Math.round(currentMockupArea.height)}px
+                  </p>
                 </div>
               </div>
             </div>

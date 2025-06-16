@@ -2,7 +2,7 @@
 import { UsePrintAreaProps } from '@/types/printArea';
 import { useImageLoader } from './useImageLoader';
 import { useCanvasDrawing } from './useCanvasDrawing';
-import { usePrintAreaInteractions } from './usePrintAreaInteractions';
+import { useCanvasInteraction } from './useCanvasInteraction';
 
 export const usePrintArea = ({
   svgUrl,
@@ -39,7 +39,7 @@ export const usePrintArea = ({
     handleCanvasMouseMove,
     handleCanvasMouseUp,
     handleInputChange
-  } = usePrintAreaInteractions({
+  } = useCanvasInteraction({
     svgCanvasRef,
     mockupCanvasRef,
     svgImageRef,
