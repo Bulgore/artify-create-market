@@ -1,15 +1,13 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   LayoutDashboard, 
-  FileTemplate, 
+  file, 
   Package, 
   ShoppingCart, 
   Users, 
   TrendingUp,
-  AlertTriangle,
   CheckCircle
 } from "lucide-react";
 
@@ -19,7 +17,7 @@ const AdminDashboard = () => {
       title: "Gabarits Actifs",
       value: "12",
       change: "+2 ce mois",
-      icon: FileTemplate,
+      icon: file,
       color: "text-blue-600"
     },
     {
@@ -164,7 +162,7 @@ const AdminDashboard = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-              <FileTemplate className="h-6 w-6 text-blue-600 mb-2" />
+              <file className="h-6 w-6 text-blue-600 mb-2" />
               <h3 className="font-medium">Nouveau Gabarit</h3>
               <p className="text-sm text-gray-600">Ajouter un gabarit produit</p>
             </div>

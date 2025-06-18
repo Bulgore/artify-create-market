@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -111,7 +110,6 @@ const PrintAreaSelector: React.FC<PrintAreaSelectorProps> = ({
                       <SVGDisplay 
                         svgUrl={svgUrl}
                         className="w-full h-full block"
-                        style={{ minHeight: '400px' }}
                         onLoad={() => {
                           console.log('SVG template loaded for print area selection');
                           setTimeout(() => forceRedraw('svg'), 150);
