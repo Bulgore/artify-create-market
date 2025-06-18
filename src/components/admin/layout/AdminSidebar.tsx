@@ -1,10 +1,11 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
   LayoutDashboard, 
-  file, 
+  File, 
   Package, 
   ShoppingCart, 
   Link2,
@@ -32,7 +33,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const primaryMenuItems = [
     { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-    { id: "gabarits", label: "Gabarits", icon: file, badge: "Core" },
+    { id: "gabarits", label: "Gabarits", icon: File, badge: "Core" },
     { id: "produits", label: "Produits Personnalisés", icon: Package },
     { id: "commandes", label: "Commandes", icon: ShoppingCart },
     { id: "mapping", label: "Mapping Imprimeurs", icon: Link2, badge: "V2" },
