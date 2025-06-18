@@ -33,38 +33,50 @@ class OrderAutomationService {
     try {
       console.log('📄 Génération fichier de production pour commande:', orderId);
       
-      // Récupérer les données de la commande
+      // Récupérer les données de la commande avec une requête simplifiée
       const { data: order, error } = await supabase
         .from('orders')
         .select(`
-          *,
-          creator_products!inner(
-            design_data,
-            creator_id
-          ),
-          product_templates!inner(
-            design_area,
-            technical_instructions_fr
-          )
+          id,
+          size,
+          quantity,
+          total_price,
+          print_product_id
         `)
         .eq('id', orderId)
         .single();
 
       if (error || !order) {
+        console.error('❌ Erreur récupération commande:', error);
         throw new Error('Commande non trouvée');
+      }
+
+      // Récupérer les informations du produit d'impression
+      const { data: printProduct, error: printError } = await supabase
+        .from('print_products')
+        .select(`
+          name_fr,
+          material,
+          print_areas
+        `)
+        .eq('id', order.print_product_id)
+        .single();
+
+      if (printError) {
+        console.error('❌ Erreur récupération produit:', printError);
       }
 
       // Créer le fichier de production (simulation)
       const productionData = {
         order_id: orderId,
-        design_data: order.creator_products.design_data,
-        print_area: order.product_templates.design_area,
+        print_areas: printProduct?.print_areas || {},
         specifications: {
           size: order.size,
           quantity: order.quantity,
-          total_price: order.total_price
+          total_price: order.total_price,
+          material: printProduct?.material || 'Standard'
         },
-        technical_instructions: order.product_templates.technical_instructions_fr,
+        product_name: printProduct?.name_fr || 'Produit personnalisé',
         generated_at: new Date().toISOString()
       };
 
@@ -86,15 +98,12 @@ class OrderAutomationService {
     try {
       console.log('📧 Routage commande vers imprimeur:', orderId);
       
-      // Trouver l'imprimeur assigné au gabarit
+      // Trouver l'imprimeur assigné au produit
       const { data: orderData, error } = await supabase
         .from('orders')
         .select(`
-          *,
-          product_templates!inner(
-            id,
-            name_fr
-          )
+          id,
+          print_product_id
         `)
         .eq('id', orderId)
         .single();
@@ -103,16 +112,28 @@ class OrderAutomationService {
         throw new Error('Impossible de récupérer les données de commande');
       }
 
-      // Mapping simulé gabarit -> imprimeur
+      // Récupérer les informations du produit et de l'imprimeur
+      const { data: printProduct, error: productError } = await supabase
+        .from('print_products')
+        .select(`
+          name_fr,
+          printer_id
+        `)
+        .eq('id', orderData.print_product_id)
+        .single();
+
+      if (productError) {
+        console.error('❌ Erreur récupération produit:', productError);
+      }
+
+      // Mapping simulé pour les imprimeurs
       const printerMapping = {
-        'template-1': { name: 'Pacific Print Co.', email: 'orders@pacificprint.pf' },
-        'template-2': { name: 'Oceania Graphics', email: 'print@oceaniagraphics.nc' },
-        'template-3': { name: 'Atoll Creations', email: 'contact@atollcreations.com' }
+        'default': { name: 'Pacific Print Co.', email: 'orders@pacificprint.pf' },
+        'oceania': { name: 'Oceania Graphics', email: 'print@oceaniagraphics.nc' },
+        'atoll': { name: 'Atoll Creations', email: 'contact@atollcreations.com' }
       };
 
-      const templateId = orderData.product_templates.id;
-      const printer = printerMapping[templateId as keyof typeof printerMapping] || 
-                    printerMapping['template-1'];
+      const printer = printerMapping['default']; // Utiliser l'imprimeur par défaut pour la démo
 
       // Simulation de l'envoi d'email
       console.log(`📨 Envoi email à ${printer.email} pour commande ${orderId}`);

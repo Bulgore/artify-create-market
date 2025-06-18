@@ -121,9 +121,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading }) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="créateur">Créateur - Je veux vendre mes designs</SelectItem>
-            <SelectItem value="imprimeur">Imprimeur - Je veux imprimer des produits</SelectItem>
           </SelectContent>
         </Select>
+        <p className="text-xs text-gray-500">
+          Note: Seul le rôle créateur est disponible dans la version 2.0
+        </p>
       </div>
 
       <Button

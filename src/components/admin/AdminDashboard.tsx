@@ -1,233 +1,183 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { 
-  Users, 
-  Template, 
+  LayoutDashboard, 
+  FileTemplate, 
   Package, 
   ShoppingCart, 
-  TrendingUp, 
-  Zap,
-  CheckCircle2,
+  Users, 
+  TrendingUp,
   AlertTriangle,
-  Clock
+  CheckCircle
 } from "lucide-react";
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({
-    totalUsers: 156,
-    activeCreators: 23,
-    totalTemplates: 12,
-    publishedProducts: 89,
-    pendingOrders: 7,
-    completedOrders: 234,
-    automationStatus: 'active' as 'active' | 'paused' | 'error',
-    lastAutomation: '2024-01-15T14:30:00Z'
-  });
-
-  const quickActions = [
+  const stats = [
     {
-      title: "Nouveau Gabarit",
-      description: "Créer un nouveau gabarit de produit",
-      icon: Template,
-      action: "gabarits",
-      color: "bg-blue-500"
+      title: "Gabarits Actifs",
+      value: "12",
+      change: "+2 ce mois",
+      icon: FileTemplate,
+      color: "text-blue-600"
     },
     {
-      title: "Gérer Commandes",
-      description: "Voir les commandes en attente",
+      title: "Produits Personnalisés",
+      value: "145",
+      change: "+23 cette semaine",
+      icon: Package,
+      color: "text-green-600"
+    },
+    {
+      title: "Commandes Aujourd'hui",
+      value: "8",
+      change: "+3 vs hier",
       icon: ShoppingCart,
-      action: "commandes",
-      color: "bg-green-500"
+      color: "text-orange-600"
     },
     {
-      title: "Configuration Mapping",
-      description: "Attribuer gabarits aux imprimeurs",
+      title: "Créateurs Actifs",
+      value: "34",
+      change: "+5 ce mois",
       icon: Users,
-      action: "mapping",
-      color: "bg-purple-500"
-    },
-    {
-      title: "Automatisation",
-      description: "Gérer le workflow automatisé",
-      icon: Zap,
-      action: "automatisation",
-      color: "bg-orange-500"
+      color: "text-purple-600"
     }
   ];
 
   const recentActivity = [
     {
-      id: 1,
       type: "order",
-      message: "Nouvelle commande #ORDER-156 reçue",
-      time: "Il y a 5 minutes",
-      status: "new"
-    },
-    {
-      id: 2,
-      type: "automation",
-      message: "Fichier de production généré pour #ORDER-155",
-      time: "Il y a 12 minutes",
+      message: "Nouvelle commande #ORD-2024-001",
+      time: "Il y a 2 min",
       status: "success"
     },
     {
-      id: 3,
-      type: "user",
-      message: "Nouveau créateur inscrit: Marie Dupont",
-      time: "Il y a 1 heure",
+      type: "product",
+      message: "Produit personnalisé publié par Marie D.",
+      time: "Il y a 15 min",
       status: "info"
     },
     {
-      id: 4,
-      type: "automation",
-      message: "Commande #ORDER-154 envoyée à Pacific Print Co.",
-      time: "Il y a 2 heures",
+      type: "template",
+      message: "Nouveau gabarit T-shirt ajouté",
+      time: "Il y a 1h",
       status: "success"
+    },
+    {
+      type: "alert",
+      message: "Stock faible pour gabarit Mug Standard",
+      time: "Il y a 2h",
+      status: "warning"
     }
   ];
 
-  const getAutomationStatusBadge = () => {
-    switch (stats.automationStatus) {
-      case 'active':
-        return <Badge className="bg-green-500"><CheckCircle2 className="h-3 w-3 mr-1" />Actif</Badge>;
-      case 'paused':
-        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pausé</Badge>;
-      case 'error':
-        return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Erreur</Badge>;
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">Tableau de Bord Admin</h1>
-        <p className="text-gray-600">Vue d'ensemble de la plateforme Podsleek V2</p>
+        <p className="text-gray-600">Vue d'ensemble de votre plateforme Podsleek V2</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
+          <Card key={index}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{stat.change}</p>
+                </div>
+                <stat.icon className={`h-8 w-8 ${stat.color}`} />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Utilisateurs Total</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Activité Récente
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">
-              +12% par rapport au mois dernier
-            </p>
+            <div className="space-y-4">
+              {recentActivity.map((activity, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className={`mt-1 h-2 w-2 rounded-full ${
+                    activity.status === 'success' ? 'bg-green-500' :
+                    activity.status === 'warning' ? 'bg-yellow-500' :
+                    activity.status === 'info' ? 'bg-blue-500' : 'bg-gray-500'
+                  }`} />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{activity.message}</p>
+                    <p className="text-xs text-gray-500">{activity.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
+        {/* System Status */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Créateurs Actifs</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              État du Système
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeCreators}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.totalTemplates} gabarits disponibles
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Produits Publiés</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.publishedProducts}</div>
-            <p className="text-xs text-muted-foreground">
-              +5 nouveaux cette semaine
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Commandes</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingOrders}</div>
-            <p className="text-xs text-muted-foreground">
-              En attente • {stats.completedOrders} terminées
-            </p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Automatisation des commandes</span>
+                <Badge variant="default" className="bg-green-100 text-green-800">Actif</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Mapping imprimeurs</span>
+                <Badge variant="default" className="bg-green-100 text-green-800">Configuré</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Sécurité RLS</span>
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">En cours</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Sauvegarde données</span>
+                <Badge variant="default" className="bg-green-100 text-green-800">OK</Badge>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Statut automatisation */}
+      {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Statut de l'Automatisation
-          </CardTitle>
+          <CardTitle>Actions Rapides V2</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium">Workflow Automatisé</span>
-                {getAutomationStatusBadge()}
-              </div>
-              <p className="text-sm text-gray-600">
-                Dernière exécution: {new Date(stats.lastAutomation).toLocaleString('fr-FR')}
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+              <FileTemplate className="h-6 w-6 text-blue-600 mb-2" />
+              <h3 className="font-medium">Nouveau Gabarit</h3>
+              <p className="text-sm text-gray-600">Ajouter un gabarit produit</p>
             </div>
-            <Button variant="outline" size="sm">
-              Voir Détails
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Actions rapides */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Actions Rapides</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <div key={index} className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center mb-3`}>
-                  <action.icon className="h-5 w-5 text-white" />
-                </div>
-                <h4 className="font-medium mb-1">{action.title}</h4>
-                <p className="text-sm text-gray-600">{action.description}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Activité récente */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Activité Récente</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className={`w-2 h-2 rounded-full ${
-                  activity.status === 'success' ? 'bg-green-500' : 
-                  activity.status === 'new' ? 'bg-blue-500' : 'bg-gray-500'
-                }`} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.message}</p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
-              </div>
-            ))}
+            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+              <Package className="h-6 w-6 text-green-600 mb-2" />
+              <h3 className="font-medium">Valider Produits</h3>
+              <p className="text-sm text-gray-600">Réviser les créations</p>
+            </div>
+            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+              <ShoppingCart className="h-6 w-6 text-orange-600 mb-2" />
+              <h3 className="font-medium">Traiter Commandes</h3>
+              <p className="text-sm text-gray-600">Gestion manuelle</p>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -119,10 +119,7 @@ export const SVGDisplay: React.FC<SVGDisplayProps> = ({
   }
 
   return (
-    <div 
-      className={className}
-      style={{ minHeight: '300px' }}
-    >
+    <div className={className}>
       <div 
         className="w-full h-full"
         dangerouslySetInnerHTML={{ __html: svgContent }}

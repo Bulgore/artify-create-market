@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
   LayoutDashboard, 
-  Template, 
+  FileTemplate, 
   Package, 
   ShoppingCart, 
   Link2,
@@ -33,7 +33,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const primaryMenuItems = [
     { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-    { id: "gabarits", label: "Gabarits", icon: Template, badge: "Core" },
+    { id: "gabarits", label: "Gabarits", icon: FileTemplate, badge: "Core" },
     { id: "produits", label: "Produits Personnalisés", icon: Package },
     { id: "commandes", label: "Commandes", icon: ShoppingCart },
     { id: "mapping", label: "Mapping Imprimeurs", icon: Link2, badge: "V2" },
