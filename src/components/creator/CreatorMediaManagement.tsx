@@ -239,8 +239,8 @@ const CreatorMediaManagement = () => {
                     <CardContent className="p-4">
                       <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center relative">
                         {file.is_used_in_product && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <AlertTriangle className="h-4 w-4 text-orange-500" title="Utilisé dans un produit" />
+                          <div className="absolute top-2 right-2 z-10" title="Utilisé dans un produit">
+                            <AlertTriangle className="h-4 w-4 text-orange-500" />
                           </div>
                         )}
                         {file.file_type.startsWith('image/') ? (
