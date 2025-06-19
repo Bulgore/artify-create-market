@@ -28,7 +28,7 @@ const TemplateDialog: React.FC<TemplateDialogProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingTemplate ? 'Modifier le gabarit' : 'Créer un nouveau gabarit'}
@@ -41,6 +41,7 @@ const TemplateDialog: React.FC<TemplateDialogProps> = ({
           onSave={onSave}
           onCancel={onClose}
           isEditing={!!editingTemplate}
+          templateId={editingTemplate?.id}
         />
       </DialogContent>
     </Dialog>

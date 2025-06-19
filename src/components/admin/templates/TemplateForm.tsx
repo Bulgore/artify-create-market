@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Save, X } from "lucide-react";
-import TemplateFileUpload from "../content/TemplateFileUpload";
-import PrintAreaSelector from "../content/PrintAreaSelector";
 import { TemplateFormData } from "@/types/templates";
+import { MockupManager } from "./MockupManager";
 
 interface TemplateFormProps {
   formData: TemplateFormData;
@@ -15,6 +14,7 @@ interface TemplateFormProps {
   onSave: () => void;
   onCancel: () => void;
   isEditing: boolean;
+  templateId?: string;
 }
 
 const TemplateForm: React.FC<TemplateFormProps> = ({
@@ -22,7 +22,8 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
   setFormData,
   onSave,
   onCancel,
-  isEditing
+  isEditing,
+  templateId
 }) => {
   return (
     <div className="space-y-6">
@@ -46,33 +47,6 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
           />
         </div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TemplateFileUpload
-          label="Fichier SVG du produit"
-          accept=".svg,image/svg+xml"
-          currentUrl={formData.svg_file_url}
-          onUrlChange={(url) => setFormData({...formData, svg_file_url: url})}
-          fileType="svg"
-        />
-        
-        <TemplateFileUpload
-          label="Image mockup du produit"
-          accept="image/*"
-          currentUrl={formData.mockup_image_url}
-          onUrlChange={(url) => setFormData({...formData, mockup_image_url: url})}
-          fileType="image"
-        />
-      </div>
-
-      <PrintAreaSelector
-        svgUrl={formData.svg_file_url}
-        mockupUrl={formData.mockup_image_url}
-        printArea={formData.design_area}
-        onPrintAreaChange={(area) => setFormData({...formData, design_area: area})}
-        mockupPrintArea={formData.mockup_area}
-        onMockupPrintAreaChange={(area) => setFormData({...formData, mockup_area: area})}
-      />
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -109,6 +83,13 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
           className="h-24"
         />
       </div>
+
+      {isEditing && templateId && (
+        <div>
+          <Label>Gestion des Mockups</Label>
+          <MockupManager templateId={templateId} />
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-4">
         <Button variant="outline" onClick={onCancel}>
