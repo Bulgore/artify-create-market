@@ -38,12 +38,7 @@ export const useImageLoader = ({ svgUrl, mockupUrl }: UseImageLoaderProps) => {
         svgImageRef.current = null;
       };
       
-      // Force reload by adding timestamp if needed
-      const urlWithTimestamp = svgUrl.includes('?') 
-        ? `${svgUrl}&t=${Date.now()}` 
-        : `${svgUrl}?t=${Date.now()}`;
-      
-      img.src = urlWithTimestamp;
+      img.src = svgUrl;
     } else {
       console.log('No SVG URL provided');
       setSvgImageLoaded(false);
@@ -76,12 +71,7 @@ export const useImageLoader = ({ svgUrl, mockupUrl }: UseImageLoaderProps) => {
         mockupImageRef.current = null;
       };
       
-      // Force reload by adding timestamp if needed
-      const urlWithTimestamp = mockupUrl.includes('?') 
-        ? `${mockupUrl}&t=${Date.now()}` 
-        : `${mockupUrl}?t=${Date.now()}`;
-      
-      img.src = urlWithTimestamp;
+      img.src = mockupUrl;
     } else {
       console.log('No mockup URL provided');
       setMockupImageLoaded(false);

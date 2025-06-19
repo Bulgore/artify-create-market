@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Upload, Trash, Search, Image, Copy } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Upload, Trash, Search, Image, Copy, AlertTriangle } from 'lucide-react';
 
 interface MediaFile {
   id: string;
@@ -16,14 +16,14 @@ interface MediaFile {
   file_size: number;
   created_at: string;
   user_id: string;
+  is_used_in_product?: boolean;
 }
 
-const MediaManagement = () => {
+const CreatorMediaManagement = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedType, setSelectedType] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -44,8 +44,25 @@ const MediaManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log('Loaded media files for user:', user.id, data);
-      setMediaFiles(data || []);
+      
+      // Vérifier quels fichiers sont utilisés dans des produits
+      const filesWithUsage = await Promise.all(
+        (data || []).map(async (file) => {
+          const { data: productData } = await supabase
+            .from('creator_products')
+            .select('id')
+            .eq('creator_id', user.id)
+            .or(`preview_url.eq.${file.file_url},design_data->>design_url.eq.${file.file_url}`)
+            .limit(1);
+          
+          return {
+            ...file,
+            is_used_in_product: (productData && productData.length > 0)
+          };
+        })
+      );
+      
+      setMediaFiles(filesWithUsage);
     } catch (error: any) {
       console.error('Error loading media files:', error);
       toast({
@@ -64,7 +81,6 @@ const MediaManagement = () => {
 
     const uploadPromises = Array.from(files).map(async (file) => {
       try {
-        // Upload to Supabase Storage
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
@@ -75,12 +91,10 @@ const MediaManagement = () => {
 
         if (uploadError) throw uploadError;
 
-        // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('media')
           .getPublicUrl(filePath);
 
-        // Save file info to database
         const { error: dbError } = await supabase
           .from('media_files')
           .insert([{
@@ -110,24 +124,31 @@ const MediaManagement = () => {
 
     await Promise.all(uploadPromises);
     loadMediaFiles();
-    
-    // Reset input
     event.target.value = '';
   };
 
-  const deleteFile = async (fileId: string, fileName: string) => {
+  const deleteFile = async (file: MediaFile) => {
+    if (file.is_used_in_product) {
+      toast({
+        variant: "destructive",
+        title: "Suppression impossible",
+        description: "Ce fichier est utilisé dans un produit actif. Supprimez d'abord le produit correspondant."
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('media_files')
         .delete()
-        .eq('id', fileId)
+        .eq('id', file.id)
         .eq('user_id', user?.id);
 
       if (error) throw error;
       
       toast({
         title: "Fichier supprimé",
-        description: `${fileName} a été retiré de votre médiathèque.`
+        description: `${file.filename} a été retiré de votre médiathèque.`
       });
       
       loadMediaFiles();
@@ -157,25 +178,16 @@ const MediaManagement = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const filteredFiles = mediaFiles.filter(file => {
-    const matchesSearch = file.filename.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === "all" || file.file_type.startsWith(selectedType);
-    return matchesSearch && matchesType;
-  });
-
-  const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) {
-      return <Image className="h-8 w-8 text-blue-500" />;
-    }
-    return <Upload className="h-8 w-8 text-gray-500" />;
-  };
+  const filteredFiles = mediaFiles.filter(file => 
+    file.filename.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
+            <Image className="h-5 w-5" />
             Ma Médiathèque
           </CardTitle>
         </CardHeader>
@@ -193,17 +205,6 @@ const MediaManagement = () => {
               </div>
             </div>
             
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2"
-            >
-              <option value="all">Tous les types</option>
-              <option value="image">Images</option>
-              <option value="video">Vidéos</option>
-              <option value="application">Documents</option>
-            </select>
-            
             <div className="relative">
               <input
                 type="file"
@@ -212,7 +213,7 @@ const MediaManagement = () => {
                 onChange={handleFileUpload}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              <Button className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
+              <Button className="bg-blue-600 hover:bg-blue-700">
                 <Upload className="h-4 w-4 mr-2" />
                 Uploader des fichiers
               </Button>
@@ -236,27 +237,20 @@ const MediaManagement = () => {
                 filteredFiles.map((file) => (
                   <Card key={file.id} className="group hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
-                      <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                      <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                        {file.is_used_in_product && (
+                          <div className="absolute top-2 right-2 z-10">
+                            <AlertTriangle className="h-4 w-4 text-orange-500" title="Utilisé dans un produit" />
+                          </div>
+                        )}
                         {file.file_type.startsWith('image/') ? (
                           <img
                             src={file.file_url}
                             alt={file.filename}
                             className="w-full h-full object-cover"
-                            onLoad={(e) => {
-                              console.log('Image loaded successfully:', file.file_url);
-                            }}
-                            onError={(e) => {
-                              console.error('Image load error:', file.file_url);
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
-                                parent.innerHTML = '<div class="text-red-500 text-sm text-center p-2">Image non disponible</div>';
-                              }
-                            }}
                           />
                         ) : (
-                          getFileIcon(file.file_type)
+                          <Image className="h-8 w-8 text-gray-500" />
                         )}
                       </div>
                       
@@ -267,9 +261,11 @@ const MediaManagement = () => {
                         <p className="text-xs text-gray-500">
                           {formatFileSize(file.file_size)}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(file.created_at).toLocaleDateString()}
-                        </p>
+                        {file.is_used_in_product && (
+                          <p className="text-xs text-orange-600 font-medium">
+                            Utilisé dans un produit
+                          </p>
+                        )}
                       </div>
                       
                       <div className="flex justify-between mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -284,9 +280,14 @@ const MediaManagement = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-red-500 hover:text-red-700"
-                          onClick={() => deleteFile(file.id, file.filename)}
-                          title="Supprimer"
+                          className={`${file.is_used_in_product 
+                            ? 'text-gray-400 cursor-not-allowed' 
+                            : 'text-red-500 hover:text-red-700'}`}
+                          onClick={() => deleteFile(file)}
+                          title={file.is_used_in_product 
+                            ? "Supprimez d'abord le produit utilisant ce fichier" 
+                            : "Supprimer"}
+                          disabled={file.is_used_in_product}
                         >
                           <Trash className="h-3 w-3" />
                         </Button>
@@ -303,4 +304,4 @@ const MediaManagement = () => {
   );
 };
 
-export default MediaManagement;
+export default CreatorMediaManagement;

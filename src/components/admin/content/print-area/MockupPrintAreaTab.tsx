@@ -41,6 +41,15 @@ export const MockupPrintAreaTab: React.FC<MockupPrintAreaTabProps> = ({
     }
   };
 
+  if (!mockupUrl) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500 mb-4">Aucune image mockup configurée</p>
+        <p className="text-sm text-gray-400">Ajoutez une URL d'image mockup dans les paramètres du gabarit</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div>
@@ -57,12 +66,12 @@ export const MockupPrintAreaTab: React.FC<MockupPrintAreaTabProps> = ({
           </Button>
         </div>
         <PrintAreaCanvas
-          url={mockupUrl || ''}
+          url={mockupUrl}
           type="mockup"
           imageLoaded={mockupImageLoaded}
           canvasRef={mockupCanvasRef}
           onLoad={() => {}}
-          onError={() => {}}
+          onError={() => console.error('Mockup image failed to load')}
           onCanvasMouseDown={(e) => onCanvasMouseDown(e, 'mockup')}
           onCanvasMouseMove={onCanvasMouseMove}
           onCanvasMouseUp={onCanvasMouseUp}

@@ -73,27 +73,39 @@ export const PrintAreaCanvas: React.FC<PrintAreaCanvasProps> = ({
     );
   }
 
-  // Mockup canvas
+  // Mockup canvas with background image
   return (
-    <div className="border border-gray-300 rounded overflow-hidden bg-white">
-      {imageLoaded ? (
-        <canvas
-          ref={canvasRef}
-          className="cursor-move max-w-full block mx-auto"
-          onMouseDown={onCanvasMouseDown}
-          onMouseMove={onCanvasMouseMove}
-          onMouseUp={onCanvasMouseUp}
-          onMouseLeave={onCanvasMouseUp}
-          style={{ maxHeight: '500px' }}
+    <div className="border border-gray-300 rounded overflow-hidden bg-white relative">
+      <div className="w-full relative" style={{ minHeight: '400px', maxHeight: '600px' }}>
+        {/* Background mockup image */}
+        <img 
+          src={url}
+          alt="Mockup"
+          className="w-full h-full object-contain"
+          onLoad={() => {
+            console.log('Mockup image loaded for print area selection');
+            setTimeout(() => forceRedraw('mockup'), 150);
+            onLoad();
+          }}
+          onError={onError}
         />
-      ) : (
-        <div className="h-96 flex items-center justify-center text-gray-500">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-            <p>Chargement de l'image mockup...</p>
-          </div>
-        </div>
-      )}
+        
+        {/* Canvas overlay for print area */}
+        {imageLoaded && (
+          <canvas
+            ref={canvasRef}
+            className="absolute top-0 left-0 cursor-move w-full h-full"
+            onMouseDown={onCanvasMouseDown}
+            onMouseMove={onCanvasMouseMove}
+            onMouseUp={onCanvasMouseUp}
+            onMouseLeave={onCanvasMouseUp}
+            style={{ 
+              minHeight: '400px',
+              pointerEvents: 'auto'
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };

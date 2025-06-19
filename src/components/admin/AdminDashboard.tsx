@@ -1,6 +1,11 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   File, 
@@ -8,67 +13,182 @@ import {
   ShoppingCart, 
   Users, 
   TrendingUp,
-  CheckCircle
+  CheckCircle,
+  Plus,
+  Eye,
+  Settings
 } from "lucide-react";
 
+interface DashboardStats {
+  templatesCount: number;
+  productsCount: number;
+  ordersCount: number;
+  creatorsCount: number;
+  pendingProductsCount: number;
+}
+
 const AdminDashboard = () => {
-  const stats = [
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<DashboardStats>({
+    templatesCount: 0,
+    productsCount: 0,
+    ordersCount: 0,
+    creatorsCount: 0,
+    pendingProductsCount: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // Charger les statistiques réelles
+      const [templatesResult, productsResult, ordersResult, usersResult] = await Promise.all([
+        supabase.from('product_templates').select('id', { count: 'exact' }),
+        supabase.from('creator_products').select('id', { count: 'exact' }),
+        supabase.from('orders').select('id', { count: 'exact' }),
+        supabase.from('users').select('id, role, creator_status', { count: 'exact' })
+      ]);
+
+      // Compter les créateurs actifs
+      const creators = usersResult.data?.filter(user => 
+        user.role === 'créateur' || user.creator_status === 'approved'
+      ) || [];
+
+      // Compter les produits en attente
+      const pendingProducts = await supabase
+        .from('creator_products')
+        .select('id', { count: 'exact' })
+        .eq('status', 'pending');
+
+      // Charger l'activité récente
+      const recentOrders = await supabase
+        .from('orders')
+        .select('id, created_at, status')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const recentProducts = await supabase
+        .from('creator_products')
+        .select('id, name_fr, created_at, status')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      setStats({
+        templatesCount: templatesResult.count || 0,
+        productsCount: productsResult.count || 0,
+        ordersCount: ordersResult.count || 0,
+        creatorsCount: creators.length,
+        pendingProductsCount: pendingProducts.count || 0
+      });
+
+      // Construire l'activité récente
+      const activity = [
+        ...(recentOrders.data || []).map(order => ({
+          type: 'order',
+          message: `Nouvelle commande #${order.id.slice(-8)}`,
+          time: formatTimeAgo(order.created_at),
+          status: order.status === 'completed' ? 'success' : 'info'
+        })),
+        ...(recentProducts.data || []).map(product => ({
+          type: 'product',
+          message: `Produit "${product.name_fr}" créé`,
+          time: formatTimeAgo(product.created_at),
+          status: product.status === 'published' ? 'success' : 'warning'
+        }))
+      ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 4);
+
+      setRecentActivity(activity);
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger les statistiques du tableau de bord."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'À l\'instant';
+    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
+    if (diffInMinutes < 1440) return `Il y a ${Math.floor(diffInMinutes / 60)}h`;
+    return `Il y a ${Math.floor(diffInMinutes / 1440)} jour(s)`;
+  };
+
+  const handleCreateTemplate = () => {
+    // Naviguer vers la gestion des gabarits et ouvrir le dialog de création
+    window.dispatchEvent(new CustomEvent('openCreateTemplateDialog'));
+    // Vous pourriez aussi utiliser un store global ou un contexte pour cela
+  };
+
+  const handleValidateProducts = () => {
+    // Naviguer vers la section des produits en attente de validation
+    navigate('/admin?tab=produits&filter=pending');
+  };
+
+  const handleProcessOrders = () => {
+    // Naviguer vers la gestion des commandes
+    navigate('/admin?tab=commandes');
+  };
+
+  const statsData = [
     {
       title: "Gabarits Actifs",
-      value: "12",
-      change: "+2 ce mois",
+      value: stats.templatesCount.toString(),
+      change: `${stats.templatesCount > 0 ? '+' : ''}${stats.templatesCount} au total`,
       icon: File,
       color: "text-blue-600"
     },
     {
       title: "Produits Personnalisés",
-      value: "145",
-      change: "+23 cette semaine",
+      value: stats.productsCount.toString(),
+      change: `${stats.pendingProductsCount} en attente`,
       icon: Package,
       color: "text-green-600"
     },
     {
-      title: "Commandes Aujourd'hui",
-      value: "8",
-      change: "+3 vs hier",
+      title: "Commandes",
+      value: stats.ordersCount.toString(),
+      change: `${stats.ordersCount} au total`,
       icon: ShoppingCart,
       color: "text-orange-600"
     },
     {
       title: "Créateurs Actifs",
-      value: "34",
-      change: "+5 ce mois",
+      value: stats.creatorsCount.toString(),
+      change: `${stats.creatorsCount} inscrits`,
       icon: Users,
       color: "text-purple-600"
     }
   ];
 
-  const recentActivity = [
-    {
-      type: "order",
-      message: "Nouvelle commande #ORD-2024-001",
-      time: "Il y a 2 min",
-      status: "success"
-    },
-    {
-      type: "product",
-      message: "Produit personnalisé publié par Marie D.",
-      time: "Il y a 15 min",
-      status: "info"
-    },
-    {
-      type: "template",
-      message: "Nouveau gabarit T-shirt ajouté",
-      time: "Il y a 1h",
-      status: "success"
-    },
-    {
-      type: "alert",
-      message: "Stock faible pour gabarit Mug Standard",
-      time: "Il y a 2h",
-      status: "warning"
-    }
-  ];
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -79,7 +199,7 @@ const AdminDashboard = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {statsData.map((stat, index) => (
           <Card key={index}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -106,7 +226,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
+              {recentActivity.length > 0 ? recentActivity.map((activity, index) => (
                 <div key={index} className="flex items-start gap-3">
                   <div className={`mt-1 h-2 w-2 rounded-full ${
                     activity.status === 'success' ? 'bg-green-500' :
@@ -118,7 +238,9 @@ const AdminDashboard = () => {
                     <p className="text-xs text-gray-500">{activity.time}</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-gray-500 text-center py-4">Aucune activité récente</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -134,20 +256,19 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm">Automatisation des commandes</span>
+                <span className="text-sm">Base de données</span>
+                <Badge variant="default" className="bg-green-100 text-green-800">Opérationnelle</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Stockage média</span>
                 <Badge variant="default" className="bg-green-100 text-green-800">Actif</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Mapping imprimeurs</span>
-                <Badge variant="default" className="bg-green-100 text-green-800">Configuré</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Sécurité RLS</span>
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">En cours</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Sauvegarde données</span>
-                <Badge variant="default" className="bg-green-100 text-green-800">OK</Badge>
+                <span className="text-sm">Produits en attente</span>
+                <Badge variant={stats.pendingProductsCount > 0 ? "default" : "secondary"} 
+                       className={stats.pendingProductsCount > 0 ? "bg-yellow-100 text-yellow-800" : ""}>
+                  {stats.pendingProductsCount}
+                </Badge>
               </div>
             </div>
           </CardContent>
@@ -157,25 +278,56 @@ const AdminDashboard = () => {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Actions Rapides V2</CardTitle>
+          <CardTitle>Actions Rapides</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-              <File className="h-6 w-6 text-blue-600 mb-2" />
-              <h3 className="font-medium">Nouveau Gabarit</h3>
-              <p className="text-sm text-gray-600">Ajouter un gabarit produit</p>
-            </div>
-            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-              <Package className="h-6 w-6 text-green-600 mb-2" />
-              <h3 className="font-medium">Valider Produits</h3>
-              <p className="text-sm text-gray-600">Réviser les créations</p>
-            </div>
-            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-              <ShoppingCart className="h-6 w-6 text-orange-600 mb-2" />
-              <h3 className="font-medium">Traiter Commandes</h3>
-              <p className="text-sm text-gray-600">Gestion manuelle</p>
-            </div>
+            <Button
+              variant="outline"
+              className="p-6 h-auto flex flex-col items-start gap-2 hover:bg-blue-50 border-blue-200"
+              onClick={handleCreateTemplate}
+            >
+              <div className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-blue-600" />
+                <File className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-medium">Nouveau Gabarit</h3>
+                <p className="text-sm text-gray-600">Ajouter un gabarit produit</p>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="p-6 h-auto flex flex-col items-start gap-2 hover:bg-green-50 border-green-200"
+              onClick={handleValidateProducts}
+            >
+              <div className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-green-600" />
+                <Package className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-medium">Valider Produits</h3>
+                <p className="text-sm text-gray-600">
+                  {stats.pendingProductsCount} produit(s) en attente
+                </p>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="p-6 h-auto flex flex-col items-start gap-2 hover:bg-orange-50 border-orange-200"
+              onClick={handleProcessOrders}
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-orange-600" />
+                <ShoppingCart className="h-5 w-5 text-orange-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-medium">Traiter Commandes</h3>
+                <p className="text-sm text-gray-600">Gestion des commandes</p>
+              </div>
+            </Button>
           </div>
         </CardContent>
       </Card>
