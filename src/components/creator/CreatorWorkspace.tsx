@@ -38,7 +38,18 @@ const CreatorWorkspace: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDesigns(data || []);
+      
+      // Map the data to match the Design interface
+      const mappedDesigns = (data || []).map(item => ({
+        id: item.id,
+        name: item.name_fr || '', // Use French name as default
+        description: item.description_fr || undefined,
+        preview_url: item.preview_url || '',
+        is_published: item.is_published,
+        creator_margin_percentage: item.creator_margin_percentage
+      }));
+      
+      setDesigns(mappedDesigns);
     } catch (error) {
       console.error('Error loading designs:', error);
     }
