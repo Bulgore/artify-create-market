@@ -27,14 +27,16 @@ export const useCanvasInteraction = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [activeView, setActiveView] = useState<ViewType>('svg');
   const [initialArea, setInitialArea] = useState<PrintArea | null>(null);
+  const [activeView, setActiveView] = useState<ViewType>('svg');
 
   const currentSvgArea = printArea;
   const currentMockupArea = mockupPrintArea || { x: 50, y: 50, width: 200, height: 200 };
 
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>, type: ViewType) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     setActiveView(type);
     
     const canvas = type === 'svg' ? svgCanvasRef.current : mockupCanvasRef.current;
@@ -45,11 +47,13 @@ export const useCanvasInteraction = ({
     const { x, y } = getCanvasCoordinates(e, canvas, image);
     const area = type === 'svg' ? currentSvgArea : currentMockupArea;
     
+    console.log('Mouse down at:', { x, y }, 'Canvas area:', area);
+    
     setDragStart({ x, y });
     setInitialArea({ ...area });
 
-    // Check if clicking on resize handle (bottom-right corner)
-    const handleSize = 10;
+    // Calculate handle size based on image dimensions
+    const handleSize = Math.max(8, image.naturalWidth / 50);
     const isOnHandle = isPointInResizeHandle(x, y, area, handleSize);
 
     if (isOnHandle) {
@@ -60,6 +64,10 @@ export const useCanvasInteraction = ({
       console.log('Starting drag operation');
       setIsDragging(true);
       setIsResizing(false);
+    } else {
+      console.log('Click outside area');
+      setIsDragging(false);
+      setIsResizing(false);
     }
   }, [svgCanvasRef, mockupCanvasRef, svgImageRef, mockupImageRef, currentSvgArea, currentMockupArea]);
 
@@ -67,13 +75,15 @@ export const useCanvasInteraction = ({
     if (!isDragging && !isResizing) return;
     if (!initialArea) return;
 
+    e.preventDefault();
+    e.stopPropagation();
+
     const canvas = activeView === 'svg' ? svgCanvasRef.current : mockupCanvasRef.current;
     const image = activeView === 'svg' ? svgImageRef.current : mockupImageRef.current;
     
     if (!canvas || !image) return;
 
     const { x, y } = getCanvasCoordinates(e, canvas, image);
-    const area = activeView === 'svg' ? currentSvgArea : currentMockupArea;
     const onChange = activeView === 'svg' ? onPrintAreaChange : onMockupPrintAreaChange;
 
     if (!onChange) return;
@@ -83,7 +93,7 @@ export const useCanvasInteraction = ({
       const deltaY = y - dragStart.y;
       
       const newArea = constrainAreaToBounds({
-        ...area,
+        ...initialArea,
         x: initialArea.x + deltaX,
         y: initialArea.y + deltaY
       }, image.naturalWidth, image.naturalHeight);
@@ -91,11 +101,12 @@ export const useCanvasInteraction = ({
       console.log('Dragging to new position:', newArea);
       onChange(newArea);
     } else if (isResizing) {
-      const newWidth = Math.max(50, x - area.x);
-      const newHeight = Math.max(50, y - area.y);
+      // Calculate new dimensions from initial area position
+      const newWidth = Math.max(50, x - initialArea.x);
+      const newHeight = Math.max(50, y - initialArea.y);
       
       const newArea = constrainAreaToBounds({
-        ...area,
+        ...initialArea,
         width: newWidth,
         height: newHeight
       }, image.naturalWidth, image.naturalHeight);
@@ -103,7 +114,7 @@ export const useCanvasInteraction = ({
       console.log('Resizing to new dimensions:', newArea);
       onChange(newArea);
     }
-  }, [isDragging, isResizing, activeView, initialArea, dragStart, currentSvgArea, currentMockupArea, onPrintAreaChange, onMockupPrintAreaChange, svgCanvasRef, mockupCanvasRef, svgImageRef, mockupImageRef]);
+  }, [isDragging, isResizing, activeView, initialArea, dragStart, onPrintAreaChange, onMockupPrintAreaChange, svgCanvasRef, mockupCanvasRef, svgImageRef, mockupImageRef]);
 
   const handleCanvasMouseUp = useCallback(() => {
     console.log('Mouse up - ending interaction');
@@ -125,15 +136,27 @@ export const useCanvasInteraction = ({
 
   // Global mouse up handler
   useEffect(() => {
-    const handleGlobalMouseUp = () => {
+    const handleGlobalMouseUp = (e: MouseEvent) => {
       setIsDragging(false);
       setIsResizing(false);
       setInitialArea(null);
     };
 
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Prevent text selection during drag
+      if (isDragging || isResizing) {
+        e.preventDefault();
+      }
+    };
+
     document.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, []);
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+    };
+  }, [isDragging, isResizing]);
 
   return {
     currentSvgArea,
