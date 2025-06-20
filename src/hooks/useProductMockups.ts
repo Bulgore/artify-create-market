@@ -42,8 +42,7 @@ export const useProductMockups = (templateId?: string) => {
 
       const mapped = (data || []).map((m) => ({
         ...m,
-        url: buildImageUrl(m.mockup_url),
-        mockup_url: buildImageUrl(m.mockup_url)
+        url: buildImageUrl(m.mockup_url)
       }));
 
       setMockups(mapped);

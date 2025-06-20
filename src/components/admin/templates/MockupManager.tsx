@@ -121,12 +121,17 @@ export const MockupManager: React.FC<MockupManagerProps> = ({ templateId }) => {
           {mockups.map((mockup) => (
             <Card key={mockup.id} className={`relative ${mockup.is_primary ? 'ring-2 ring-blue-500' : ''}`}>
               <CardContent className="p-4">
-                <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100">
+                <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 relative">
                   <img
                     src={buildImageUrl(mockup.mockup_url)}
                     alt={mockup.mockup_name}
                     className="w-full h-full object-cover"
                   />
+                  {(!mockup.mockup_url || mockup.mockup_url.startsWith('blob:')) && (
+                    <p className="text-xs text-red-500 mt-2 p-2 bg-white bg-opacity-70 absolute bottom-0 left-0 right-0 text-center">
+                      Mockup invalide, merci de ré-uploader l'image
+                    </p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">

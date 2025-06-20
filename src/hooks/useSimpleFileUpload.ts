@@ -14,15 +14,19 @@ export const useSimpleFileUpload = () => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${bucket}/${fileName}`;
 
-      // Pour l'instant, on simule l'upload et on retourne une URL temporaire
-      const tempUrl = URL.createObjectURL(file);
-      
-      // TODO: Implémenter l'upload réel vers Supabase Storage une fois configuré
-      console.log('File would be uploaded to:', filePath);
-      
-      return tempUrl;
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, { upsert: true });
+
+      if (error) {
+        throw error;
+      }
+
+      const filePath = `${bucket}/${fileName}`;
+      console.log('File uploaded to:', filePath);
+
+      return filePath;
     } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
