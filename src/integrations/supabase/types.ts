@@ -136,15 +136,15 @@ export type Database = {
           description_fr: string | null
           description_ty: string | null
           design_data: Json
+          design_file_info: Json | null
+          generated_mockups: Json | null
           id: string
           is_published: boolean
           name_en: string | null
           name_fr: string
           name_ty: string | null
-          preview_url: string | null
-          generated_mockups: Json | null
           original_design_url: string | null
-          design_file_info: Json | null
+          preview_url: string | null
           print_product_id: string
           seo_description_en: string | null
           seo_description_fr: string | null
@@ -166,15 +166,15 @@ export type Database = {
           description_fr?: string | null
           description_ty?: string | null
           design_data?: Json
+          design_file_info?: Json | null
+          generated_mockups?: Json | null
           id?: string
           is_published?: boolean
           name_en?: string | null
           name_fr: string
           name_ty?: string | null
-          preview_url?: string | null
-          generated_mockups?: Json | null
           original_design_url?: string | null
-          design_file_info?: Json | null
+          preview_url?: string | null
           print_product_id: string
           seo_description_en?: string | null
           seo_description_fr?: string | null
@@ -196,15 +196,15 @@ export type Database = {
           description_fr?: string | null
           description_ty?: string | null
           design_data?: Json
+          design_file_info?: Json | null
+          generated_mockups?: Json | null
           id?: string
           is_published?: boolean
           name_en?: string | null
           name_fr?: string
           name_ty?: string | null
-          preview_url?: string | null
-          generated_mockups?: Json | null
           original_design_url?: string | null
-          design_file_info?: Json | null
+          preview_url?: string | null
           print_product_id?: string
           seo_description_en?: string | null
           seo_description_fr?: string | null
@@ -629,6 +629,104 @@ export type Database = {
           },
         ]
       }
+      printer_emails: {
+        Row: {
+          attachments: Json | null
+          creator_product_id: string
+          delivery_status: string | null
+          email_content: string
+          email_subject: string
+          id: string
+          order_id: string
+          printer_email: string
+          sent_at: string
+        }
+        Insert: {
+          attachments?: Json | null
+          creator_product_id: string
+          delivery_status?: string | null
+          email_content: string
+          email_subject: string
+          id?: string
+          order_id: string
+          printer_email: string
+          sent_at?: string
+        }
+        Update: {
+          attachments?: Json | null
+          creator_product_id?: string
+          delivery_status?: string | null
+          email_content?: string
+          email_subject?: string
+          id?: string
+          order_id?: string
+          printer_email?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_emails_creator_product_id_fkey"
+            columns: ["creator_product_id"]
+            isOneToOne: false
+            referencedRelation: "creator_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_emails_creator_product_id_fkey"
+            columns: ["creator_product_id"]
+            isOneToOne: false
+            referencedRelation: "creator_products_with_pricing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_mockups: {
+        Row: {
+          created_at: string
+          display_order: number
+          has_print_area: boolean
+          id: string
+          is_primary: boolean
+          mockup_name: string
+          mockup_url: string
+          print_area: Json | null
+          product_template_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          has_print_area?: boolean
+          id?: string
+          is_primary?: boolean
+          mockup_name: string
+          mockup_url: string
+          print_area?: Json | null
+          product_template_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          has_print_area?: boolean
+          id?: string
+          is_primary?: boolean
+          mockup_name?: string
+          mockup_url?: string
+          print_area?: Json | null
+          product_template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_mockups_product_template_id_fkey"
+            columns: ["product_template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_templates: {
         Row: {
           available_colors: string[] | null
@@ -690,6 +788,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_templates_primary_mockup_id_fkey"
+            columns: ["primary_mockup_id"]
+            isOneToOne: false
+            referencedRelation: "product_mockups"
             referencedColumns: ["id"]
           },
         ]

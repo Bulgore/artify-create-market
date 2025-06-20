@@ -14,10 +14,6 @@ export const useProductData = () => {
     margin_percentage: 20
   });
 
-  const updateProductData = (updates: Partial<ProductData>) => {
-    setProductData(prev => ({ ...prev, ...updates }));
-  };
-
   const resetProductData = () => {
     setProductData({
       name: '',
@@ -29,7 +25,6 @@ export const useProductData = () => {
   return {
     productData,
     setProductData,
-    updateProductData,
     resetProductData
   };
 };

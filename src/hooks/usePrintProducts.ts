@@ -40,34 +40,49 @@ export const usePrintProducts = () => {
 
       console.log("✅ User authenticated:", user.email);
       
-      // D'abord, récupérer tous les produits actifs
+      // Récupérer tous les produits actifs avec leurs templates et mockups
       const { data: allProducts, error: productsError } = await supabase
         .from('print_products')
-        .select('*')
+        .select(`
+          *,
+          product_templates (
+            id,
+            name_fr,
+            name_en,
+            name_ty,
+            technical_instructions_fr,
+            technical_instructions_en,
+            technical_instructions_ty,
+            type,
+            available_positions,
+            available_colors,
+            is_active,
+            created_by,
+            created_at,
+            updated_at,
+            primary_mockup_id,
+            product_mockups!product_templates_primary_mockup_id_fkey (
+              id,
+              mockup_url,
+              mockup_name,
+              print_area,
+              is_primary
+            )
+          )
+        `)
         .eq('is_active', true);
 
       if (productsError) {
         console.error("❌ Error fetching print products:", productsError);
-        
-        // Diagnostiquer le type d'erreur
-        if (productsError.code === 'PGRST116' || productsError.message?.includes('permission denied')) {
-          toast({
-            variant: "destructive",
-            title: "Erreur de permission",
-            description: "Vous n'avez pas les droits pour accéder aux produits d'impression. Vérifiez votre rôle utilisateur.",
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Erreur de base de données",
-            description: `Impossible de charger les produits: ${productsError.message}`,
-          });
-        }
+        toast({
+          variant: "destructive",
+          title: "Erreur de base de données",
+          description: `Impossible de charger les produits: ${productsError.message}`,
+        });
         throw productsError;
       }
 
       console.log("📦 Raw products from database:", allProducts?.length || 0);
-      console.log("📦 Products data:", allProducts);
 
       if (!allProducts || allProducts.length === 0) {
         console.log("⚠️ No active products found");
@@ -79,7 +94,7 @@ export const usePrintProducts = () => {
         return;
       }
 
-      // Ensuite, récupérer les gabarits pour chaque produit qui en a un
+      // Traiter les produits avec templates
       const productsWithTemplates = [];
       
       for (const product of allProducts) {
@@ -90,61 +105,38 @@ export const usePrintProducts = () => {
         console.log(`   - template_id: ${product.template_id}`);
         console.log(`   - is_active: ${product.is_active}`);
         
-        if (!product.template_id) {
-          console.log(`   ❌ No template_id - SKIPPING`);
+        if (!product.template_id || !product.product_templates) {
+          console.log(`   ❌ No template - SKIPPING`);
           continue;
         }
 
-        // Récupérer le gabarit associé
-        const { data: template, error: templateError } = await supabase
-          .from('product_templates')
-          .select('*')
-          .eq('id', product.template_id)
-          .eq('is_active', true)
-          .single();
-
-        if (templateError) {
-          console.error(`   ❌ Template fetch error for ${mappedProduct.name}:`, templateError);
-          
-          // Diagnostiquer si c'est un problème de permission
-          if (templateError.code === 'PGRST116' || templateError.message?.includes('permission denied')) {
-            console.error(`   ❌ Permission denied for template ${product.template_id}`);
-          }
-          continue;
-        }
-
-        if (!template) {
-          console.log(`   ❌ No active template found - SKIPPING`);
-          continue;
-        }
-
+        const template = product.product_templates;
         const mappedTemplate = mapTemplateWithCompatibility(template);
+
+        // Récupérer le mockup principal avec sa zone d'impression
+        let mockupImageUrl = '';
+        if (template.primary_mockup_id && template.product_mockups?.length > 0) {
+          const primaryMockup = template.product_mockups.find(m => m.id === template.primary_mockup_id);
+          if (primaryMockup) {
+            mockupImageUrl = primaryMockup.mockup_url;
+            console.log(`   ✅ Primary mockup found: ${primaryMockup.mockup_name}`);
+          }
+        }
+
+        if (!mockupImageUrl) {
+          console.log(`   ❌ No primary mockup - SKIPPING`);
+          continue;
+        }
+
         console.log(`   ✅ Template found: ${mappedTemplate.name}`);
-        console.log(`   📐 Template design_area:`, template.design_area);
-
-        // Vérifier la zone d'impression
-        let designArea = null;
-        try {
-          designArea = typeof template.design_area === 'string' 
-            ? JSON.parse(template.design_area) 
-            : template.design_area;
-        } catch (e) {
-          console.error(`   ❌ Invalid design_area JSON for ${mappedProduct.name}:`, e);
-          continue;
-        }
-
-        if (!designArea || !designArea.width || !designArea.height || designArea.width <= 0 || designArea.height <= 0) {
-          console.log(`   ❌ Invalid design area dimensions - SKIPPING`);
-          console.log(`   📐 Design area:`, designArea);
-          continue;
-        }
-
-        console.log(`   ✅ Valid design area: ${designArea.width}x${designArea.height}`);
 
         // Construire l'objet produit avec template
         const productWithTemplate = {
           ...mappedProduct,
-          product_templates: mappedTemplate
+          product_templates: {
+            ...mappedTemplate,
+            mockup_image_url: mockupImageUrl
+          }
         };
 
         productsWithTemplates.push(productWithTemplate);
@@ -159,19 +151,9 @@ export const usePrintProducts = () => {
 
       if (productsWithTemplates.length === 0) {
         console.log("⚠️ No valid products found after validation");
-        
-        // Diagnostic détaillé
-        const diagnostics = allProducts.map(product => {
-          const mappedProduct = mapPrintProductWithCompatibility(product);
-          const issues = [];
-          if (!product.template_id) issues.push("No template assigned");
-          if (!product.is_active) issues.push("Product not active");
-          return `${mappedProduct.name}: ${issues.length > 0 ? issues.join(', ') : 'Unknown issue'}`;
-        });
-
         toast({
           title: "Aucun produit configuré",
-          description: `${allProducts.length} produit(s) trouvé(s) mais aucun n'est correctement configuré pour la personnalisation.\n\nProblèmes détectés:\n${diagnostics.join('\n')}`,
+          description: `${allProducts.length} produit(s) trouvé(s) mais aucun n'est correctement configuré pour la personnalisation.`,
         });
       } else {
         console.log(`✅ ${productsWithTemplates.length} produits disponibles pour la personnalisation`);
@@ -186,7 +168,6 @@ export const usePrintProducts = () => {
     } catch (error: any) {
       console.error('❌ CRITICAL ERROR in fetchPrintProducts:', error);
       
-      // Message d'erreur plus informatif selon le type d'erreur
       let errorMessage = "Erreur inconnue";
       if (error.code === 'PGRST116') {
         errorMessage = "Permissions insuffisantes. Vérifiez votre rôle utilisateur.";

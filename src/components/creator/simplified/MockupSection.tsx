@@ -14,8 +14,7 @@ export const MockupSection: React.FC<MockupSectionProps> = ({
   mockupUrl,
   designUrl,
   designArea,
-  designPosition,
-  svgTemplateUrl
+  designPosition
 }) => {
   return (
     <MockupPreview

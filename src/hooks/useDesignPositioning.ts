@@ -46,13 +46,7 @@ export const useDesignPositioning = () => {
         zoneImpressionAdmin: designArea,
         designOriginal: designDimensions,
         positionFinaleExacte: finalPosition,
-        agrandissementMaximal: Math.round(autoPosition.scale * 100) + '%',
-        verificationCentrage: {
-          centreX: finalPosition.x + finalPosition.width / 2,
-          centreZoneX: designArea.x + designArea.width / 2,
-          centreY: finalPosition.y + finalPosition.height / 2,
-          centreZoneY: designArea.y + designArea.height / 2
-        }
+        agrandissementMaximal: Math.round(autoPosition.scale * 100) + '%'
       });
       
       setAutoDesignPosition(finalPosition);
