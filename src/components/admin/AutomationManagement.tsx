@@ -50,7 +50,7 @@ const AutomationManagement = () => {
         {
           id: '1',
           name: 'Banner Promo Été',
-          description: 'Afficher la bannière de promotion été automatiquement',
+          description: "Afficher la bannière de promotion d'été automatiquement",
           contentType: 'banner',
           contentId: 'summer-banner',
           startDate: '2024-06-01',

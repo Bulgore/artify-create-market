@@ -4,7 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { PrintProduct, ProductData } from '@/types/customProduct';
-import { parseDesignArea } from '@/types/designArea';
+import { parsePrintArea } from '@/types/printArea';
 import { calculateAutoPosition, getImageDimensions } from '@/utils/designPositioning';
 
 export const useProductSubmission = () => {
@@ -99,7 +99,17 @@ export const useProductSubmission = () => {
         console.log('🔧 Calcul automatique de la position...');
         
         try {
-          const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
+          let designArea = { x: 50, y: 50, width: 200, height: 200 };
+          if (selectedProduct.product_templates.primary_mockup_id) {
+            const { data } = await supabase
+              .from('product_mockups')
+              .select('print_area')
+              .eq('id', selectedProduct.product_templates.primary_mockup_id)
+              .single();
+            if (data?.print_area) {
+              designArea = parsePrintArea(data.print_area);
+            }
+          }
           console.log('📐 Zone d\'impression définie:', designArea);
           
           const designDimensions = await getImageDimensions(designUrl);
@@ -120,16 +130,15 @@ export const useProductSubmission = () => {
           
         } catch (error) {
           console.error('⚠️ Erreur calcul automatique (utilisation fallback):', error);
-          
+
           // Fallback sécurisé
-          const designArea = parseDesignArea(selectedProduct.product_templates.design_area);
           finalPosition = {
-            x: designArea.x + (designArea.width * 0.1),
-            y: designArea.y + (designArea.height * 0.1),
-            width: designArea.width * 0.8,
-            height: designArea.height * 0.8,
+            x: 50,
+            y: 50,
+            width: 200,
+            height: 200,
             rotation: 0,
-            scale: 0.8
+            scale: 1
           };
           
           console.log('⚠️ Position fallback utilisée:', finalPosition);
@@ -151,8 +160,7 @@ export const useProductSubmission = () => {
         creator_margin_percentage: productData.margin_percentage || 20,
         design_data: {
           design_image_url: designUrl,
-          position: finalPosition,
-          template_svg_url: selectedProduct.product_templates.svg_file_url
+          position: finalPosition
         },
         preview_url: selectedProduct.product_templates.mockup_image_url,
         is_published: false

@@ -1,14 +1,13 @@
 
 import React from 'react';
 import { MockupPreview } from '../design-uploader/MockupPreview';
-import type { DesignArea } from '@/types/designArea';
+import type { PrintArea } from '@/types/printArea';
 
 interface MockupSectionProps {
   mockupUrl?: string;
   designUrl?: string;
-  designArea?: DesignArea;
+  designArea?: PrintArea;
   designPosition?: any;
-  svgTemplateUrl?: string;
 }
 
 export const MockupSection: React.FC<MockupSectionProps> = ({
@@ -24,7 +23,6 @@ export const MockupSection: React.FC<MockupSectionProps> = ({
       designUrl={designUrl}
       designArea={designArea}
       designPosition={designPosition}
-      svgTemplateUrl={svgTemplateUrl}
     />
   );
 };
