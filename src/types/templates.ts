@@ -19,6 +19,7 @@ export interface ProductTemplate {
   updated_at?: string;
   created_by?: string;
   primary_mockup_id?: string;
+  printer_id?: string | null;
 }
 
 export interface ProductMockup {
@@ -41,6 +42,7 @@ export interface TemplateFormData {
   available_colors: string[];
   technical_instructions: string;
   is_active: boolean;
+  printer_id: string;
 }
 
 export const DEFAULT_TEMPLATE_FORM_DATA: TemplateFormData = {
@@ -49,12 +51,14 @@ export const DEFAULT_TEMPLATE_FORM_DATA: TemplateFormData = {
   available_positions: ['face'],
   available_colors: ['white', 'black'],
   technical_instructions: '',
-  is_active: true
+  is_active: true,
+  printer_id: ''
 };
 
 // Fonction utilitaire pour mapper les templates avec compatibilité
 export const mapTemplateWithCompatibility = (template: any): ProductTemplate => ({
   ...template,
   name: template.name ?? template.name_fr ?? '',
-  technical_instructions: template.technical_instructions ?? template.technical_instructions_fr ?? ''
+  technical_instructions: template.technical_instructions ?? template.technical_instructions_fr ?? '',
+  printer_id: template.printer_id ?? template.template_printers?.printer_id ?? null
 });

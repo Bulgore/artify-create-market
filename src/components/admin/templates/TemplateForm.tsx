@@ -7,6 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Save, X } from "lucide-react";
 import { TemplateFormData } from "@/types/templates";
 import { MockupManager } from "./MockupManager";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { usePrinters } from "@/hooks/usePrinters";
 
 interface TemplateFormProps {
   formData: TemplateFormData;
@@ -25,6 +33,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
   isEditing,
   templateId
 }) => {
+  const { printers } = usePrinters();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
@@ -74,6 +83,25 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
       </div>
 
       <div>
+        <Label>Imprimeur associé *</Label>
+        <Select
+          value={formData.printer_id}
+          onValueChange={(value) => setFormData({ ...formData, printer_id: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Choisir un imprimeur" />
+          </SelectTrigger>
+          <SelectContent>
+            {printers.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
         <Label htmlFor="instructions">Instructions techniques</Label>
         <Textarea
           id="instructions"
@@ -96,7 +124,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
           <X className="h-4 w-4 mr-2" />
           Annuler
         </Button>
-        <Button onClick={onSave} className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
+        <Button onClick={onSave} disabled={!formData.printer_id} className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
           <Save className="h-4 w-4 mr-2" />
           {isEditing ? 'Mettre à jour' : 'Créer'}
         </Button>

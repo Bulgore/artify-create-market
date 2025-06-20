@@ -15,7 +15,7 @@ export const useTemplateOperations = () => {
     try {
       const { data, error } = await supabase
         .from('product_templates')
-        .select('*')
+        .select('*, template_printers(printer_id)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -24,7 +24,8 @@ export const useTemplateOperations = () => {
       const mappedTemplates = (data || []).map((template: any) => ({
         ...template,
         name: template.name_fr ?? template.name ?? '',
-        technical_instructions: template.technical_instructions_fr ?? template.technical_instructions ?? ''
+        technical_instructions: template.technical_instructions_fr ?? template.technical_instructions ?? '',
+        printer_id: template.template_printers?.printer_id || null
       }));
       
       return mappedTemplates;
@@ -59,6 +60,8 @@ export const useTemplateOperations = () => {
 
       console.log('Template data to save:', templateData);
 
+      let templateId = editingTemplate?.id || '';
+
       if (editingTemplate) {
         const { error } = await supabase
           .from('product_templates')
@@ -69,25 +72,37 @@ export const useTemplateOperations = () => {
           console.error('Update error:', error);
           throw error;
         }
-        
+
+        templateId = editingTemplate.id;
+
         toast({
           title: "Gabarit mis à jour",
           description: "Le gabarit a été mis à jour avec succès.",
         });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('product_templates')
-          .insert([templateData]);
+          .insert([templateData])
+          .select()
+          .single();
 
         if (error) {
           console.error('Insert error:', error);
           throw error;
         }
-        
+
+        templateId = data?.id;
+
         toast({
           title: "Gabarit créé",
           description: "Le nouveau gabarit a été créé avec succès.",
         });
+      }
+
+      if (templateId && formData.printer_id) {
+        await supabase
+          .from('template_printers')
+          .upsert({ template_id: templateId, printer_id: formData.printer_id }, { onConflict: 'template_id' });
       }
 
       return true;

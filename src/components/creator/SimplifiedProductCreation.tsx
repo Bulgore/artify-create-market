@@ -21,7 +21,12 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   const [selectedProduct, setSelectedProduct] = useState<PrintProduct | null>(null);
   const [designUrl, setDesignUrl] = useState('');
   
-  const { autoDesignPosition, calculateDesignPosition, resetDesignPosition } = useDesignPositioning();
+  const {
+    autoDesignPosition,
+    designArea,
+    calculateDesignPosition,
+    resetDesignPosition
+  } = useDesignPositioning();
   const { productData, setProductData, resetProductData } = useProductData();
   const { isLoading, handleSubmit } = useProductSubmission();
 
@@ -145,6 +150,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
                 )?.mockup_url
               }
               designUrl={designUrl}
+              designArea={designArea || undefined}
               designPosition={autoDesignPosition}
             />
 

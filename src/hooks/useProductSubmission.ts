@@ -58,7 +58,7 @@ export const useProductSubmission = () => {
         },
         generated_mockups: [] as GeneratedMockup[], // Rempli plus tard par la génération
         is_published: false,
-        status: 'draft'
+        status: 'pending'
       };
 
       console.log('📦 Données du produit créateur:', creatorProductData);

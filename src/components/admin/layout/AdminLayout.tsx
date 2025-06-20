@@ -1,16 +1,33 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import AdminMainContent from "./AdminMainContent";
+import { useSearchParams } from "react-router-dom";
 
 interface AdminLayoutProps {
   onSignOut: () => void;
 }
 
 const AdminLayout = ({ onSignOut }: AdminLayoutProps) => {
-  const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "dashboard";
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+
+  useEffect(() => {
+    const urlTab = searchParams.get("tab") || "dashboard";
+    if (urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", tab);
+    setSearchParams(params);
+  };
 
   const getSectionTitle = () => {
     const sectionTitles: { [key: string]: string } = {
@@ -35,9 +52,9 @@ const AdminLayout = ({ onSignOut }: AdminLayoutProps) => {
   return (
     <SidebarProvider>
       <div className="flex h-full w-full">
-        <AdminSidebar 
+        <AdminSidebar
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           onSignOut={onSignOut}
         />
         

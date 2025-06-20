@@ -1,21 +1,22 @@
 
 import { useState, useCallback } from 'react';
-import { parsePrintArea } from '@/types/printArea';
+import { parsePrintArea, type PrintArea } from '@/types/printArea';
 import { calculateAutoPosition, getImageDimensions } from '@/utils/designPositioning';
 import type { PrintProduct } from '@/types/customProduct';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useDesignPositioning = () => {
   const [autoDesignPosition, setAutoDesignPosition] = useState<any>(null);
+  const [designArea, setDesignArea] = useState<PrintArea | null>(null);
 
   const calculateDesignPosition = useCallback(async (
-    designUrl: string, 
+    designUrl: string,
     selectedProduct: PrintProduct | null
   ) => {
     if (!selectedProduct?.product_templates) return;
 
     try {
-      let designArea = { x: 50, y: 50, width: 200, height: 200 };
+      let area = { x: 50, y: 50, width: 200, height: 200 };
       if (selectedProduct.product_templates.primary_mockup_id) {
         const { data } = await supabase
           .from('product_mockups')
@@ -23,15 +24,16 @@ export const useDesignPositioning = () => {
           .eq('id', selectedProduct.product_templates.primary_mockup_id)
           .single();
         if (data?.print_area) {
-          designArea = parsePrintArea(data.print_area);
+          area = parsePrintArea(data.print_area);
         }
       }
-      console.log('🎯 Zone d\'impression utilisée:', designArea);
+      console.log('🎯 Zone d\'impression utilisée:', area);
+      setDesignArea(area);
       
       const designDimensions = await getImageDimensions(designUrl);
       console.log('📐 Dimensions RÉELLES du design uploadé:', designDimensions);
       
-      const autoPosition = calculateAutoPosition(designDimensions, designArea);
+      const autoPosition = calculateAutoPosition(designDimensions, area);
       
       const finalPosition = {
         x: autoPosition.x,
@@ -55,14 +57,13 @@ export const useDesignPositioning = () => {
       console.error('❌ Erreur calcul position automatique PROFESSIONNELLE:', error);
       
       // Fallback centré dans une zone par défaut
+      const fallbackArea = { x: 50, y: 50, width: 200, height: 200 };
       const fallbackPosition = {
-        x: 50,
-        y: 50,
-        width: 200,
-        height: 200,
+        ...fallbackArea,
         rotation: 0,
         scale: 1
       };
+      setDesignArea(fallbackArea);
       
       console.log('⚠️ Utilisation position fallback CENTRÉE dans zone admin:', fallbackPosition);
       setAutoDesignPosition(fallbackPosition);
@@ -71,10 +72,12 @@ export const useDesignPositioning = () => {
 
   const resetDesignPosition = useCallback(() => {
     setAutoDesignPosition(null);
+    setDesignArea(null);
   }, []);
 
   return {
     autoDesignPosition,
+    designArea,
     calculateDesignPosition,
     resetDesignPosition
   };

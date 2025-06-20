@@ -47,45 +47,14 @@ const PrinterMappingManagement = () => {
 
       if (templatesError) throw templatesError;
 
-      // Simulation des imprimeurs (à remplacer par vraie table Supabase)
-      const mockPrinters: PrinterData[] = [
-        {
-          id: '1',
-          name: 'Pacific Print Co.',
-          email: 'orders@pacificprint.pf',
-          phone: '+689 40 50 60 70',
-          address: 'Papeete, Tahiti',
-          specialties: ['T-shirts', 'Hoodies', 'Tote bags'],
-          notes: 'Spécialisé textile, livraison 3-5 jours',
-          is_active: true,
-          created_at: '2024-01-01'
-        },
-        {
-          id: '2',
-          name: 'Oceania Graphics',
-          email: 'print@oceaniagraphics.nc',
-          phone: '+687 25 30 40',
-          address: 'Nouméa, Nouvelle-Calédonie',
-          specialties: ['Posters', 'Stickers', 'Cartes'],
-          notes: 'Impression papier haute qualité',
-          is_active: true,
-          created_at: '2024-01-01'
-        },
-        {
-          id: '3',
-          name: 'Atoll Creations',
-          email: 'contact@atollcreations.com',
-          phone: '+689 87 65 43 21',
-          address: 'Moorea, Polynésie Française',
-          specialties: ['Mugs', 'Objets personnalisés'],
-          notes: 'Spécialiste objets publicitaires',
-          is_active: true,
-          created_at: '2024-01-15'
-        }
-      ];
+      const { data: printersData, error: printersError } = await supabase
+        .from('printers')
+        .select('id, name, email, phone, address, specialties, notes, is_active, created_at');
+
+      if (printersError) throw printersError;
 
       setTemplates(templatesData || []);
-      setPrinters(mockPrinters);
+      setPrinters(printersData || []);
 
     } catch (error: any) {
       console.error('Error fetching data:', error);
