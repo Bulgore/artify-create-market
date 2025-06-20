@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProductMockups } from '@/hooks/useProductMockups';
 import { Save, RotateCcw } from 'lucide-react';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 interface MockupPrintAreaEditorProps {
   mockup: {
@@ -39,7 +40,7 @@ export const MockupPrintAreaEditor: React.FC<MockupPrintAreaEditorProps> = ({
       imageRef.current = image;
       drawCanvas();
     };
-    image.src = mockup.mockup_url;
+    image.src = buildImageUrl(mockup.mockup_url);
   }, [mockup.mockup_url]);
 
   const drawCanvas = () => {

@@ -9,6 +9,7 @@ import type { PrintProduct } from '@/types/customProduct';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreatorProductUpdate } from '@/hooks/useCreatorProductUpdate';
 import { toast } from '@/hooks/use-toast';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 interface EditCreatorProductProps {
   productId: string;
@@ -42,7 +43,7 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
   const fetchProduct = async () => {
     const { data, error } = await supabase
       .from('creator_products')
-      .select(`*, print_products(*, product_templates(*, product_mockups(id,mockup_url,mockup_name,print_area,is_primary,display_order)))`)
+      .select(`*, print_products(*, product_templates(*, product_mockups(id,mockup_url,mockup_url:url,mockup_name,print_area,is_primary,display_order)))`)
       .eq('id', productId)
       .single();
 
@@ -56,6 +57,13 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
     }
 
     const mapped = mapPrintProductWithCompatibility(data.print_products);
+    if (mapped.product_templates?.product_mockups) {
+      mapped.product_templates.product_mockups = mapped.product_templates.product_mockups.map(m => ({
+        ...m,
+        mockup_url: buildImageUrl(m.mockup_url),
+        url: buildImageUrl(m.mockup_url)
+      }));
+    }
     setPrintProduct(mapped);
     setDesignUrl(data.original_design_url || '');
     setProductData({
@@ -99,9 +107,11 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
           <MockupSection
             mockupUrl={
               Array.isArray(printProduct.product_templates?.product_mockups)
-                ? printProduct.product_templates?.product_mockups.find(
-                    m => m.id === printProduct.product_templates?.primary_mockup_id
-                  )?.mockup_url
+                ? buildImageUrl(
+                    printProduct.product_templates?.product_mockups.find(
+                      m => m.id === printProduct.product_templates?.primary_mockup_id
+                    )?.mockup_url
+                  )
                 : undefined
             }
             designUrl={designUrl}

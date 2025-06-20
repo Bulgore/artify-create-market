@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { mapTemplateWithCompatibility, ProductTemplate } from '@/types/customProduct';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 interface TemplateSelectorProps {
   selectedTemplateId?: string;
@@ -42,7 +43,17 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
       if (error) throw error;
 
-      const mappedTemplates = (data || []).map(mapTemplateWithCompatibility);
+      const mappedTemplates = (data || []).map((t: any) => {
+        const mapped = mapTemplateWithCompatibility(t);
+        if (t.product_mockups) {
+          mapped.product_mockups = t.product_mockups.map((m: any) => ({
+            ...m,
+            mockup_url: buildImageUrl(m.mockup_url),
+            url: buildImageUrl(m.mockup_url)
+          }));
+        }
+        return mapped;
+      });
       setTemplates(mappedTemplates);
     } catch (error: any) {
       console.error('Error fetching templates:', error);
@@ -101,9 +112,11 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               <img
                 src={
                   Array.isArray(template.product_mockups)
-                    ? template.product_mockups.find(
-                        m => m.id === template.primary_mockup_id
-                      )?.mockup_url || '/placeholder.svg'
+                    ? buildImageUrl(
+                        template.product_mockups.find(
+                          m => m.id === template.primary_mockup_id
+                        )?.mockup_url
+                      )
                     : '/placeholder.svg'
                 }
                 alt={template.name}
