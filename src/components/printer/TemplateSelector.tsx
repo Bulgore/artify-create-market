@@ -27,7 +27,15 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     try {
       const { data, error } = await supabase
         .from('product_templates')
-        .select('*')
+        .select(`
+          *,
+          product_mockups!product_templates_primary_mockup_id_fkey (
+            id,
+            mockup_url,
+            mockup_name,
+            is_primary
+          )
+        `)
         .eq('is_active', true)
         .order('name_fr');
 
@@ -90,7 +98,11 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               onClick={() => onTemplateSelect(template.id, template)}
             >
               <img
-                src={template.mockup_image_url}
+                src={
+                  template.product_mockups?.find(
+                    m => m.id === template.primary_mockup_id
+                  )?.mockup_url || '/placeholder.svg'
+                }
                 alt={template.name}
                 className="w-full h-32 object-cover rounded mb-2"
               />

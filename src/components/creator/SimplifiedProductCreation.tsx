@@ -139,7 +139,11 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 
           <div className="space-y-6">
             <MockupSection
-              mockupUrl={selectedProduct.product_templates?.mockup_image_url}
+              mockupUrl={
+                selectedProduct.product_templates?.product_mockups?.find(
+                  m => m.id === selectedProduct.product_templates?.primary_mockup_id
+                )?.mockup_url
+              }
               designUrl={designUrl}
               designPosition={autoDesignPosition}
             />

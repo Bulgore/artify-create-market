@@ -1,4 +1,4 @@
-
+import type { ProductMockup } from './templates';
 export interface PrintProduct {
   id: string;
   printer_id: string;
@@ -40,8 +40,8 @@ export interface ProductTemplate {
   name: string;
   technical_instructions: string | null;
   type: string;
-  mockup_image_url: string;
   primary_mockup_id?: string;
+  product_mockups?: ProductMockup[];
   available_positions: string[];
   available_colors: string[];
   is_active: boolean;

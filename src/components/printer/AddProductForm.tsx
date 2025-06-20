@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import TemplateSelector from "./TemplateSelector";
+import type { ProductMockup } from '@/types/templates';
 
 interface ProductTemplate {
   id: string;
   name: string;
   type: string;
-  mockup_image_url: string;
+  primary_mockup_id?: string;
+  product_mockups?: ProductMockup[];
   available_positions: string[];
   available_colors: string[];
   technical_instructions: string;
