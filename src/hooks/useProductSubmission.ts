@@ -4,6 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { PrintProduct } from '@/types/customProduct';
+import type { GeneratedMockup } from '@/types/creatorProduct';
 
 interface ProductData {
   name: string;
@@ -55,7 +56,7 @@ export const useProductSubmission = () => {
           fileType: designUrl.includes('.svg') ? 'svg' : 'image',
           autoPositioned: true
         },
-        generated_mockups: [], // Sera rempli plus tard par le processus de génération
+        generated_mockups: [] as GeneratedMockup[], // Rempli plus tard par la génération
         is_published: false,
         status: 'draft'
       };

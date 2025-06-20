@@ -18,7 +18,6 @@ interface SelectedTemplate {
   technical_instructions?: string | null;
   type: string;
   mockup_image_url: string;
-  design_area: any;
   available_positions: string[];
   available_colors: string[];
 }
@@ -149,7 +148,7 @@ export const useProductForm = () => {
         base_price: formData.base_price,
         material: formData.material.trim(),
         stock_quantity: formData.stock_quantity,
-        print_areas: formData.selectedTemplate?.design_area || { width: 20, height: 30, unit: "cm" },
+        print_areas: { width: 20, height: 30, unit: "cm" },
         images: [formData.selectedTemplate?.mockup_image_url || "/placeholder.svg"],
         available_sizes: formData.available_sizes,
         available_colors: formData.available_colors

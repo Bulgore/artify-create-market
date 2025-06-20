@@ -26,17 +26,16 @@ export const useProductSelection = (printProducts: PrintProduct[]) => {
       toast({
         variant: "destructive",
         title: "Gabarit non trouvé",
-        description: "Ce produit n'est pas encore configuré pour la personnalisation. L'imprimeur doit d'abord lui assigner un gabarit valide avec une zone d'impression définie."
+        description: "Ce produit n'est pas encore configuré pour la personnalisation."
       });
       return;
     }
-
-    if (!product.product_templates.design_area) {
-      console.error("Template has no design area:", product.product_templates);
+    if (!product.product_templates.primary_mockup_id) {
+      console.error("Template has no primary mockup:", product.product_templates);
       toast({
         variant: "destructive",
-        title: "Zone d'impression manquante",
-        description: "Le gabarit de ce produit n'a pas de zone d'impression définie."
+        title: "Mockup principal manquant",
+        description: "Le gabarit de ce produit n'a pas de mockup principal défini."
       });
       return;
     }

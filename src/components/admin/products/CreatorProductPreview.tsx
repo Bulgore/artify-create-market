@@ -1,25 +1,30 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type {
+  CreatorProduct,
+  GeneratedMockup,
+  DesignFileInfo
+} from '@/types/creatorProduct';
 
 interface CreatorProductPreviewProps {
   productId: string;
   onClose: () => void;
 }
 
-interface ProductWithMockups {
-  id: string;
-  name_fr: string;
-  description_fr: string;
-  preview_url?: string;
-  // Nouveaux champs pour la logique multi-mockup
-  generated_mockups?: any[];
-  original_design_url?: string;
-  design_file_info?: any;
+interface ProductWithMockups extends CreatorProduct {
+  generated_mockups?: GeneratedMockup[];
+  original_design_url?: string | null;
+  design_file_info?: DesignFileInfo | null;
 }
 
 export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
@@ -47,9 +52,11 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
         name_fr: data.name_fr,
         description_fr: data.description_fr,
         preview_url: data.preview_url,
-        generated_mockups: data.generated_mockups || [],
+        generated_mockups: Array.isArray(data.generated_mockups)
+          ? (data.generated_mockups as GeneratedMockup[])
+          : [],
         original_design_url: data.original_design_url || data.preview_url,
-        design_file_info: data.design_file_info || {}
+        design_file_info: (data.design_file_info as DesignFileInfo) || null
       };
       
       setProduct(productData);
@@ -66,17 +73,17 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
   };
 
   const nextMockup = () => {
-    if (product?.generated_mockups && product.generated_mockups.length > 0) {
-      setCurrentMockupIndex((prev) => 
-        (prev + 1) % product.generated_mockups!.length
+    if (Array.isArray(product?.generated_mockups) && product.generated_mockups.length > 0) {
+      setCurrentMockupIndex((prev) =>
+        (prev + 1) % product.generated_mockups.length
       );
     }
   };
 
   const prevMockup = () => {
-    if (product?.generated_mockups && product.generated_mockups.length > 0) {
-      setCurrentMockupIndex((prev) => 
-        prev === 0 ? product.generated_mockups!.length - 1 : prev - 1
+    if (Array.isArray(product?.generated_mockups) && product.generated_mockups.length > 0) {
+      setCurrentMockupIndex((prev) =>
+        prev === 0 ? product.generated_mockups.length - 1 : prev - 1
       );
     }
   };
