@@ -39,15 +39,8 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
     <Card className="group hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-          {template.mockup_image_url ? (
-            <img
-              src={template.mockup_image_url}
-              alt={template.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <FileImage className="h-8 w-8 text-gray-400" />
-          )}
+          <FileImage className="h-8 w-8 text-gray-400" />
+          <span className="text-xs text-gray-500 ml-2">Mockups configurés</span>
         </div>
         
         <div className="space-y-2">

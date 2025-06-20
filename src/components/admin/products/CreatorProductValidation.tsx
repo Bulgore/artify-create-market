@@ -14,8 +14,6 @@ interface CreatorProduct {
   name_fr: string;
   description_fr: string;
   preview_url: string;
-  original_design_url: string;
-  design_file_info: any;
   status: string;
   creator_id: string;
   created_at: string;
@@ -23,6 +21,9 @@ interface CreatorProduct {
     full_name_fr: string;
     email: string;
   };
+  // Champs optionnels pour la compatibilité
+  original_design_url?: string;
+  design_file_info?: any;
 }
 
 export const CreatorProductValidation: React.FC = () => {
@@ -41,8 +42,6 @@ export const CreatorProductValidation: React.FC = () => {
           name_fr,
           description_fr,
           preview_url,
-          original_design_url,
-          design_file_info,
           status,
           creator_id,
           created_at,
@@ -70,12 +69,14 @@ export const CreatorProductValidation: React.FC = () => {
 
   const updateProductStatus = async (productId: string, status: 'approved' | 'rejected', reason?: string) => {
     try {
+      const updateData: any = { status };
+      if (status === 'rejected' && reason) {
+        updateData.rejection_reason = reason;
+      }
+
       const { error } = await supabase
         .from('creator_products')
-        .update({ 
-          status,
-          ...(status === 'rejected' && { rejection_reason: reason })
-        })
+        .update(updateData)
         .eq('id', productId);
 
       if (error) throw error;
@@ -193,7 +194,7 @@ export const CreatorProductValidation: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => downloadDesignFile(
-                                product.original_design_url,
+                                product.original_design_url!,
                                 `design_${product.id}.jpg`
                               )}
                               className="flex items-center gap-1"

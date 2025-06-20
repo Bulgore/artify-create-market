@@ -15,8 +15,10 @@ interface ProductWithMockups {
   id: string;
   name_fr: string;
   description_fr: string;
-  generated_mockups: any[];
-  original_design_url: string;
+  preview_url?: string;
+  // Champs optionnels pour la nouvelle logique
+  generated_mockups?: any[];
+  original_design_url?: string;
 }
 
 export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
@@ -37,7 +39,18 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
         .single();
 
       if (error) throw error;
-      setProduct(data);
+      
+      // Mapper les données pour assurer la compatibilité
+      const productData: ProductWithMockups = {
+        id: data.id,
+        name_fr: data.name_fr,
+        description_fr: data.description_fr,
+        preview_url: data.preview_url,
+        generated_mockups: data.generated_mockups || [],
+        original_design_url: data.original_design_url || data.preview_url
+      };
+      
+      setProduct(productData);
     } catch (error: any) {
       console.error('Error fetching product:', error);
       toast({
@@ -51,17 +64,17 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
   };
 
   const nextMockup = () => {
-    if (product?.generated_mockups) {
+    if (product?.generated_mockups && product.generated_mockups.length > 0) {
       setCurrentMockupIndex((prev) => 
-        (prev + 1) % product.generated_mockups.length
+        (prev + 1) % product.generated_mockups!.length
       );
     }
   };
 
   const prevMockup = () => {
-    if (product?.generated_mockups) {
+    if (product?.generated_mockups && product.generated_mockups.length > 0) {
       setCurrentMockupIndex((prev) => 
-        prev === 0 ? product.generated_mockups.length - 1 : prev - 1
+        prev === 0 ? product.generated_mockups!.length - 1 : prev - 1
       );
     }
   };
@@ -97,6 +110,7 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
 
   const mockups = product.generated_mockups || [];
   const hasMultipleMockups = mockups.length > 1;
+  const displayImage = mockups.length > 0 ? mockups[currentMockupIndex]?.url : product.preview_url;
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -108,11 +122,11 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="relative bg-gray-50 rounded-lg p-4">
-              {mockups.length > 0 ? (
+              {displayImage ? (
                 <>
                   <img
-                    src={mockups[currentMockupIndex]?.url || product.original_design_url}
-                    alt={`Mockup ${currentMockupIndex + 1}`}
+                    src={displayImage}
+                    alt={`Aperçu ${currentMockupIndex + 1}`}
                     className="w-full h-auto rounded"
                   />
                   
@@ -142,11 +156,9 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
                   )}
                 </>
               ) : (
-                <img
-                  src={product.original_design_url}
-                  alt="Design original"
-                  className="w-full h-auto rounded"
-                />
+                <div className="w-full h-64 bg-gray-200 rounded flex items-center justify-center">
+                  <p className="text-gray-500">Aucun aperçu disponible</p>
+                </div>
               )}
             </div>
             
@@ -177,34 +189,36 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
               <p className="text-gray-600 mt-2">{product.description_fr}</p>
             </div>
             
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">Fichier design original</h4>
-              <div className="flex items-center gap-2">
-                <img
-                  src={product.original_design_url}
-                  alt="Design original"
-                  className="w-16 h-16 object-cover rounded border"
-                />
-                <div>
-                  <p className="text-sm text-blue-800">Fichier HD disponible</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = product.original_design_url;
-                      link.download = `design_${product.id}.jpg`;
-                      link.target = '_blank';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}
-                  >
-                    Télécharger HD
-                  </Button>
+            {product.original_design_url && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">Fichier design original</h4>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={product.original_design_url}
+                    alt="Design original"
+                    className="w-16 h-16 object-cover rounded border"
+                  />
+                  <div>
+                    <p className="text-sm text-blue-800">Fichier HD disponible</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = product.original_design_url!;
+                        link.download = `design_${product.id}.jpg`;
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                    >
+                      Télécharger HD
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             
             <div className="text-sm text-gray-500">
               <p><strong>ID Produit:</strong> {product.id}</p>

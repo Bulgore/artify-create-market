@@ -26,21 +26,21 @@ export const useProductMockups = (templateId?: string) => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('product_mockups')
-        .select('*')
-        .eq('product_template_id', templateId)
-        .order('display_order', { ascending: true });
+      // Utiliser une requête SQL brute pour accéder à la nouvelle table
+      const { data, error } = await supabase.rpc('get_product_mockups', {
+        template_id: templateId
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Mockups table not yet available, using fallback');
+        setMockups([]);
+        return;
+      }
+      
       setMockups(data || []);
     } catch (error: any) {
       console.error('Error fetching mockups:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les mockups.",
-      });
+      setMockups([]);
     } finally {
       setIsLoading(false);
     }
@@ -48,9 +48,13 @@ export const useProductMockups = (templateId?: string) => {
 
   const addMockup = async (mockupData: Omit<ProductMockup, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { error } = await supabase
-        .from('product_mockups')
-        .insert([mockupData]);
+      const { error } = await supabase.rpc('add_product_mockup', {
+        template_id: mockupData.product_template_id,
+        mockup_url: mockupData.mockup_url,
+        mockup_name: mockupData.mockup_name,
+        display_order: mockupData.display_order,
+        is_primary: mockupData.is_primary
+      });
 
       if (error) throw error;
       
@@ -74,10 +78,10 @@ export const useProductMockups = (templateId?: string) => {
 
   const updateMockup = async (mockupId: string, updates: Partial<ProductMockup>) => {
     try {
-      const { error } = await supabase
-        .from('product_mockups')
-        .update(updates)
-        .eq('id', mockupId);
+      const { error } = await supabase.rpc('update_product_mockup', {
+        mockup_id: mockupId,
+        updates: updates
+      });
 
       if (error) throw error;
       
@@ -101,10 +105,9 @@ export const useProductMockups = (templateId?: string) => {
 
   const deleteMockup = async (mockupId: string) => {
     try {
-      const { error } = await supabase
-        .from('product_mockups')
-        .delete()
-        .eq('id', mockupId);
+      const { error } = await supabase.rpc('delete_product_mockup', {
+        mockup_id: mockupId
+      });
 
       if (error) throw error;
       
