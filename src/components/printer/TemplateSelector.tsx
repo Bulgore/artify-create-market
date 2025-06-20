@@ -29,11 +29,12 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         .from('product_templates')
         .select(`
           *,
-          product_mockups!product_templates_primary_mockup_id_fkey (
+          product_mockups (
             id,
             mockup_url,
             mockup_name,
-            is_primary
+            is_primary,
+            display_order
           )
         `)
         .eq('is_active', true)
@@ -99,9 +100,11 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             >
               <img
                 src={
-                  template.product_mockups?.find(
-                    m => m.id === template.primary_mockup_id
-                  )?.mockup_url || '/placeholder.svg'
+                  Array.isArray(template.product_mockups)
+                    ? template.product_mockups.find(
+                        m => m.id === template.primary_mockup_id
+                      )?.mockup_url || '/placeholder.svg'
+                    : '/placeholder.svg'
                 }
                 alt={template.name}
                 className="w-full h-32 object-cover rounded mb-2"

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import CreatorNavigation from './CreatorNavigation';
 import CustomProductCreator from './CustomProductCreator';
 import DesignList from './DesignList';
+import { EditCreatorProduct } from './EditCreatorProduct';
 import SalesPanel from './SalesPanel';
 import CreatorProfile from './CreatorProfile';
 import CreatorMediaManagement from './CreatorMediaManagement';
@@ -63,18 +64,37 @@ const CreatorWorkspace: React.FC = () => {
     setSearchParams({ tab: 'create' });
   };
 
+  const handleEditDesign = (id: string) => {
+    setSearchParams({ tab: 'edit', id });
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'products':
         return (
-          <DesignList 
+          <DesignList
             designs={designs}
             onDesignUpdated={loadDesigns}
             onCreateDesign={handleCreateDesign}
+            onEditDesign={handleEditDesign}
           />
         );
       case 'create':
         return <CustomProductCreator />;
+      case 'edit': {
+        const editId = searchParams.get('id');
+        if (!editId) return null;
+        return (
+          <EditCreatorProduct
+            productId={editId}
+            onUpdated={() => {
+              loadDesigns();
+              setSearchParams({ tab: 'products' });
+            }}
+            onBack={() => setSearchParams({ tab: 'products' })}
+          />
+        );
+      }
       case 'media':
         return <CreatorMediaManagement />;
       case 'analytics':

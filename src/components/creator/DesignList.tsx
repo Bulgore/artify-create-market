@@ -18,12 +18,14 @@ interface DesignListProps {
   designs: Design[];
   onDesignUpdated: () => void;
   onCreateDesign: () => void;
+  onEditDesign: (id: string) => void;
 }
 
-const DesignList: React.FC<DesignListProps> = ({ 
-  designs, 
+const DesignList: React.FC<DesignListProps> = ({
+  designs,
   onDesignUpdated,
-  onCreateDesign
+  onCreateDesign,
+  onEditDesign
 }) => {
   const handlePublishToggle = async (id: string, currentStatus: boolean) => {
     try {
@@ -95,15 +97,10 @@ const DesignList: React.FC<DesignListProps> = ({
             </div>
           </CardContent>
           <CardFooter className="p-4 pt-0 flex justify-between gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="flex-1"
-              onClick={() => {
-                toast({
-                  title: "Fonction à venir",
-                  description: "L'édition de produits sera bientôt disponible."
-                });
-              }}
+              onClick={() => onEditDesign(design.id)}
             >
               Modifier
             </Button>
