@@ -40,10 +40,8 @@ export interface ProductTemplate {
   name: string;
   technical_instructions: string | null;
   type: string;
-  design_area: any;
-  mockup_area?: any;
   mockup_image_url: string;
-  svg_file_url: string;
+  primary_mockup_id?: string;
   available_positions: string[];
   available_colors: string[];
   is_active: boolean;

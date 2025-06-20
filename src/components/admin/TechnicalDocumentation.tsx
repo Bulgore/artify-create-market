@@ -76,7 +76,7 @@ const TechnicalDocumentation = () => {
 - **Recommandation** : Tester l’accès admin après chaque déploiement, lister ici tout nouveau bug critique et la date/solution associée.
 ---
 
-Version documentation : 1.2.1 — Dernière mise à jour : ${new Date().toLocaleString('fr-FR')}
+Version documentation : 1.2.1 — Dernière mise à jour : ${new Date().toLocaleString('fr-FR')}.
 `;
   };
 

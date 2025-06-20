@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { parseDesignArea } from '@/types/designArea';
 import type { PrintProduct } from '@/types/customProduct';
 import { ProductSelectionSection } from './simplified/ProductSelectionSection';
 import { DesignUploadHandler } from './simplified/DesignUploadHandler';
@@ -85,14 +84,13 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     let finalPosition = autoDesignPosition;
     if (!finalPosition) {
       console.log('⚠️ Position automatique manquante, utilisation fallback centré');
-      const designArea = parseDesignArea(selectedProduct.product_templates?.design_area || '{}');
       finalPosition = {
-        x: designArea.x + (designArea.width * 0.1),
-        y: designArea.y + (designArea.height * 0.1),
-        width: designArea.width * 0.8,
-        height: designArea.height * 0.8,
+        x: 50,
+        y: 50,
+        width: 200,
+        height: 200,
         rotation: 0,
-        scale: 0.8
+        scale: 1
       };
     }
 
@@ -122,9 +120,6 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     }
   };
 
-  const designArea = selectedProduct?.product_templates 
-    ? parseDesignArea(selectedProduct.product_templates.design_area)
-    : undefined;
 
   return (
     <div className="space-y-6">
@@ -146,9 +141,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
             <MockupSection
               mockupUrl={selectedProduct.product_templates?.mockup_image_url}
               designUrl={designUrl}
-              designArea={designArea}
               designPosition={autoDesignPosition}
-              svgTemplateUrl={selectedProduct.product_templates?.svg_file_url}
             />
 
             <ProductCreationForm

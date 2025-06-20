@@ -142,6 +142,9 @@ export type Database = {
           name_fr: string
           name_ty: string | null
           preview_url: string | null
+          generated_mockups: Json | null
+          original_design_url: string | null
+          design_file_info: Json | null
           print_product_id: string
           seo_description_en: string | null
           seo_description_fr: string | null
@@ -169,6 +172,9 @@ export type Database = {
           name_fr: string
           name_ty?: string | null
           preview_url?: string | null
+          generated_mockups?: Json | null
+          original_design_url?: string | null
+          design_file_info?: Json | null
           print_product_id: string
           seo_description_en?: string | null
           seo_description_fr?: string | null
@@ -196,6 +202,9 @@ export type Database = {
           name_fr?: string
           name_ty?: string | null
           preview_url?: string | null
+          generated_mockups?: Json | null
+          original_design_url?: string | null
+          design_file_info?: Json | null
           print_product_id?: string
           seo_description_en?: string | null
           seo_description_fr?: string | null
@@ -626,15 +635,13 @@ export type Database = {
           available_positions: string[] | null
           created_at: string | null
           created_by: string
-          design_area: Json
           id: string
           is_active: boolean | null
-          mockup_area: Json | null
           mockup_image_url: string
           name_en: string | null
           name_fr: string
           name_ty: string | null
-          svg_file_url: string
+          primary_mockup_id: string | null
           technical_instructions_en: string | null
           technical_instructions_fr: string | null
           technical_instructions_ty: string | null
@@ -646,15 +653,13 @@ export type Database = {
           available_positions?: string[] | null
           created_at?: string | null
           created_by: string
-          design_area: Json
           id?: string
           is_active?: boolean | null
-          mockup_area?: Json | null
           mockup_image_url: string
           name_en?: string | null
           name_fr: string
           name_ty?: string | null
-          svg_file_url: string
+          primary_mockup_id?: string | null
           technical_instructions_en?: string | null
           technical_instructions_fr?: string | null
           technical_instructions_ty?: string | null
@@ -666,15 +671,13 @@ export type Database = {
           available_positions?: string[] | null
           created_at?: string | null
           created_by?: string
-          design_area?: Json
           id?: string
           is_active?: boolean | null
-          mockup_area?: Json | null
           mockup_image_url?: string
           name_en?: string | null
           name_fr?: string
           name_ty?: string | null
-          svg_file_url?: string
+          primary_mockup_id?: string | null
           technical_instructions_en?: string | null
           technical_instructions_fr?: string | null
           technical_instructions_ty?: string | null

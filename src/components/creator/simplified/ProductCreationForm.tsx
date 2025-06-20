@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { parseDesignArea } from '@/types/designArea';
+
 import type { PrintProduct } from '@/types/customProduct';
 import { ProductDetailsSection } from './ProductDetailsSection';
 import { ValidationFeedback } from './ValidationFeedback';
@@ -30,9 +30,6 @@ export const ProductCreationForm: React.FC<ProductCreationFormProps> = ({
   onSubmit,
   isLoading
 }) => {
-  const designArea = selectedProduct?.product_templates 
-    ? parseDesignArea(selectedProduct.product_templates.design_area)
-    : undefined;
 
   // Validation STRICTE et EXPLICITE avec logs détaillés
   const hasProduct = !!(selectedProduct && selectedProduct.id);
@@ -75,7 +72,6 @@ export const ProductCreationForm: React.FC<ProductCreationFormProps> = ({
         selectedProduct={selectedProduct}
         designUrl={designUrl}
         productName={productData.name}
-        designArea={designArea}
         autoDesignPosition={autoDesignPosition}
       />
       

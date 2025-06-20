@@ -37,13 +37,16 @@ export const useCache = <T>(key: string, options: CacheOptions = {}) => {
 
   // Save to localStorage when cache changes
   useEffect(() => {
-    if (storageKey && cache.size > 0) {
-      try {
+    if (!storageKey) return;
+    try {
+      if (cache.size > 0) {
         const cacheObject = Object.fromEntries(cache);
         localStorage.setItem(storageKey, JSON.stringify(cacheObject));
-      } catch (error) {
-        console.warn('Failed to save cache to localStorage:', error);
+      } else {
+        localStorage.removeItem(storageKey);
       }
+    } catch (error) {
+      console.warn('Failed to save cache to localStorage:', error);
     }
   }, [cache, storageKey]);
 
