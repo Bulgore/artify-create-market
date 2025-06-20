@@ -3,8 +3,7 @@ import React from 'react';
 import { MockupImage } from './MockupImage';
 import { PrintAreaOverlay } from './PrintAreaOverlay';
 import { DesignOverlay } from './DesignOverlay';
-import { SVGDisplay } from '@/components/ui/SVGDisplay';
-import type { DesignArea } from '@/types/designArea';
+import type { PrintArea } from '@/types/printArea';
 import type { AutoPositionResult } from '@/utils/designPositioning';
 
 interface MockupContainerProps {
@@ -13,9 +12,8 @@ interface MockupContainerProps {
   mockupError: boolean;
   designUrl?: string;
   designError: boolean;
-  designArea?: DesignArea;
+  designArea?: PrintArea;
   autoPosition?: AutoPositionResult;
-  svgTemplateUrl?: string;
   onMockupLoad: () => void;
   onMockupError: () => void;
   onDesignLoad: () => void;
@@ -30,7 +28,6 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
   designError,
   designArea,
   autoPosition,
-  svgTemplateUrl,
   onMockupLoad,
   onMockupError,
   onDesignLoad,
@@ -41,64 +38,6 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Vue SVG Template avec zone d'impression visible */}
-      {svgTemplateUrl && (
-        <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
-          <div className="bg-gray-100 px-3 py-2 border-b">
-            <h4 className="text-sm font-medium text-gray-700">📐 Template SVG avec zone d'impression</h4>
-          </div>
-          <div className="relative h-64 bg-white">
-            <SVGDisplay 
-              svgUrl={svgTemplateUrl}
-              className="w-full h-full"
-              showError={false}
-              onLoad={() => console.log('✅ SVG template affiché')}
-              onError={() => console.log('⚠️ SVG template non affiché (non bloquant)')}
-            />
-            
-            {/* Overlay de la zone d'impression sur le SVG */}
-            {designArea && (
-              <div
-                className="absolute border-2 border-blue-500 border-dashed bg-blue-500 bg-opacity-20 pointer-events-none"
-                style={{
-                  left: `${(designArea.x / 400) * 100}%`,
-                  top: `${(designArea.y / 300) * 100}%`,
-                  width: `${(designArea.width / 400) * 100}%`,
-                  height: `${(designArea.height / 300) * 100}%`
-                }}
-                title={`Zone d'impression définie par l'admin (${Math.round(designArea.width)}×${Math.round(designArea.height)}px)`}
-              >
-                <div className="absolute -top-6 left-0 text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded shadow font-medium">
-                  Zone d'impression ({Math.round(designArea.width)}×{Math.round(designArea.height)}px)
-                </div>
-              </div>
-            )}
-            
-            {/* Design positionné dans le SVG */}
-            {designUrl && autoPosition && !designError && (
-              <div
-                className="absolute pointer-events-none border border-green-500 rounded"
-                style={{
-                  left: `${(autoPosition.x / 400) * 100}%`,
-                  top: `${(autoPosition.y / 300) * 100}%`,
-                  width: `${(autoPosition.width / 400) * 100}%`,
-                  height: `${(autoPosition.height / 300) * 100}%`
-                }}
-              >
-                <img
-                  src={designUrl}
-                  alt="Design dans zone SVG"
-                  className="w-full h-full object-contain"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
-                />
-                <div className="absolute -bottom-5 left-0 text-xs text-green-700 bg-green-100 px-1 py-0.5 rounded font-medium">
-                  Auto-centré {Math.round(autoPosition.scale * 100)}%
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       
       {/* Vue Mockup traditionnelle */}
       <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">

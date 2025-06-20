@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { DesignArea } from '@/types/designArea';
+import type { PrintArea } from '@/types/printArea';
 import type { AutoPositionResult } from '@/utils/designPositioning';
 
 interface MockupStatusInfoProps {
@@ -8,7 +8,7 @@ interface MockupStatusInfoProps {
   mockupError: boolean;
   designUrl?: string;
   autoPosition?: AutoPositionResult;
-  designArea?: DesignArea;
+  designArea?: PrintArea;
 }
 
 export const MockupStatusInfo: React.FC<MockupStatusInfoProps> = ({
