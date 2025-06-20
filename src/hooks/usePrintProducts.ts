@@ -60,14 +60,15 @@ export const usePrintProducts = () => {
             created_by,
             created_at,
             updated_at,
-            primary_mockup_id,
-            product_mockups!product_templates_primary_mockup_id_fkey (
-              id,
-              mockup_url,
-              mockup_name,
-              print_area,
-              is_primary
-            )
+          primary_mockup_id,
+          product_mockups (
+            id,
+            mockup_url,
+            mockup_name,
+            print_area,
+            is_primary,
+            display_order
+          )
           )
         `)
         .eq('is_active', true);
@@ -115,8 +116,14 @@ export const usePrintProducts = () => {
 
         // Récupérer le mockup principal avec sa zone d'impression
         let mockupImageUrl = '';
-        if (template.primary_mockup_id && template.product_mockups?.length > 0) {
-          const primaryMockup = template.product_mockups.find(m => m.id === template.primary_mockup_id);
+        if (
+          template.primary_mockup_id &&
+          Array.isArray(template.product_mockups) &&
+          template.product_mockups.length > 0
+        ) {
+          const primaryMockup = template.product_mockups.find(
+            m => m.id === template.primary_mockup_id
+          );
           if (primaryMockup) {
             mockupImageUrl = primaryMockup.mockup_url;
             console.log(`   ✅ Primary mockup found: ${primaryMockup.mockup_name}`);

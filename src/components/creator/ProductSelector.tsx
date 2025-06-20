@@ -44,11 +44,12 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ onProductSelect }) =>
             created_by,
             created_at,
             updated_at,
-            product_mockups!product_templates_primary_mockup_id_fkey (
+            product_mockups (
               id,
               mockup_url,
               mockup_name,
-              is_primary
+              is_primary,
+              display_order
             )
           )
         `)

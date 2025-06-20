@@ -152,9 +152,12 @@ export const useProductForm = () => {
         stock_quantity: formData.stock_quantity,
         print_areas: { width: 20, height: 30, unit: "cm" },
         images: [
-          formData.selectedTemplate?.product_mockups?.find(
-            m => m.id === formData.selectedTemplate?.primary_mockup_id
-          )?.mockup_url || "/placeholder.svg"
+          Array.isArray(formData.selectedTemplate?.product_mockups)
+            ?
+                formData.selectedTemplate?.product_mockups.find(
+                  m => m.id === formData.selectedTemplate?.primary_mockup_id
+                )?.mockup_url || "/placeholder.svg"
+            : "/placeholder.svg"
         ],
         available_sizes: formData.available_sizes,
         available_colors: formData.available_colors

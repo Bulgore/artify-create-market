@@ -71,3 +71,14 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Database migrations
+
+Run pending migrations on your Supabase project and regenerate the TypeScript definitions:
+
+```sh
+supabase db push
+supabase gen types typescript --project-id <your-project-id> --schema public > src/integrations/supabase/types.ts
+```
+
+This repository already contains the migration creating `printers` and `template_printers` tables located in `supabase/migrations/20250620160541-add-printers-mapping.sql`.

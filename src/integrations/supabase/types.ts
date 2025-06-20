@@ -625,6 +625,81 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "product_templates"
+        referencedColumns: ["id"]
+          },
+        ]
+      }
+      printers: {
+        Row: {
+          id: string
+          name: string
+          email: string
+          phone: string | null
+          address: string | null
+          specialties: string[] | null
+          notes: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          email: string
+          phone?: string | null
+          address?: string | null
+          specialties?: string[] | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string
+          phone?: string | null
+          address?: string | null
+          specialties?: string[] | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      template_printers: {
+        Row: {
+          id: string
+          template_id: string
+          printer_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          template_id: string
+          printer_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          template_id?: string
+          printer_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_printers_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_printers_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
             referencedColumns: ["id"]
           },
         ]
