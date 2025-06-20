@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Truck, Plus, Edit, Mail, Phone, MapPin, Save } from "lucide-react";
+import { Plus, Edit, Mail, Phone, MapPin, Save } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,50 +49,31 @@ const PrinterManagement: React.FC<PrinterManagementProps> = ({
 
   useEffect(() => {
     fetchPrinters();
+    // eslint-disable-next-line
   }, []);
 
   const fetchPrinters = async () => {
     try {
       setLoading(true);
-      
-      // Simulation de données - à remplacer par vraie API Supabase
-      const mockPrinters: PrinterData[] = [
-        {
-          id: '1',
-          name: 'Pacific Print Co.',
-          email: 'orders@pacificprint.pf',
-          phone: '+689 40 50 60 70',
-          address: 'Papeete, Tahiti',
-          specialties: ['T-shirts', 'Hoodies', 'Tote bags'],
-          notes: 'Spécialisé textile, livraison 3-5 jours',
-          is_active: true,
-          created_at: '2024-01-01'
-        },
-        {
-          id: '2',
-          name: 'Oceania Graphics',
-          email: 'print@oceaniagraphics.nc',
-          phone: '+687 25 30 40',
-          address: 'Nouméa, Nouvelle-Calédonie',
-          specialties: ['Posters', 'Stickers', 'Cartes'],
-          notes: 'Impression papier haute qualité',
-          is_active: true,
-          created_at: '2024-01-01'
-        },
-        {
-          id: '3',
-          name: 'Atoll Creations',
-          email: 'contact@atollcreations.com',
-          phone: '+689 87 65 43 21',
-          address: 'Moorea, Polynésie Française',
-          specialties: ['Mugs', 'Objets personnalisés'],
-          notes: 'Spécialiste objets publicitaires',
-          is_active: true,
-          created_at: '2024-01-15'
-        }
-      ];
+      const { data, error } = await supabase
+        .from('printers')
+        .select('id, name, email, phone, address, specialties, notes, is_active, created_at')
+        .order('created_at', { ascending: false });
 
-      setPrinters(mockPrinters);
+      if (error) throw error;
+
+      const fixedData = (data || []).map((p: any) => ({
+        ...p,
+        specialties: Array.isArray(p.specialties)
+          ? p.specialties
+          : (typeof p.specialties === "string" && p.specialties.startsWith("{")) // old array format
+            ? p.specialties.replace(/^{|}$/g, "").split(",").map((s: string) => s.trim()).filter(Boolean)
+            : p.specialties
+              ? String(p.specialties).split(",").map((s: string) => s.trim()).filter(Boolean)
+              : [],
+      }));
+
+      setPrinters(fixedData);
     } catch (error: any) {
       console.error('Error fetching printers:', error);
       toast({
@@ -107,21 +88,44 @@ const PrinterManagement: React.FC<PrinterManagementProps> = ({
 
   const handleSavePrinter = async () => {
     try {
-      const newPrinter: PrinterData = {
-        id: editingPrinter?.id || Date.now().toString(),
-        ...printerForm,
-        specialties: printerForm.specialties.split(',').map(s => s.trim()),
-        created_at: editingPrinter?.created_at || new Date().toISOString()
-      };
+      const specialtiesArr = printerForm.specialties
+        ? printerForm.specialties.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
 
       if (editingPrinter) {
-        setPrinters(prev => prev.map(p => p.id === editingPrinter.id ? newPrinter : p));
+        // UPDATE
+        const { error } = await supabase
+          .from('printers')
+          .update({
+            name: printerForm.name,
+            email: printerForm.email,
+            phone: printerForm.phone,
+            address: printerForm.address,
+            specialties: specialtiesArr,
+            notes: printerForm.notes,
+            is_active: printerForm.is_active,
+          })
+          .eq('id', editingPrinter.id);
+
+        if (error) throw error;
         toast({
           title: "Imprimeur modifié",
           description: "Les informations ont été mises à jour."
         });
       } else {
-        setPrinters(prev => [...prev, newPrinter]);
+        // INSERT
+        const { error } = await supabase
+          .from('printers')
+          .insert([{
+            name: printerForm.name,
+            email: printerForm.email,
+            phone: printerForm.phone,
+            address: printerForm.address,
+            specialties: specialtiesArr,
+            notes: printerForm.notes,
+            is_active: printerForm.is_active,
+          }]);
+        if (error) throw error;
         toast({
           title: "Imprimeur ajouté",
           description: "Le nouvel imprimeur a été créé."
@@ -130,7 +134,8 @@ const PrinterManagement: React.FC<PrinterManagementProps> = ({
 
       resetForm();
       setIsDialogOpen(false);
-    } catch (error) {
+      fetchPrinters();
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -155,13 +160,13 @@ const PrinterManagement: React.FC<PrinterManagementProps> = ({
   const openEditDialog = (printer: PrinterData) => {
     setEditingPrinter(printer);
     setPrinterForm({
-      name: printer.name,
-      email: printer.email,
+      name: printer.name || '',
+      email: printer.email || '',
       phone: printer.phone || '',
       address: printer.address || '',
-      specialties: printer.specialties.join(', '),
+      specialties: (printer.specialties || []).join(', '),
       notes: printer.notes || '',
-      is_active: printer.is_active
+      is_active: printer.is_active,
     });
     setIsDialogOpen(true);
   };

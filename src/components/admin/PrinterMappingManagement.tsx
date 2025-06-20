@@ -11,7 +11,7 @@ interface PrinterData {
   email: string;
   phone?: string;
   address?: string;
-  specialties: [];
+  specialties: string;
   notes?: string;
   is_active: boolean;
   created_at: string;
