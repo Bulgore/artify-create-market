@@ -21,7 +21,7 @@ interface CreatorProduct {
     full_name_fr: string;
     email: string;
   };
-  // Champs optionnels pour la compatibilité
+  // Nouveaux champs pour la compatibilité
   original_design_url?: string;
   design_file_info?: any;
 }
@@ -45,6 +45,8 @@ export const CreatorProductValidation: React.FC = () => {
           status,
           creator_id,
           created_at,
+          original_design_url,
+          design_file_info,
           users!creator_id (
             full_name_fr,
             email
@@ -54,7 +56,22 @@ export const CreatorProductValidation: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Mapper les données avec les nouveaux champs
+      const mappedProducts = (data || []).map((product: any) => ({
+        id: product.id,
+        name_fr: product.name_fr,
+        description_fr: product.description_fr,
+        preview_url: product.preview_url,
+        status: product.status,
+        creator_id: product.creator_id,
+        created_at: product.created_at,
+        original_design_url: product.original_design_url,
+        design_file_info: product.design_file_info,
+        users: product.users
+      }));
+      
+      setProducts(mappedProducts);
     } catch (error: any) {
       console.error('Error fetching pending products:', error);
       toast({

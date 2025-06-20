@@ -46,31 +46,12 @@ export const useTemplateOperations = () => {
 
     try {
       console.log('Saving template with data:', formData);
-      
-      // S'assurer que les zones sont des objets valides avec des nombres
-      const cleanDesignArea = {
-        x: Number(formData.design_area.x) || 0,
-        y: Number(formData.design_area.y) || 0,
-        width: Number(formData.design_area.width) || 200,
-        height: Number(formData.design_area.height) || 200
-      };
-
-      const cleanMockupArea = formData.mockup_area ? {
-        x: Number(formData.mockup_area.x) || 50,
-        y: Number(formData.mockup_area.y) || 50,
-        width: Number(formData.mockup_area.width) || 200,
-        height: Number(formData.mockup_area.height) || 200
-      } : null;
 
       const templateData = {
         name_fr: formData.name || '',
         technical_instructions_fr: formData.technical_instructions || '',
         type: formData.type || '',
-        svg_file_url: formData.svg_file_url || '',
-        mockup_image_url: formData.mockup_image_url || '',
         created_by: user.id,
-        design_area: JSON.stringify(cleanDesignArea),
-        mockup_area: cleanMockupArea ? JSON.stringify(cleanMockupArea) : null,
         available_positions: formData.available_positions || ['face'],
         available_colors: formData.available_colors || ['white', 'black'],
         is_active: Boolean(formData.is_active)
@@ -136,7 +117,7 @@ export const useTemplateOperations = () => {
         console.log('Checking print_products...');
         const { data: printProducts, error: printProductsError } = await supabase
           .from('print_products')
-          .select('id, name, template_id')
+          .select('id, name_fr, template_id')
           .eq('template_id', templateId);
 
         if (printProductsError) {
@@ -146,31 +127,14 @@ export const useTemplateOperations = () => {
 
         console.log(`Found ${printProducts?.length || 0} references in print_products:`, printProducts);
 
-        // Vérifier les références dans tshirt_templates
-        console.log('Checking tshirt_templates...');
-        const { data: tshirtTemplates, error: tshirtError } = await supabase
-          .from('tshirt_templates')
-          .select('id, name, template_id')
-          .eq('template_id', templateId);
-
-        if (tshirtError) {
-          console.error('❌ Error checking tshirt_templates:', tshirtError);
-          throw tshirtError;
-        }
-
-        console.log(`Found ${tshirtTemplates?.length || 0} references in tshirt_templates:`, tshirtTemplates);
-
         const allReferences = [];
         if (printProducts && printProducts.length > 0) {
           allReferences.push({ table: 'print_products', products: printProducts });
         }
-        if (tshirtTemplates && tshirtTemplates.length > 0) {
-          allReferences.push({ table: 'tshirt_templates', products: tshirtTemplates });
-        }
 
         if (allReferences.length > 0) {
           const referencesText = allReferences.map(ref => 
-            `${ref.table}: ${ref.products.map(p => `${p.name || p.id} (ID: ${p.id})`).join(', ')}`
+            `${ref.table}: ${ref.products.map(p => `${p.name_fr || p.id} (ID: ${p.id})`).join(', ')}`
           ).join('\n');
           
           console.log('⚠️ Template has references:', referencesText);
@@ -225,20 +189,6 @@ export const useTemplateOperations = () => {
           // Continue malgré l'erreur pour essayer de nettoyer
         } else {
           console.log('✅ print_products references removed');
-        }
-
-        // Supprimer les références dans tshirt_templates
-        console.log('Removing references from tshirt_templates...');
-        const { error: tshirtTemplatesError } = await supabase
-          .from('tshirt_templates')
-          .update({ template_id: null })
-          .eq('template_id', templateId);
-
-        if (tshirtTemplatesError) {
-          console.error('❌ Error removing tshirt_templates references:', tshirtTemplatesError);
-          // Continue malgré l'erreur pour essayer de supprimer le template
-        } else {
-          console.log('✅ tshirt_templates references removed');
         }
       }
 

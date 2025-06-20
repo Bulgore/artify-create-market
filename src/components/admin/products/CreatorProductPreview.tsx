@@ -16,9 +16,10 @@ interface ProductWithMockups {
   name_fr: string;
   description_fr: string;
   preview_url?: string;
-  // Champs optionnels pour la nouvelle logique
+  // Nouveaux champs pour la logique multi-mockup
   generated_mockups?: any[];
   original_design_url?: string;
+  design_file_info?: any;
 }
 
 export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
@@ -40,14 +41,15 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
 
       if (error) throw error;
       
-      // Mapper les données pour assurer la compatibilité
+      // Mapper les données pour assurer la compatibilité avec les nouveaux champs
       const productData: ProductWithMockups = {
         id: data.id,
         name_fr: data.name_fr,
         description_fr: data.description_fr,
         preview_url: data.preview_url,
         generated_mockups: data.generated_mockups || [],
-        original_design_url: data.original_design_url || data.preview_url
+        original_design_url: data.original_design_url || data.preview_url,
+        design_file_info: data.design_file_info || {}
       };
       
       setProduct(productData);
@@ -200,9 +202,16 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
                   />
                   <div>
                     <p className="text-sm text-blue-800">Fichier HD disponible</p>
+                    {product.design_file_info && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        <p>Taille: {product.design_file_info.size ? Math.round(product.design_file_info.size / 1024) + ' KB' : 'N/A'}</p>
+                        <p>Format: {product.design_file_info.type || 'N/A'}</p>
+                      </div>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
+                      className="mt-2"
                       onClick={() => {
                         const link = document.createElement('a');
                         link.href = product.original_design_url!;
