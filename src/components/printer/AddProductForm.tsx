@@ -11,7 +11,6 @@ interface ProductTemplate {
   name: string;
   type: string;
   mockup_image_url: string;
-  design_area: any;
   available_positions: string[];
   available_colors: string[];
   technical_instructions: string;

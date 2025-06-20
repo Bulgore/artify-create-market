@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye } from 'lucide-react';
-import type { DesignArea } from '@/types/designArea';
+import type { PrintArea } from '@/types/printArea';
 import { calculateAutoPosition, getImageDimensions, AutoPositionResult } from '@/utils/designPositioning';
 import { MockupContainer } from './mockup/MockupContainer';
 import { MockupStatusInfo } from './mockup/MockupStatusInfo';
@@ -10,17 +10,15 @@ import { MockupStatusInfo } from './mockup/MockupStatusInfo';
 interface MockupPreviewProps {
   mockupUrl?: string;
   designUrl?: string;
-  designArea?: DesignArea;
+  designArea?: PrintArea;
   designPosition?: any;
-  svgTemplateUrl?: string;
 }
 
 export const MockupPreview: React.FC<MockupPreviewProps> = ({
   mockupUrl,
   designUrl,
   designArea,
-  designPosition,
-  svgTemplateUrl
+  designPosition
 }) => {
   const [mockupLoaded, setMockupLoaded] = useState(false);
   const [designLoaded, setDesignLoaded] = useState(false);
@@ -33,10 +31,9 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
       mockupUrl: mockupUrl?.substring(0, 50) + '...',
       designUrl: designUrl?.substring(0, 50) + '...',
       designArea,
-      designPosition,
-      svgTemplateUrl: svgTemplateUrl?.substring(0, 50) + '...'
+      designPosition
     });
-  }, [mockupUrl, designUrl, designArea, designPosition, svgTemplateUrl]);
+  }, [mockupUrl, designUrl, designArea, designPosition]);
 
   // Calculer la position automatique quand le design et la zone sont disponibles
   useEffect(() => {
@@ -115,7 +112,6 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
             designError={designError}
             designArea={designArea}
             autoPosition={autoPosition}
-            svgTemplateUrl={svgTemplateUrl}
             onMockupLoad={handleMockupLoad}
             onMockupError={handleMockupError}
             onDesignLoad={handleDesignLoad}

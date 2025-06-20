@@ -1,5 +1,5 @@
 
-import { DesignArea } from '@/types/designArea';
+import { PrintArea } from '@/types/printArea';
 
 export interface AutoPositionResult {
   x: number;
@@ -16,7 +16,7 @@ export interface AutoPositionResult {
  */
 export const calculateAutoPosition = (
   designDimensions: { width: number; height: number },
-  printArea: DesignArea
+  printArea: PrintArea
 ): AutoPositionResult => {
   console.log('🎯 Calcul position automatique PROFESSIONNEL AMÉLIORÉ:', { 
     designDimensions, 

@@ -1,9 +1,9 @@
 
 import React from 'react';
-import type { DesignArea } from '@/types/designArea';
+import type { PrintArea } from '@/types/printArea';
 
 interface PrintAreaOverlayProps {
-  designArea: DesignArea;
+  designArea: PrintArea;
   containerWidth: number;
   containerHeight: number;
 }
