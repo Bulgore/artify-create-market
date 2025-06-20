@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PrintProduct, mapPrintProductWithCompatibility } from '@/types/customProduct';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 interface ProductSelectorProps {
   onProductSelect: (product: PrintProduct | null) => void;
@@ -66,6 +67,13 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ onProductSelect }) =>
             name: product.product_templates.name_fr ?? product.product_templates.name ?? '',
             technical_instructions: product.product_templates.technical_instructions_fr ?? product.product_templates.technical_instructions ?? ''
           };
+          if (product.product_templates.product_mockups) {
+            mappedProduct.product_templates.product_mockups = product.product_templates.product_mockups.map((m: any) => ({
+              ...m,
+              mockup_url: buildImageUrl(m.mockup_url),
+              url: buildImageUrl(m.mockup_url)
+            }));
+          }
         }
         return mappedProduct;
       });

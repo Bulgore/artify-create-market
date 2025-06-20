@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 interface ProductMockup {
   id: string;
@@ -38,8 +39,14 @@ export const useProductMockups = (templateId?: string) => {
         setMockups([]);
         return;
       }
-      
-      setMockups(data || []);
+
+      const mapped = (data || []).map((m) => ({
+        ...m,
+        url: buildImageUrl(m.mockup_url),
+        mockup_url: buildImageUrl(m.mockup_url)
+      }));
+
+      setMockups(mapped);
     } catch (error: any) {
       console.error('Error fetching mockups:', error);
       setMockups([]);

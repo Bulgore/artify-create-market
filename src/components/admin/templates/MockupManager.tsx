@@ -8,6 +8,7 @@ import { useProductMockups } from '@/hooks/useProductMockups';
 import { useSimpleFileUpload } from '@/hooks/useSimpleFileUpload';
 import { Upload, Trash, Edit, Eye, Move } from 'lucide-react';
 import { MockupPrintAreaEditor } from './MockupPrintAreaEditor';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 interface MockupManagerProps {
   templateId: string;
@@ -122,7 +123,7 @@ export const MockupManager: React.FC<MockupManagerProps> = ({ templateId }) => {
               <CardContent className="p-4">
                 <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100">
                   <img
-                    src={mockup.mockup_url}
+                    src={buildImageUrl(mockup.mockup_url)}
                     alt={mockup.mockup_name}
                     className="w-full h-full object-cover"
                   />

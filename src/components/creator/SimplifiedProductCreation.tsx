@@ -8,6 +8,7 @@ import { ProductCreationForm } from './simplified/ProductCreationForm';
 import { useDesignPositioning } from '@/hooks/useDesignPositioning';
 import { useProductData } from '@/hooks/useProductData';
 import { useProductSubmission } from '@/hooks/useProductSubmission';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 interface SimplifiedProductCreationProps {
   printProducts: PrintProduct[];
@@ -146,11 +147,13 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
             <MockupSection
               mockupUrl={
                 Array.isArray(selectedProduct.product_templates?.product_mockups)
-                  ? selectedProduct.product_templates?.product_mockups.find(
-                      m =>
-                        m.id ===
-                        selectedProduct.product_templates?.primary_mockup_id
-                    )?.mockup_url
+                  ? buildImageUrl(
+                      selectedProduct.product_templates?.product_mockups.find(
+                        m =>
+                          m.id ===
+                          selectedProduct.product_templates?.primary_mockup_id
+                      )?.mockup_url
+                    )
                   : undefined
               }
               designUrl={designUrl}

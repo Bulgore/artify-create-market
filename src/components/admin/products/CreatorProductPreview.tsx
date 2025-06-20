@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { buildImageUrl } from '@/utils/imageUrl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type {
@@ -51,11 +52,14 @@ export const CreatorProductPreview: React.FC<CreatorProductPreviewProps> = ({
         id: data.id,
         name_fr: data.name_fr,
         description_fr: data.description_fr,
-        preview_url: data.preview_url,
+        preview_url: buildImageUrl(data.preview_url),
         generated_mockups: Array.isArray(data.generated_mockups)
-          ? (data.generated_mockups as GeneratedMockup[])
+          ? (data.generated_mockups as any[]).map((m) => ({
+              ...m,
+              url: buildImageUrl((m as any).url || (m as any).mockup_url || (m as any).path)
+            }))
           : [],
-        original_design_url: data.original_design_url || data.preview_url,
+        original_design_url: buildImageUrl(data.original_design_url || data.preview_url),
         design_file_info: (data.design_file_info as DesignFileInfo) || null
       };
       

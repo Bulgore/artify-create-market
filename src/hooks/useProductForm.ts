@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { ProductMockup } from "@/types/templates";
+import { buildImageUrl } from "@/utils/imageUrl";
 
 interface SelectedTemplate {
   id: string;
@@ -153,10 +154,11 @@ export const useProductForm = () => {
         print_areas: { width: 20, height: 30, unit: "cm" },
         images: [
           Array.isArray(formData.selectedTemplate?.product_mockups)
-            ?
+            ? buildImageUrl(
                 formData.selectedTemplate?.product_mockups.find(
                   m => m.id === formData.selectedTemplate?.primary_mockup_id
-                )?.mockup_url || "/placeholder.svg"
+                )?.mockup_url
+              )
             : "/placeholder.svg"
         ],
         available_sizes: formData.available_sizes,
