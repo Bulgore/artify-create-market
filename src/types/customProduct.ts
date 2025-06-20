@@ -48,6 +48,7 @@ export interface ProductTemplate {
   created_by: string;
   created_at: string;
   updated_at: string;
+  printer_id?: string | null;
 }
 
 export interface ProductData {
@@ -67,5 +68,6 @@ export const mapPrintProductWithCompatibility = (product: any): PrintProduct => 
 export const mapTemplateWithCompatibility = (template: any): ProductTemplate => ({
   ...template,
   name: template.name ?? template.name_fr ?? '',
-  technical_instructions: template.technical_instructions ?? template.technical_instructions_fr ?? ''
+  technical_instructions: template.technical_instructions ?? template.technical_instructions_fr ?? '',
+  printer_id: template.printer_id ?? template.template_printers?.printer_id ?? null
 });

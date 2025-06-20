@@ -19,7 +19,8 @@ export const useTemplateForm = () => {
       available_positions: template.available_positions,
       available_colors: template.available_colors,
       technical_instructions: template.technical_instructions || '',
-      is_active: template.is_active
+      is_active: template.is_active,
+      printer_id: template.printer_id || ''
     });
     setIsDialogOpen(true);
   };

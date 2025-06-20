@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link2, AlertCircle, CheckCircle2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Template {
   id: string;
@@ -44,17 +45,27 @@ const TemplateMappingPanel: React.FC<TemplateMappingPanelProps> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    // Charger les mappings existants (simulation)
-    const mockMappings: TemplateMapping[] = templates.slice(0, 2).map((template, index) => ({
-      template_id: template.id,
-      printer_id: printers[index]?.id || '',
-      template_name: template.name_fr,
-      printer_name: printers[index]?.name || ''
-    }));
-    setMappings(mockMappings);
+    fetchMappings();
   }, [templates, printers]);
 
-  const handleMappingChange = (templateId: string, printerId: string) => {
+  const fetchMappings = async () => {
+    const { data, error } = await supabase.from('template_printers').select('template_id, printer_id');
+    if (!error) {
+      const mapped = (data || []).map((m: any) => {
+        const tpl = templates.find(t => t.id === m.template_id);
+        const prt = printers.find(p => p.id === m.printer_id);
+        return {
+          template_id: m.template_id,
+          printer_id: m.printer_id,
+          template_name: tpl?.name_fr || '',
+          printer_name: prt?.name || ''
+        } as TemplateMapping;
+      });
+      setMappings(mapped);
+    }
+  };
+
+  const handleMappingChange = async (templateId: string, printerId: string) => {
     const template = templates.find(t => t.id === templateId);
     const printer = printers.find(p => p.id === printerId);
     
@@ -66,6 +77,10 @@ const TemplateMappingPanel: React.FC<TemplateMappingPanelProps> = ({
       template_name: template.name_fr,
       printer_name: printer.name
     };
+
+    await supabase
+      .from('template_printers')
+      .upsert({ template_id: templateId, printer_id: printerId }, { onConflict: 'template_id' });
 
     setMappings(prev => {
       const existing = prev.findIndex(m => m.template_id === templateId);
@@ -85,7 +100,12 @@ const TemplateMappingPanel: React.FC<TemplateMappingPanelProps> = ({
     });
   };
 
-  const removeMappingForTemplate = (templateId: string) => {
+  const removeMappingForTemplate = async (templateId: string) => {
+    await supabase
+      .from('template_printers')
+      .delete()
+      .eq('template_id', templateId);
+
     setMappings(prev => prev.filter(m => m.template_id !== templateId));
     toast({
       title: "Mapping supprimé",
