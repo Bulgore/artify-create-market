@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import type { ProductMockup } from "@/types/templates";
 
 interface SelectedTemplate {
   id: string;
@@ -17,7 +18,8 @@ interface SelectedTemplate {
   name: string;
   technical_instructions?: string | null;
   type: string;
-  mockup_image_url: string;
+  primary_mockup_id?: string;
+  product_mockups?: ProductMockup[];
   available_positions: string[];
   available_colors: string[];
 }
@@ -149,7 +151,11 @@ export const useProductForm = () => {
         material: formData.material.trim(),
         stock_quantity: formData.stock_quantity,
         print_areas: { width: 20, height: 30, unit: "cm" },
-        images: [formData.selectedTemplate?.mockup_image_url || "/placeholder.svg"],
+        images: [
+          formData.selectedTemplate?.product_mockups?.find(
+            m => m.id === formData.selectedTemplate?.primary_mockup_id
+          )?.mockup_url || "/placeholder.svg"
+        ],
         available_sizes: formData.available_sizes,
         available_colors: formData.available_colors
       };

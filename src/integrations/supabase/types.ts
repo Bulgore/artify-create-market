@@ -735,7 +735,6 @@ export type Database = {
           created_by: string
           id: string
           is_active: boolean | null
-          mockup_image_url: string
           name_en: string | null
           name_fr: string
           name_ty: string | null
@@ -753,7 +752,6 @@ export type Database = {
           created_by: string
           id?: string
           is_active?: boolean | null
-          mockup_image_url: string
           name_en?: string | null
           name_fr: string
           name_ty?: string | null
@@ -771,7 +769,6 @@ export type Database = {
           created_by?: string
           id?: string
           is_active?: boolean | null
-          mockup_image_url?: string
           name_en?: string | null
           name_fr?: string
           name_ty?: string | null

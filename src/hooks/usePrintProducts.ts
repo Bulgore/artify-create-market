@@ -134,8 +134,7 @@ export const usePrintProducts = () => {
         const productWithTemplate = {
           ...mappedProduct,
           product_templates: {
-            ...mappedTemplate,
-            mockup_image_url: mockupImageUrl
+            ...mappedTemplate
           }
         };
 

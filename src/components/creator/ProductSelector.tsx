@@ -37,13 +37,19 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ onProductSelect }) =>
             technical_instructions_en,
             technical_instructions_ty,
             type,
-            mockup_image_url,
+            primary_mockup_id,
             available_positions,
             available_colors,
             is_active,
             created_by,
             created_at,
-            updated_at
+            updated_at,
+            product_mockups!product_templates_primary_mockup_id_fkey (
+              id,
+              mockup_url,
+              mockup_name,
+              is_primary
+            )
           )
         `)
         .eq('is_active', true);
