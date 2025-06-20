@@ -8,23 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Download, Eye, Check, X, AlertTriangle } from 'lucide-react';
 import { CreatorProductPreview } from './CreatorProductPreview';
+import type { CreatorProduct, DesignFileInfo } from '@/types/creatorProduct';
 
-interface CreatorProduct {
-  id: string;
-  name_fr: string;
-  description_fr: string;
-  preview_url: string;
-  status: string;
-  creator_id: string;
-  created_at: string;
-  users: {
-    full_name_fr: string;
-    email: string;
-  };
-  // Nouveaux champs pour la compatibilité
-  original_design_url?: string;
-  design_file_info?: any;
-}
 
 export const CreatorProductValidation: React.FC = () => {
   const { toast } = useToast();
@@ -67,7 +52,7 @@ export const CreatorProductValidation: React.FC = () => {
         creator_id: product.creator_id,
         created_at: product.created_at,
         original_design_url: product.original_design_url,
-        design_file_info: product.design_file_info,
+        design_file_info: product.design_file_info as DesignFileInfo,
         users: product.users
       }));
       
