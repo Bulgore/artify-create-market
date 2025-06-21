@@ -12,6 +12,12 @@ export const useTemplateForm = () => {
   };
 
   const openEditDialog = (template: ProductTemplate) => {
+    console.log('📝 Opening edit dialog for template:', {
+      id: template.id,
+      name: template.name,
+      printer_id: template.printer_id
+    });
+    
     setEditingTemplate(template);
     setFormData({
       name: template.name || '',
@@ -26,12 +32,14 @@ export const useTemplateForm = () => {
   };
 
   const openCreateDialog = () => {
+    console.log('🆕 Opening create dialog');
     setEditingTemplate(null);
     resetForm();
     setIsDialogOpen(true);
   };
 
   const closeDialog = () => {
+    console.log('❌ Closing dialog');
     setIsDialogOpen(false);
     setEditingTemplate(null);
     resetForm();

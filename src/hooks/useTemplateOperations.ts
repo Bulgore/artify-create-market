@@ -15,22 +15,49 @@ export const useTemplateOperations = () => {
     try {
       const { data, error } = await supabase
         .from('product_templates')
-        .select('*, template_printers(printer_id)')
+        .select(`
+          *,
+          template_printers!left(
+            printer_id,
+            printers!inner(
+              id,
+              name
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Mapper avec compatibilité
-      const mappedTemplates = (data || []).map((template: any) => ({
-        ...template,
-        name: template.name_fr ?? template.name ?? '',
-        technical_instructions: template.technical_instructions_fr ?? template.technical_instructions ?? '',
-        printer_id: template.template_printers?.printer_id || null
-      }));
+      console.log('✅ Raw templates data:', data);
+      
+      // Mapper avec compatibilité et récupération du printer_id
+      const mappedTemplates = (data || []).map((template: any) => {
+        const printerMapping = template.template_printers && template.template_printers.length > 0 
+          ? template.template_printers[0] 
+          : null;
+        
+        const mappedTemplate = {
+          ...template,
+          name: template.name_fr ?? template.name ?? '',
+          technical_instructions: template.technical_instructions_fr ?? template.technical_instructions ?? '',
+          printer_id: printerMapping?.printer_id || null,
+          printer_name: printerMapping?.printers?.name || null
+        };
+        
+        console.log('🔄 Mapped template:', {
+          id: template.id,
+          name: mappedTemplate.name,
+          printer_id: mappedTemplate.printer_id,
+          printer_name: mappedTemplate.printer_name
+        });
+        
+        return mappedTemplate;
+      });
       
       return mappedTemplates;
     } catch (error: any) {
-      console.error('Error fetching templates:', error);
+      console.error('❌ Error fetching templates:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -46,7 +73,7 @@ export const useTemplateOperations = () => {
     if (!user) return false;
 
     try {
-      console.log('Saving template with data:', formData);
+      console.log('💾 Saving template with data:', formData);
 
       const templateData = {
         name_fr: formData.name || '',
@@ -58,28 +85,26 @@ export const useTemplateOperations = () => {
         is_active: Boolean(formData.is_active)
       };
 
-      console.log('Template data to save:', templateData);
+      console.log('📝 Template data to save:', templateData);
 
       let templateId = editingTemplate?.id || '';
 
       if (editingTemplate) {
+        // Mise à jour d'un template existant
         const { error } = await supabase
           .from('product_templates')
           .update(templateData)
           .eq('id', editingTemplate.id);
 
         if (error) {
-          console.error('Update error:', error);
+          console.error('❌ Update error:', error);
           throw error;
         }
 
         templateId = editingTemplate.id;
-
-        toast({
-          title: "Gabarit mis à jour",
-          description: "Le gabarit a été mis à jour avec succès.",
-        });
+        console.log('✅ Template updated successfully');
       } else {
+        // Création d'un nouveau template
         const { data, error } = await supabase
           .from('product_templates')
           .insert([templateData])
@@ -87,27 +112,57 @@ export const useTemplateOperations = () => {
           .single();
 
         if (error) {
-          console.error('Insert error:', error);
+          console.error('❌ Insert error:', error);
           throw error;
         }
 
         templateId = data?.id;
-
-        toast({
-          title: "Gabarit créé",
-          description: "Le nouveau gabarit a été créé avec succès.",
-        });
+        console.log('✅ Template created successfully:', templateId);
       }
 
+      // Gestion du mapping template-imprimeur
       if (templateId && formData.printer_id) {
+        console.log('🔗 Managing template-printer mapping:', {
+          template_id: templateId,
+          printer_id: formData.printer_id
+        });
+
+        // Supprimer l'ancien mapping s'il existe
         await supabase
           .from('template_printers')
-          .upsert({ template_id: templateId, printer_id: formData.printer_id }, { onConflict: 'template_id' });
+          .delete()
+          .eq('template_id', templateId);
+
+        // Créer le nouveau mapping
+        const { error: mappingError } = await supabase
+          .from('template_printers')
+          .insert({
+            template_id: templateId,
+            printer_id: formData.printer_id
+          });
+
+        if (mappingError) {
+          console.error('❌ Mapping error:', mappingError);
+          toast({
+            variant: "destructive",
+            title: "Avertissement",
+            description: "Template sauvegardé mais erreur lors de l'association avec l'imprimeur.",
+          });
+        } else {
+          console.log('✅ Template-printer mapping created successfully');
+        }
       }
+
+      toast({
+        title: editingTemplate ? "Gabarit mis à jour" : "Gabarit créé",
+        description: editingTemplate 
+          ? "Le gabarit a été mis à jour avec succès."
+          : "Le nouveau gabarit a été créé avec succès.",
+      });
 
       return true;
     } catch (error: any) {
-      console.error('Error saving template:', error);
+      console.error('❌ Error saving template:', error);
       toast({
         variant: "destructive",
         title: "Erreur",

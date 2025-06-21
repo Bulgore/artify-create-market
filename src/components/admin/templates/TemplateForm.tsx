@@ -7,14 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Save, X } from "lucide-react";
 import { TemplateFormData } from "@/types/templates";
 import { MockupManager } from "./MockupManager";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { usePrinters } from "@/hooks/usePrinters";
+import { PrinterSelector } from "./PrinterSelector";
 
 interface TemplateFormProps {
   formData: TemplateFormData;
@@ -33,7 +26,11 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
   isEditing,
   templateId
 }) => {
-  const { printers } = usePrinters();
+  const handlePrinterChange = (printerId: string) => {
+    console.log('🔄 Printer selection changed:', printerId);
+    setFormData({ ...formData, printer_id: printerId });
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
@@ -82,24 +79,10 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
         </div>
       </div>
 
-      <div>
-        <Label>Imprimeur associé *</Label>
-        <Select
-          value={formData.printer_id}
-          onValueChange={(value) => setFormData({ ...formData, printer_id: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choisir un imprimeur" />
-          </SelectTrigger>
-          <SelectContent>
-            {printers.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <PrinterSelector
+        selectedPrinterId={formData.printer_id}
+        onPrinterChange={handlePrinterChange}
+      />
 
       <div>
         <Label htmlFor="instructions">Instructions techniques</Label>
