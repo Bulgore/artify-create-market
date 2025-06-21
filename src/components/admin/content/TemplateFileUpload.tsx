@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Upload, X, FileImage, Code } from 'lucide-react';
 import MediaLibraryModal from './MediaLibraryModal';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 interface TemplateFileUploadProps {
   label: string;
@@ -35,26 +36,31 @@ const TemplateFileUpload: React.FC<TemplateFileUploadProps> = ({
 
     setIsUploading(true);
     try {
-      // Générer un nom de fichier unique
       const fileExtension = file.name.split('.').pop();
       const fileName = `template-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
-      const filePath = `templates/${fileName}`;
 
-      // Upload vers le bucket templates (sera créé automatiquement si nécessaire)
+      console.log(`🔄 Uploading template file: ${fileName}`);
+
+      // Upload vers le bucket templates ou mockups selon le type
+      const bucket = fileType === 'image' ? 'mockups' : 'templates';
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('templates')
-        .upload(filePath, file);
+        .from(bucket)
+        .upload(fileName, file, { upsert: true });
 
       if (uploadError) {
+        console.error('❌ Template upload error:', uploadError);
         throw uploadError;
       }
 
+      console.log('✅ Template upload successful:', uploadData);
+
       // Obtenir l'URL publique
       const { data: urlData } = supabase.storage
-        .from('templates')
-        .getPublicUrl(filePath);
+        .from(bucket)
+        .getPublicUrl(fileName);
 
       const publicUrl = urlData.publicUrl;
+      console.log('🔗 Template public URL:', publicUrl);
 
       // Sauvegarder les infos du fichier dans media_files
       const { error: dbError } = await supabase
@@ -68,8 +74,7 @@ const TemplateFileUpload: React.FC<TemplateFileUploadProps> = ({
         });
 
       if (dbError) {
-        console.error('Error saving to database:', dbError);
-        // Ne pas faire échouer l'upload si la DB échoue
+        console.error('⚠️ DB save error (non-critical):', dbError);
       }
 
       onUrlChange(publicUrl);
@@ -131,9 +136,10 @@ const TemplateFileUpload: React.FC<TemplateFileUploadProps> = ({
           
           {fileType === 'image' && (
             <img
-              src={currentUrl}
+              src={buildImageUrl(currentUrl)}
               alt="Aperçu"
               className="w-full h-32 object-cover rounded border"
+              onError={() => console.log('❌ Image preview failed to load:', currentUrl)}
             />
           )}
         </div>

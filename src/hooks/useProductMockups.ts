@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { buildImageUrl } from '@/utils/imageUrl';
+import { buildMockupUrl } from '@/utils/imageUrl';
 
 interface ProductMockup {
   id: string;
@@ -27,7 +27,8 @@ export const useProductMockups = (templateId?: string) => {
     
     setIsLoading(true);
     try {
-      // Utiliser une requête directe pour la nouvelle table product_mockups
+      console.log('🔄 Fetching mockups for template:', templateId);
+      
       const { data, error } = await supabase
         .from('product_mockups')
         .select('*')
@@ -35,19 +36,21 @@ export const useProductMockups = (templateId?: string) => {
         .order('display_order', { ascending: true });
 
       if (error) {
-        console.error('Error fetching mockups:', error);
+        console.error('❌ Error fetching mockups:', error);
         setMockups([]);
         return;
       }
 
+      console.log('✅ Mockups fetched:', data?.length || 0);
+
       const mapped = (data || []).map((m) => ({
         ...m,
-        url: buildImageUrl(m.mockup_url)
+        url: buildMockupUrl(m.mockup_url)
       }));
 
       setMockups(mapped);
     } catch (error: any) {
-      console.error('Error fetching mockups:', error);
+      console.error('❌ Exception fetching mockups:', error);
       setMockups([]);
     } finally {
       setIsLoading(false);
@@ -56,11 +59,16 @@ export const useProductMockups = (templateId?: string) => {
 
   const addMockup = async (mockupData: Omit<ProductMockup, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('🔄 Adding mockup:', mockupData);
+      
       const { error } = await supabase
         .from('product_mockups')
         .insert([mockupData]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error adding mockup:', error);
+        throw error;
+      }
       
       toast({
         title: "Mockup ajouté",
@@ -70,7 +78,7 @@ export const useProductMockups = (templateId?: string) => {
       fetchMockups();
       return true;
     } catch (error: any) {
-      console.error('Error adding mockup:', error);
+      console.error('❌ Exception adding mockup:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -82,12 +90,17 @@ export const useProductMockups = (templateId?: string) => {
 
   const updateMockup = async (mockupId: string, updates: Partial<ProductMockup>) => {
     try {
+      console.log('🔄 Updating mockup:', mockupId, updates);
+      
       const { error } = await supabase
         .from('product_mockups')
         .update(updates)
         .eq('id', mockupId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error updating mockup:', error);
+        throw error;
+      }
       
       toast({
         title: "Mockup mis à jour",
@@ -97,7 +110,7 @@ export const useProductMockups = (templateId?: string) => {
       fetchMockups();
       return true;
     } catch (error: any) {
-      console.error('Error updating mockup:', error);
+      console.error('❌ Exception updating mockup:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -109,12 +122,17 @@ export const useProductMockups = (templateId?: string) => {
 
   const deleteMockup = async (mockupId: string) => {
     try {
+      console.log('🔄 Deleting mockup:', mockupId);
+      
       const { error } = await supabase
         .from('product_mockups')
         .delete()
         .eq('id', mockupId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error deleting mockup:', error);
+        throw error;
+      }
       
       toast({
         title: "Mockup supprimé",
@@ -124,7 +142,7 @@ export const useProductMockups = (templateId?: string) => {
       fetchMockups();
       return true;
     } catch (error: any) {
-      console.error('Error deleting mockup:', error);
+      console.error('❌ Exception deleting mockup:', error);
       toast({
         variant: "destructive",
         title: "Erreur",

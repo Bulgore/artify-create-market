@@ -15,18 +15,28 @@ export const useSimpleFileUpload = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      const { error } = await supabase.storage
+      console.log(`🔄 Uploading to bucket: ${bucket}, file: ${fileName}`);
+
+      const { data, error } = await supabase.storage
         .from(bucket)
         .upload(fileName, file, { upsert: true });
 
       if (error) {
+        console.error('❌ Upload error:', error);
         throw error;
       }
 
-      const filePath = `${bucket}/${fileName}`;
-      console.log('File uploaded to:', filePath);
+      console.log('✅ Upload successful:', data);
 
-      return filePath;
+      // Construire l'URL publique
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName);
+
+      const publicUrl = urlData.publicUrl;
+      console.log('🔗 Public URL:', publicUrl);
+
+      return publicUrl;
     } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({

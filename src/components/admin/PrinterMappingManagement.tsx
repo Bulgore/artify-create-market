@@ -11,7 +11,7 @@ interface PrinterData {
   email: string;
   phone?: string;
   address?: string;
-  specialties: string;
+  specialties: string[];
   notes?: string;
   is_active: boolean;
   created_at: string;
@@ -53,8 +53,14 @@ const PrinterMappingManagement = () => {
 
       if (printersError) throw printersError;
 
+      // Normaliser les données printer avec le bon type pour specialties
+      const normalizedPrinters = (printersData || []).map((p: any) => ({
+        ...p,
+        specialties: Array.isArray(p.specialties) ? p.specialties : []
+      }));
+
       setTemplates(templatesData || []);
-      setPrinters(printersData || []);
+      setPrinters(normalizedPrinters);
 
     } catch (error: any) {
       console.error('Error fetching data:', error);
