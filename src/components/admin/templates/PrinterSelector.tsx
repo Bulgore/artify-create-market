@@ -18,24 +18,36 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({
   console.log('🖨️ PrinterSelector render:', { 
     selectedPrinterId, 
     printersCount: printers.length,
-    loading 
+    loading,
+    printers: printers.map(p => ({ id: p.id, name: p.name }))
   });
+
+  const handleValueChange = (value: string) => {
+    console.log('🔄 PrinterSelector value change:', { oldValue: selectedPrinterId, newValue: value });
+    if (value && value !== "loading" && value !== "no-printers") {
+      onPrinterChange(value);
+    }
+  };
 
   return (
     <div>
       <Label>Imprimeur associé *</Label>
       <Select
-        value={selectedPrinterId}
-        onValueChange={onPrinterChange}
+        value={selectedPrinterId || undefined}
+        onValueChange={handleValueChange}
       >
         <SelectTrigger>
           <SelectValue placeholder="Choisir un imprimeur" />
         </SelectTrigger>
         <SelectContent>
           {loading ? (
-            <SelectItem value="" disabled>Chargement...</SelectItem>
+            <SelectItem value="loading" disabled>
+              Chargement des imprimeurs...
+            </SelectItem>
           ) : printers.length === 0 ? (
-            <SelectItem value="" disabled>Aucun imprimeur disponible</SelectItem>
+            <SelectItem value="no-printers" disabled>
+              Aucun imprimeur disponible
+            </SelectItem>
           ) : (
             printers.map((printer) => (
               <SelectItem key={printer.id} value={printer.id}>
@@ -45,7 +57,7 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({
           )}
         </SelectContent>
       </Select>
-      {selectedPrinterId && (
+      {selectedPrinterId && printers.length > 0 && (
         <p className="text-xs text-gray-500 mt-1">
           Imprimeur sélectionné: {printers.find(p => p.id === selectedPrinterId)?.name || 'Inconnu'}
         </p>

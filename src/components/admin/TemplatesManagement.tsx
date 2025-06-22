@@ -25,10 +25,13 @@ const TemplatesManagement = () => {
 
   console.log('🔐 TemplatesManagement - User auth state:', {
     user: user?.id,
-    isSuperAdmin: isSuperAdmin()
+    isSuperAdmin: isSuperAdmin(),
+    templates: templates?.length || 0
   });
 
+  // Vérifications d'authentification avec gestion d'erreur
   if (!user) {
+    console.log('❌ No user - showing login required message');
     return (
       <Card>
         <CardContent className="text-center py-10">
@@ -39,6 +42,7 @@ const TemplatesManagement = () => {
   }
 
   if (!isSuperAdmin()) {
+    console.log('❌ User is not super admin - showing access denied');
     return (
       <Card>
         <CardContent className="text-center py-10">
@@ -48,30 +52,44 @@ const TemplatesManagement = () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
+  console.log('✅ User authenticated and authorized, rendering templates management');
+
+  try {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <TemplatesHeader onCreateTemplate={openCreateDialog} />
+          <CardContent>
+            <TemplatesGrid
+              templates={templates || []}
+              isLoading={isLoading}
+              onEditTemplate={openEditDialog}
+              onDeleteTemplate={handleDeleteTemplate}
+            />
+          </CardContent>
+        </Card>
+
+        <TemplateDialog
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          editingTemplate={editingTemplate}
+          formData={formData}
+          setFormData={setFormData}
+          onSave={handleSaveTemplate}
+        />
+      </div>
+    );
+  } catch (error) {
+    console.error('❌ Error rendering TemplatesManagement:', error);
+    return (
       <Card>
-        <TemplatesHeader onCreateTemplate={openCreateDialog} />
-        <CardContent>
-          <TemplatesGrid
-            templates={templates}
-            isLoading={isLoading}
-            onEditTemplate={openEditDialog}
-            onDeleteTemplate={handleDeleteTemplate}
-          />
+        <CardContent className="text-center py-10">
+          <p className="text-red-500">Erreur lors du chargement de la page des gabarits</p>
+          <p className="text-sm text-gray-500 mt-2">Veuillez rafraîchir la page</p>
         </CardContent>
       </Card>
-
-      <TemplateDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        editingTemplate={editingTemplate}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSaveTemplate}
-      />
-    </div>
-  );
+    );
+  }
 };
 
 export default TemplatesManagement;
