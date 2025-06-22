@@ -13,6 +13,8 @@ export const useTemplateOperations = () => {
   const fetchTemplates = async () => {
     setIsLoading(true);
     try {
+      console.log('🔄 Fetching templates...');
+      
       const { data, error } = await supabase
         .from('product_templates')
         .select(`
@@ -27,7 +29,10 @@ export const useTemplateOperations = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching templates:', error);
+        throw error;
+      }
       
       console.log('✅ Raw templates data:', data);
       
@@ -70,10 +75,29 @@ export const useTemplateOperations = () => {
   };
 
   const saveTemplate = async (formData: TemplateFormData, editingTemplate: ProductTemplate | null) => {
-    if (!user) return false;
+    if (!user) {
+      console.error('❌ No authenticated user');
+      toast({
+        variant: "destructive",
+        title: "Erreur d'authentification",
+        description: "Vous devez être connecté pour effectuer cette action.",
+      });
+      return false;
+    }
+
+    if (!isSuperAdmin()) {
+      console.error('❌ User is not super admin');
+      toast({
+        variant: "destructive",
+        title: "Accès refusé",
+        description: "Seuls les super administrateurs peuvent modifier les gabarits.",
+      });
+      return false;
+    }
 
     try {
       console.log('💾 Saving template with data:', formData);
+      console.log('🔐 User authenticated:', user.id, 'Super admin:', isSuperAdmin());
 
       const templateData = {
         name_fr: formData.name || '',
@@ -91,6 +115,8 @@ export const useTemplateOperations = () => {
 
       if (editingTemplate) {
         // Mise à jour d'un template existant
+        console.log('🔄 Updating existing template:', editingTemplate.id);
+        
         const { error } = await supabase
           .from('product_templates')
           .update(templateData)
@@ -105,6 +131,8 @@ export const useTemplateOperations = () => {
         console.log('✅ Template updated successfully');
       } else {
         // Création d'un nouveau template
+        console.log('🆕 Creating new template');
+        
         const { data, error } = await supabase
           .from('product_templates')
           .insert([templateData])
@@ -128,10 +156,14 @@ export const useTemplateOperations = () => {
         });
 
         // Supprimer l'ancien mapping s'il existe
-        await supabase
+        const { error: deleteError } = await supabase
           .from('template_printers')
           .delete()
           .eq('template_id', templateId);
+
+        if (deleteError) {
+          console.error('⚠️ Error deleting old mapping (non-critical):', deleteError);
+        }
 
         // Créer le nouveau mapping
         const { error: mappingError } = await supabase
@@ -163,16 +195,46 @@ export const useTemplateOperations = () => {
       return true;
     } catch (error: any) {
       console.error('❌ Error saving template:', error);
+      
+      let errorMessage = 'Erreur inconnue';
+      if (error.message?.includes('row-level security')) {
+        errorMessage = 'Droits insuffisants pour cette opération. Vérifiez vos permissions.';
+      } else if (error.message?.includes('permission denied')) {
+        errorMessage = 'Permission refusée. Seuls les super administrateurs peuvent effectuer cette action.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: `Impossible de sauvegarder le gabarit: ${error.message || 'Erreur inconnue'}`,
+        description: `Impossible de sauvegarder le gabarit: ${errorMessage}`,
       });
       return false;
     }
   };
 
   const deleteTemplate = async (templateId: string, forceDelete: boolean = false) => {
+    if (!user) {
+      console.error('❌ No authenticated user');
+      toast({
+        variant: "destructive",
+        title: "Erreur d'authentification",
+        description: "Vous devez être connecté pour effectuer cette action.",
+      });
+      return false;
+    }
+
+    if (!isSuperAdmin()) {
+      console.error('❌ User is not super admin');
+      toast({
+        variant: "destructive",
+        title: "Accès refusé",
+        description: "Seuls les super administrateurs peuvent supprimer les gabarits.",
+      });
+      return false;
+    }
+
     try {
       console.log(`\n=== DEBUT SUPPRESSION TEMPLATE ===`);
       console.log(`Template ID: ${templateId}`);
@@ -287,10 +349,20 @@ export const useTemplateOperations = () => {
       return true;
     } catch (error: any) {
       console.error('❌ CRITICAL ERROR in deleteTemplate:', error);
+      
+      let errorMessage = 'Erreur inconnue';
+      if (error.message?.includes('row-level security')) {
+        errorMessage = 'Droits insuffisants pour cette opération.';
+      } else if (error.message?.includes('permission denied')) {
+        errorMessage = 'Permission refusée.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: "destructive",
         title: "Erreur de suppression",
-        description: `Impossible de supprimer le gabarit : ${error.message || 'Erreur inconnue'}`
+        description: `Impossible de supprimer le gabarit : ${errorMessage}`
       });
       return false;
     }

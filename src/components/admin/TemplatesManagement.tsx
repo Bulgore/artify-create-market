@@ -8,7 +8,7 @@ import TemplateDialog from "./templates/TemplateDialog";
 import TemplatesHeader from "./templates/TemplatesHeader";
 
 const TemplatesManagement = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, user } = useAuth();
   const {
     templates,
     isLoading,
@@ -22,6 +22,21 @@ const TemplatesManagement = () => {
     openEditDialog,
     openCreateDialog
   } = useTemplates();
+
+  console.log('🔐 TemplatesManagement - User auth state:', {
+    user: user?.id,
+    isSuperAdmin: isSuperAdmin()
+  });
+
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="text-center py-10">
+          <p className="text-gray-500">Vous devez être connecté pour accéder à cette page</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!isSuperAdmin()) {
     return (

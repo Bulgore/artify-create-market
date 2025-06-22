@@ -8,6 +8,7 @@ export const useTemplateForm = () => {
   const [formData, setFormData] = useState<TemplateFormData>(DEFAULT_TEMPLATE_FORM_DATA);
 
   const resetForm = () => {
+    console.log('🔄 Resetting form to default values');
     setFormData({ ...DEFAULT_TEMPLATE_FORM_DATA });
   };
 
@@ -19,15 +20,20 @@ export const useTemplateForm = () => {
     });
     
     setEditingTemplate(template);
-    setFormData({
-      name: template.name || '',
-      type: template.type,
-      available_positions: template.available_positions,
-      available_colors: template.available_colors,
-      technical_instructions: template.technical_instructions || '',
-      is_active: template.is_active,
+    
+    // Mapper les données du template vers le formulaire
+    const mappedFormData = {
+      name: template.name || template.name_fr || '',
+      type: template.type || '',
+      available_positions: template.available_positions || ['face'],
+      available_colors: template.available_colors || ['white', 'black'],
+      technical_instructions: template.technical_instructions || template.technical_instructions_fr || '',
+      is_active: template.is_active ?? true,
       printer_id: template.printer_id || ''
-    });
+    };
+    
+    console.log('📝 Mapped form data:', mappedFormData);
+    setFormData(mappedFormData);
     setIsDialogOpen(true);
   };
 
