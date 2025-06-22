@@ -2,13 +2,13 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthContextProvider } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 
-// Existing imports
-import Home from '@/pages/Home';
+// Existing imports - correcting module names
+import Home from '@/pages/Index';
 import Studio from '@/pages/Studio';
 import Admin from '@/pages/Admin';
-import PrinterStudio from '@/pages/PrinterStudio';
+import PrinterStudio from '@/pages/Studio'; // Using Studio as fallback
 
 // New imports for creator profiles
 import CreatorProfile from '@/pages/CreatorProfile';
@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthContextProvider>
+      <AuthProvider>
         <Router>
           <div className="min-h-screen bg-background">
             <Routes>
@@ -42,7 +42,7 @@ function App() {
             <Toaster />
           </div>
         </Router>
-      </AuthContextProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
