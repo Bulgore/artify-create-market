@@ -10,6 +10,8 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   blur?: boolean;
   aspectRatio?: string;
   className?: string;
+  onLoad?: () => void;
+  onError?: () => void;
 }
 
 const OptimizedImage: React.FC<OptimizedImageProps> = ({
@@ -20,12 +22,22 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
   blur = true,
   aspectRatio,
   className,
+  onLoad,
+  onError,
   ...props
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isInView, setIsInView] = useState(!lazy);
+  const [currentSrc, setCurrentSrc] = useState(src);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Reset states when src changes
+  useEffect(() => {
+    setIsLoaded(false);
+    setIsError(false);
+    setCurrentSrc(src);
+  }, [src]);
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -53,13 +65,26 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
     return () => observer.disconnect();
   }, [lazy, isInView]);
 
-  const handleLoad = () => {
+  const handleLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    console.log('✅ Image loaded successfully:', currentSrc);
     setIsLoaded(true);
+    setIsError(false);
+    onLoad?.();
   };
 
-  const handleError = () => {
-    setIsError(true);
-    setIsLoaded(true);
+  const handleError = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('❌ Image failed to load:', currentSrc);
+    
+    // Try fallback if not already using it
+    if (currentSrc !== fallbackSrc && !isError) {
+      console.log('🔄 Trying fallback image:', fallbackSrc);
+      setCurrentSrc(fallbackSrc);
+      setIsError(false);
+    } else {
+      setIsError(true);
+      setIsLoaded(true);
+    }
+    onError?.();
   };
 
   const imageStyle: React.CSSProperties = {
@@ -87,7 +112,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
       {!isLoaded && (
         <div 
           className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"
-          style={{ 
+          style={{
             backgroundSize: '200% 100%',
             animation: 'shimmer 1.5s infinite'
           }}
@@ -97,7 +122,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
       {/* Actual Image */}
       {isInView && (
         <img
-          src={isError ? fallbackSrc : src}
+          src={currentSrc}
           alt={alt}
           onLoad={handleLoad}
           onError={handleError}
@@ -114,9 +139,21 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
       )}
 
       {/* Loading indicator */}
-      {!isLoaded && isInView && (
+      {!isLoaded && isInView && !isError && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-[#33C3F0] border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* Error state */}
+      {isError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="text-center text-gray-400">
+            <div className="w-12 h-12 bg-gray-200 rounded mb-2 mx-auto flex items-center justify-center">
+              <span className="text-gray-400">❌</span>
+            </div>
+            <p className="text-xs">Image non disponible</p>
+          </div>
         </div>
       )}
     </div>

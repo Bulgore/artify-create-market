@@ -36,7 +36,8 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     selectedProductId: selectedProduct?.id,
     designUrl: !!designUrl,
     productName: productData.name,
-    autoPositionExists: !!autoDesignPosition
+    autoPositionExists: !!autoDesignPosition,
+    printProductsAvailable: printProducts.length
   });
 
   const handleProductSelect = (product: PrintProduct | null) => {
@@ -63,14 +64,15 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   };
 
   const handleProductSubmit = async () => {
-    console.log('🚀 SimplifiedProductCreation - handleProductSubmit AVEC PRODUIT EXPLICITE');
-    console.log('📦 Produit à soumettre:', {
-      id: selectedProduct?.id,
-      name: selectedProduct?.name,
-      hasTemplates: !!selectedProduct?.product_templates
+    console.log('🚀 SimplifiedProductCreation - handleProductSubmit');
+    console.log('📦 Validation des données:', {
+      selectedProduct: !!selectedProduct,
+      designUrl: !!designUrl,
+      productName: productData.name,
+      autoPosition: !!autoDesignPosition
     });
     
-    // Validation SIMPLE et CLAIRE - uniquement les 3 champs ESSENTIELS
+    // Validation SIMPLE et CLAIRE
     if (!selectedProduct) {
       console.log('❌ Aucun produit sélectionné');
       return;
@@ -86,7 +88,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       return;
     }
 
-    // Position automatique - pas de validation bloquante, utiliser fallback si nécessaire
+    // Position automatique avec fallback
     let finalPosition = autoDesignPosition;
     if (!finalPosition) {
       console.log('⚠️ Position automatique manquante, utilisation fallback centré');
@@ -100,17 +102,10 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       };
     }
 
-    console.log('✅ Validation SIMPLE réussie - soumission avec PRODUIT EXPLICITE:', {
-      selectedProduct: selectedProduct.name,
-      selectedProductId: selectedProduct.id,
-      designUrl: designUrl.substring(0, 50),
-      productName: productData.name,
-      finalPosition
-    });
+    console.log('✅ Validation réussie - soumission du produit');
 
-    // Appeler directement useProductSubmission avec tous les paramètres requis
     const success = await handleSubmit(
-      selectedProduct,  // Passer l'objet complet, pas undefined
+      selectedProduct,
       designUrl,
       finalPosition,
       productData
@@ -121,15 +116,30 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       // Réinitialiser le formulaire
       setSelectedProduct(null);
       setDesignUrl('');
-      resetDesignPosition();
+      resetDesignPosition();  
       resetProductData();
+      
+      // Appeler la callback parent
+      onProductCreate(success);
     }
   };
 
+  // Afficher message si aucun produit disponible
+  if (printProducts.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun produit disponible</h3>
+        <p className="text-gray-500">Les produits d'impression ne sont pas encore configurés.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <ProductSelectionSection onProductSelect={handleProductSelect} />
+      <ProductSelectionSection 
+        printProducts={printProducts}
+        onProductSelect={handleProductSelect} 
+      />
 
       {selectedProduct && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
