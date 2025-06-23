@@ -1,8 +1,6 @@
 
 import React from "react";
 import { useParams } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,8 +41,6 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
-      
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Image du produit */}
@@ -140,8 +136,6 @@ const ProductDetail = () => {
           </Tabs>
         </div>
       </div>
-      
-      <Footer />
     </div>
   );
 };

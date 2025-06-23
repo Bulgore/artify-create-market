@@ -3,21 +3,17 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import FeaturedCreators from '@/components/FeaturedCreators';
 import CallToAction from '@/components/CallToAction';
-import Footer from '@/components/Footer';
 
 const Index = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      
+    <>
       <main>
         <HeroSection />
         <FeaturedProducts />
@@ -49,9 +45,7 @@ const Index = () => {
         
         <CallToAction />
       </main>
-      
-      <Footer />
-    </div>
+    </>
   );
 };
 

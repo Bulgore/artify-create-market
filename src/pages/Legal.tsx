@@ -1,13 +1,10 @@
 
 import React from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+
 
 const Legal = () => {
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
-      
       <div className="container mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Mentions légales</h1>
         
@@ -35,8 +32,6 @@ const Legal = () => {
           <p>Conformément à la loi Informatique et Libertés, vous disposez d'un droit d'accès, de rectification et de suppression des données vous concernant. Pour l'exercer, veuillez nous contacter à l'adresse suivante: privacy@podsleek.com.</p>
         </div>
       </div>
-      
-      <Footer />
     </div>
   );
 };
