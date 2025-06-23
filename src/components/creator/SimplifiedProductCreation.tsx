@@ -8,19 +8,22 @@ import { ProductCreationForm } from './simplified/ProductCreationForm';
 import { useDesignPositioning } from '@/hooks/useDesignPositioning';
 import { useProductData } from '@/hooks/useProductData';
 import { useProductSubmission } from '@/hooks/useProductSubmission';
+import { usePrintProducts } from '@/hooks/usePrintProducts';
 import { buildImageUrl } from '@/utils/imageUrl';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface SimplifiedProductCreationProps {
-  printProducts: PrintProduct[];
   onProductCreate: (productData: any) => void;
 }
 
 export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps> = ({
-  printProducts,
   onProductCreate
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<PrintProduct | null>(null);
   const [designUrl, setDesignUrl] = useState('');
+  
+  const { printProducts, isLoading: loadingProducts, error: productsError } = usePrintProducts();
   
   const {
     autoDesignPosition,
@@ -37,7 +40,8 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     designUrl: !!designUrl,
     productName: productData.name,
     autoPositionExists: !!autoDesignPosition,
-    printProductsAvailable: printProducts.length
+    printProductsAvailable: printProducts.length,
+    productsError
   });
 
   const handleProductSelect = (product: PrintProduct | null) => {
@@ -55,7 +59,9 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     setDesignUrl(url);
     resetDesignPosition();
     
-    await calculateDesignPosition(url, selectedProduct);
+    if (selectedProduct) {
+      await calculateDesignPosition(url, selectedProduct);
+    }
   };
 
   const handleDesignRemove = () => {
@@ -124,8 +130,22 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     }
   };
 
+  // Afficher les erreurs de chargement des produits
+  if (productsError) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Erreur de chargement:</strong> {productsError}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   // Afficher message si aucun produit disponible
-  if (printProducts.length === 0) {
+  if (!loadingProducts && printProducts.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun produit disponible</h3>
