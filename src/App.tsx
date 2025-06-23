@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -31,19 +32,19 @@ function App() {
         <LanguageProvider>
           <Router>
             <div className="min-h-screen bg-background">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/studio" element={<Studio />} />
-              <Route path="/admin/*" element={<Admin />} />
-              <Route path="/printer" element={<PrinterStudio />} />
-              
-              {/* New routes for creator profiles */}
-              <Route path="/creators" element={<CreatorsPage />} />
-              <Route path="/creator/:creatorId" element={<CreatorProfile />} />
-            </Routes>
-            <Toaster />
-          </div>
-        </Router>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/studio" element={<Studio />} />
+                <Route path="/admin/*" element={<Admin />} />
+                <Route path="/printer" element={<PrinterStudio />} />
+                
+                {/* New routes for creator profiles */}
+                <Route path="/creators" element={<CreatorsPage />} />
+                <Route path="/creator/:creatorId" element={<CreatorProfile />} />
+              </Routes>
+              <Toaster />
+            </div>
+          </Router>
         </LanguageProvider>
       </AuthProvider>
     </QueryClientProvider>
