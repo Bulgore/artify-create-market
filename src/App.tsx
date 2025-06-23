@@ -15,6 +15,15 @@ import Auth from '@/pages/Auth';
 // New imports for creator profiles
 import CreatorProfile from '@/pages/CreatorProfile';
 import CreatorsPage from '@/pages/CreatorsPage';
+import Products from '@/pages/Products';
+import ProductDetail from '@/pages/ProductDetail';
+import CustomPage from '@/pages/CustomPage';
+import Artists from '@/pages/Artists';
+import Privacy from '@/pages/Privacy';
+import Terms from '@/pages/Terms';
+import Legal from '@/pages/Legal';
+import NotFound from '@/pages/NotFound';
+import Layout from '@/components/Layout';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,20 +40,26 @@ function App() {
       <AuthProvider>
         <LanguageProvider>
           <Router>
-            <div className="min-h-screen bg-background">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/studio" element={<Studio />} />
-                <Route path="/admin/*" element={<Admin />} />
-                <Route path="/printer" element={<Studio />} />
-                
-                {/* New routes for creator profiles */}
-                <Route path="/creators" element={<CreatorsPage />} />
-                <Route path="/creator/:creatorId" element={<CreatorProfile />} />
-              </Routes>
-              <Toaster />
-            </div>
+            <Routes>
+              <Route path="/admin/*" element={<Admin />} />
+              <Route element={<Layout />}>
+                <Route index element={<Home />} />
+                <Route path="auth" element={<Auth />} />
+                <Route path="studio" element={<Studio />} />
+                <Route path="printer" element={<Studio />} />
+                <Route path="products" element={<Products />} />
+                <Route path="product/:id" element={<ProductDetail />} />
+                <Route path="creators" element={<CreatorsPage />} />
+                <Route path="creator/:creatorId" element={<CreatorProfile />} />
+                <Route path="artists" element={<Artists />} />
+                <Route path="page/:slug" element={<CustomPage />} />
+                <Route path="privacy" element={<Privacy />} />
+                <Route path="terms" element={<Terms />} />
+                <Route path="legal" element={<Legal />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
+            <Toaster />
           </Router>
         </LanguageProvider>
       </AuthProvider>

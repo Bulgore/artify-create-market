@@ -1,13 +1,10 @@
 
 import React from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+
 
 const Terms = () => {
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
-      
       <div className="container mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Conditions générales d'utilisation</h1>
         
@@ -42,8 +39,6 @@ const Terms = () => {
           <p>Les présentes CGU sont régies par le droit français. Tout litige relatif à leur interprétation et/ou à leur exécution relève des tribunaux français.</p>
         </div>
       </div>
-      
-      <Footer />
     </div>
   );
 };

@@ -1,13 +1,10 @@
 
 import React from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+
 
 const Privacy = () => {
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
-      
       <div className="container mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Politique de confidentialité</h1>
         
@@ -60,8 +57,6 @@ const Privacy = () => {
           <p>Pour toute question concernant cette politique de confidentialité ou pour exercer vos droits, veuillez nous contacter à l'adresse suivante : privacy@podsleek.com</p>
         </div>
       </div>
-      
-      <Footer />
     </div>
   );
 };
