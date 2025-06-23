@@ -62,10 +62,10 @@ const Navbar = () => {
                 {t('nav.products', 'Produits')}
               </Link>
               <Link
-                to="/artists"
+                to="/creators"
                 className="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                {t('nav.artists', 'Artistes')}
+                {t('nav.artists', 'Créateurs')}
               </Link>
               <Link
                 to="/page/about"
@@ -155,10 +155,10 @@ const Navbar = () => {
             ) : (
               <div className="flex items-center space-x-2">
                 <Button variant="outline" asChild>
-                  <Link to="/auth">{t('button.login', 'Connexion')}</Link>
+                  <Link to="/auth?tab=login">{t('button.login', 'Connexion')}</Link>
                 </Button>
                 <Button asChild>
-                  <Link to="/auth">{t('button.register', 'S\'inscrire')}</Link>
+                  <Link to="/auth?tab=register">{t('button.register', "S'inscrire")}</Link>
                 </Button>
               </div>
             )}
