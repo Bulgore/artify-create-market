@@ -10,7 +10,6 @@ interface CustomProductCreatorProps {
 
 const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) => {
   const {
-    printProducts,
     isLoading,
     handleProductCreate
   } = useCustomProductCreator();
@@ -40,7 +39,6 @@ const CustomProductCreator: React.FC<CustomProductCreatorProps> = ({ onBack }) =
           </p>
           
           <SimplifiedProductCreation
-            printProducts={printProducts}
             onProductCreate={handleProductCreate}
           />
         </CardContent>

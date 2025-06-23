@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +32,7 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
   const [showProductCreation, setShowProductCreation] = useState(false);
   
   // Utiliser le hook de création de produit
-  const { printProducts, handleProductCreate } = useCustomProductCreator();
+  const { handleProductCreate } = useCustomProductCreator();
 
   useEffect(() => {
     if (user) {
@@ -255,7 +254,6 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
             <DialogTitle>Créer un nouveau produit</DialogTitle>
           </DialogHeader>
           <SimplifiedProductCreation
-            printProducts={printProducts}
             onProductCreate={handleProductCreated}
           />
         </DialogContent>
