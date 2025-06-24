@@ -1404,6 +1404,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      validate_user_role_secure: {
+        Args: { required_role: string }
+        Returns: boolean
+      }
     }
     Enums: {
       creator_level: "debutant" | "confirme" | "premium"
