@@ -11,6 +11,7 @@ import Home from '@/pages/Index';
 import Studio from '@/pages/Studio';
 import Admin from '@/pages/Admin';
 import Auth from '@/pages/Auth';
+import BuilderPage from '@/pages/BuilderPage';
 
 // New imports for creator profiles
 import CreatorProfile from '@/pages/CreatorProfile';
@@ -22,6 +23,7 @@ import Artists from '@/pages/Artists';
 import Privacy from '@/pages/Privacy';
 import Terms from '@/pages/Terms';
 import Legal from '@/pages/Legal';
+import FAQ from '@/pages/FAQ';
 import NotFound from '@/pages/NotFound';
 import Layout from '@/components/Layout';
 
@@ -42,6 +44,7 @@ function App() {
           <Router>
             <Routes>
               <Route path="/admin/*" element={<Admin />} />
+              <Route path="/builder/:contentPath" element={<BuilderPage />} />
               <Route element={<Layout />}>
                 <Route index element={<Home />} />
                 <Route path="auth" element={<Auth />} />
@@ -53,6 +56,7 @@ function App() {
                 <Route path="creator/:creatorId" element={<CreatorProfile />} />
                 <Route path="artists" element={<Artists />} />
                 <Route path="page/:slug" element={<CustomPage />} />
+                <Route path="faq" element={<FAQ />} />
                 <Route path="privacy" element={<Privacy />} />
                 <Route path="terms" element={<Terms />} />
                 <Route path="legal" element={<Legal />} />
