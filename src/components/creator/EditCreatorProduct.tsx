@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { DesignUploadHandler } from './simplified/DesignUploadHandler';
 import { MockupSection } from './simplified/MockupSection';
@@ -6,6 +5,7 @@ import { ProductCreationForm } from './simplified/ProductCreationForm';
 import { useDesignPositioning } from '@/hooks/useDesignPositioning';
 import { useProductData } from '@/hooks/useProductData';
 import { mapPrintProductWithCompatibility } from '@/types/customProduct';
+import { mapTemplateWithCompatibility } from '@/types/templates';
 import type { PrintProduct } from '@/types/customProduct';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreatorProductUpdate } from '@/hooks/useCreatorProductUpdate';
@@ -107,7 +107,7 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
 
       const mapped = mapPrintProductWithCompatibility(data.print_products);
       
-      // Récupérer le template séparément
+      // Récupérer le template séparément avec compatibilité
       if (mapped.template_id) {
         console.log('🔍 [EditCreatorProduct] Récupération du template:', mapped.template_id);
         const { data: templateData } = await supabase
@@ -117,8 +117,9 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
           .single();
 
         if (templateData) {
-          mapped.product_templates = templateData;
-          console.log('✅ [EditCreatorProduct] Template récupéré:', templateData.name_fr);
+          // Utiliser la fonction de compatibilité pour mapper le template
+          mapped.product_templates = mapTemplateWithCompatibility(templateData);
+          console.log('✅ [EditCreatorProduct] Template récupéré:', mapped.product_templates.name);
 
           // Récupérer les mockups du template
           const { data: mockupsData } = await supabase
