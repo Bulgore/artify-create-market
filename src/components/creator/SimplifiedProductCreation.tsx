@@ -154,6 +154,40 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     );
   }
 
+  // Fonction pour obtenir l'URL du mockup principal
+  const getPrimaryMockupUrl = (product: PrintProduct) => {
+    console.log('🔍 Récupération mockup pour produit:', product.name);
+    console.log('📦 Template du produit:', product.product_templates);
+    console.log('🖼️ Mockups disponibles:', product.product_templates?.product_mockups);
+    
+    if (!product.product_templates?.product_mockups || !Array.isArray(product.product_templates.product_mockups)) {
+      console.warn('⚠️ Aucun mockup disponible pour ce produit');
+      return undefined;
+    }
+
+    // Chercher le mockup principal
+    const primaryMockup = product.product_templates.product_mockups.find(
+      m => m.id === product.product_templates?.primary_mockup_id
+    );
+
+    if (primaryMockup) {
+      const mockupUrl = buildImageUrl(primaryMockup.mockup_url);
+      console.log('✅ Mockup principal trouvé:', mockupUrl);
+      return mockupUrl;
+    }
+
+    // Fallback sur le premier mockup disponible
+    const firstMockup = product.product_templates.product_mockups[0];
+    if (firstMockup) {
+      const mockupUrl = buildImageUrl(firstMockup.mockup_url);
+      console.log('⚠️ Utilisation du premier mockup comme fallback:', mockupUrl);
+      return mockupUrl;
+    }
+
+    console.warn('❌ Aucun mockup utilisable trouvé');
+    return undefined;
+  };
+
   return (
     <div className="space-y-6">
       <ProductSelectionSection 
@@ -175,17 +209,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
 
           <div className="space-y-6">
             <MockupSection
-              mockupUrl={
-                Array.isArray(selectedProduct.product_templates?.product_mockups)
-                  ? buildImageUrl(
-                      selectedProduct.product_templates?.product_mockups.find(
-                        m =>
-                          m.id ===
-                          selectedProduct.product_templates?.primary_mockup_id
-                      )?.mockup_url
-                    )
-                  : undefined
-              }
+              mockupUrl={getPrimaryMockupUrl(selectedProduct)}
               designUrl={designUrl}
               designArea={designArea || undefined}
               designPosition={autoDesignPosition}

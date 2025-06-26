@@ -100,6 +100,7 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
   };
 
   if (!mockupUrl) {
+    console.warn('⚠️ [MockupPreview] Aucune URL de mockup fournie');
     return (
       <Card>
         <CardHeader>
@@ -109,9 +110,13 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <p className="text-gray-500">Aucun aperçu disponible</p>
-            <p className="text-xs text-gray-400 mt-2">Mockup URL manquante</p>
+          <div className="text-center py-8 bg-gray-50 rounded border-2 border-dashed border-gray-300">
+            <Eye className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500 font-medium">Aucun aperçu disponible</p>
+            <p className="text-xs text-gray-400 mt-2">Le produit sélectionné n'a pas de mockup configuré</p>
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs">
+              <strong>🔍 Debug:</strong> mockupUrl = {mockupUrl || 'undefined'}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -128,16 +133,6 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
       </CardHeader>
       <CardContent>
         <div className="relative">
-          {/* Message de debug temporaire */}
-          {designUrl && (
-            <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-              <strong>🔍 Debug Design:</strong>
-              <br />URL: {designUrl.substring(0, 60)}...
-              <br />Position: {autoPosition ? 'Calculée' : 'En attente'}
-              <br />Zone impression: {designArea ? 'Définie' : 'Manquante'}
-            </div>
-          )}
-
           <MockupContainer
             mockupUrl={mockupUrl}
             mockupLoaded={mockupLoaded}
@@ -159,25 +154,6 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
             autoPosition={autoPosition}
             designArea={designArea}
           />
-
-          {/* Message d'erreur design avec fallback */}
-          {designUrl && designError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
-              <p className="text-red-600 text-sm font-medium">❌ Erreur de chargement du design</p>
-              <p className="text-red-500 text-xs mt-1">
-                URL: {designUrl.substring(0, 80)}...
-              </p>
-              <button 
-                onClick={() => {
-                  setDesignError(false);
-                  handleDesignLoad();
-                }}
-                className="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-              >
-                Réessayer
-              </button>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

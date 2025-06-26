@@ -58,7 +58,7 @@ export const useProductSubmission = () => {
         },
         generated_mockups: [] as GeneratedMockup[],
         is_published: false,
-        status: 'pending' // Statut valide selon la contrainte
+        status: 'active' // Changé de 'pending' à 'active' pour éviter l'erreur de contrainte
       };
 
       console.log('📦 Données du produit créateur:', creatorProductData);

@@ -51,17 +51,14 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       console.log('👤 [EditCreatorProduct] Utilisateur actuel:', user?.id);
 
-      // Requête simplifiée pour éviter les erreurs de relation
+      // Requête pour récupérer le produit créateur avec son print_product
       console.log('📡 [EditCreatorProduct] Exécution de la requête SELECT...');
       const { data, error } = await supabase
         .from('creator_products')
         .select(`
           *,
           print_products!inner(
-            *,
-            product_templates(
-              *
-            )
+            *
           )
         `)
         .eq('id', productId)
@@ -110,23 +107,36 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
 
       const mapped = mapPrintProductWithCompatibility(data.print_products);
       
-      // Récupérer les mockups séparément pour éviter les erreurs de relation
+      // Récupérer le template séparément
       if (mapped.template_id) {
-        const { data: mockupsData } = await supabase
-          .from('product_mockups')
+        console.log('🔍 [EditCreatorProduct] Récupération du template:', mapped.template_id);
+        const { data: templateData } = await supabase
+          .from('product_templates')
           .select('*')
-          .eq('product_template_id', mapped.template_id)
-          .order('display_order');
+          .eq('id', mapped.template_id)
+          .single();
 
-        if (mockupsData && mockupsData.length > 0) {
-          mapped.product_templates = {
-            ...mapped.product_templates,
-            product_mockups: mockupsData.map(m => ({
+        if (templateData) {
+          mapped.product_templates = templateData;
+          console.log('✅ [EditCreatorProduct] Template récupéré:', templateData.name_fr);
+
+          // Récupérer les mockups du template
+          const { data: mockupsData } = await supabase
+            .from('product_mockups')
+            .select('*')
+            .eq('product_template_id', templateData.id)
+            .order('display_order');
+
+          if (mockupsData && mockupsData.length > 0) {
+            mapped.product_templates.product_mockups = mockupsData.map(m => ({
               ...m,
               mockup_url: buildImageUrl(m.mockup_url),
               url: buildImageUrl(m.mockup_url)
-            }))
-          };
+            }));
+            console.log('✅ [EditCreatorProduct] Mockups récupérés:', mockupsData.length);
+          } else {
+            console.warn('⚠️ [EditCreatorProduct] Aucun mockup trouvé pour ce template');
+          }
         }
       }
 
@@ -178,6 +188,31 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
     if (success) {
       onUpdated();
     }
+  };
+
+  // Fonction pour obtenir l'URL du mockup principal
+  const getPrimaryMockupUrl = () => {
+    if (!printProduct?.product_templates?.product_mockups || !Array.isArray(printProduct.product_templates.product_mockups)) {
+      console.warn('⚠️ [EditCreatorProduct] Aucun mockup disponible');
+      return undefined;
+    }
+
+    // Chercher le mockup principal
+    const primaryMockup = printProduct.product_templates.product_mockups.find(
+      m => m.id === printProduct.product_templates?.primary_mockup_id
+    );
+
+    if (primaryMockup) {
+      return buildImageUrl(primaryMockup.mockup_url);
+    }
+
+    // Fallback sur le premier mockup
+    const firstMockup = printProduct.product_templates.product_mockups[0];
+    if (firstMockup) {
+      return buildImageUrl(firstMockup.mockup_url);
+    }
+
+    return undefined;
   };
 
   if (loading) {
@@ -246,15 +281,7 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
         
         <div className="space-y-6">
           <MockupSection
-            mockupUrl={
-              Array.isArray(printProduct.product_templates?.product_mockups)
-                ? buildImageUrl(
-                    printProduct.product_templates?.product_mockups.find(
-                      m => m.id === printProduct.product_templates?.primary_mockup_id
-                    )?.mockup_url
-                  )
-                : undefined
-            }
+            mockupUrl={getPrimaryMockupUrl()}
             designUrl={designUrl}
             designArea={designArea || undefined}
             designPosition={autoDesignPosition}
