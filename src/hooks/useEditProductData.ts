@@ -95,7 +95,8 @@ export const useEditProductData = () => {
             ...mappedTemplate,
             name: mappedTemplate.name || mappedTemplate.name_fr || '',
             technical_instructions: mappedTemplate.technical_instructions || mappedTemplate.technical_instructions_fr || '',
-            created_by: templateData.created_by || user?.id || ''
+            created_by: templateData.created_by || user?.id || '',
+            updated_at: templateData.updated_at || new Date().toISOString()
           };
           console.log('✅ [useEditProductData] Template récupéré:', mapped.product_templates.name);
 
