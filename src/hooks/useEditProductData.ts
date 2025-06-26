@@ -90,11 +90,12 @@ export const useEditProductData = () => {
         if (templateData) {
           // Utiliser la fonction de compatibilité pour mapper le template
           const mappedTemplate = mapTemplateWithCompatibility(templateData);
-          // Ensure compatibility with both template types
+          // Ensure compatibility with both template types and include all required fields
           mapped.product_templates = {
             ...mappedTemplate,
             name: mappedTemplate.name || mappedTemplate.name_fr || '',
-            technical_instructions: mappedTemplate.technical_instructions || mappedTemplate.technical_instructions_fr || ''
+            technical_instructions: mappedTemplate.technical_instructions || mappedTemplate.technical_instructions_fr || '',
+            created_by: templateData.created_by || user?.id || ''
           };
           console.log('✅ [useEditProductData] Template récupéré:', mapped.product_templates.name);
 
