@@ -56,9 +56,9 @@ export const useProductSubmission = () => {
           fileType: designUrl.includes('.svg') ? 'svg' : 'image',
           autoPositioned: true
         },
-        generated_mockups: [] as GeneratedMockup[], // Rempli plus tard par la génération
+        generated_mockups: [] as GeneratedMockup[],
         is_published: false,
-        status: 'pending'
+        status: 'pending' // Statut valide selon la contrainte
       };
 
       console.log('📦 Données du produit créateur:', creatorProductData);

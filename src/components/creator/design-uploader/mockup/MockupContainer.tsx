@@ -36,6 +36,16 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
   const containerWidth = 400;
   const containerHeight = 300;
 
+  console.log('🖼️ [MockupContainer] Props reçues:', {
+    mockupUrl: mockupUrl?.substring(0, 80) + '...',
+    mockupLoaded,
+    mockupError,
+    designUrl: designUrl?.substring(0, 80) + '...',
+    designError,
+    hasDesignArea: !!designArea,
+    hasAutoPosition: !!autoPosition
+  });
+
   return (
     <div className="space-y-4">
       
@@ -49,50 +59,68 @@ export const MockupContainer: React.FC<MockupContainerProps> = ({
             <div className="w-full h-full flex items-center justify-center text-red-500">
               <div className="text-center">
                 <p>❌ Erreur mockup</p>
-                <p className="text-xs mt-1">{mockupUrl.substring(0, 40)}...</p>
+                <p className="text-xs mt-1">{mockupUrl?.substring(0, 40)}...</p>
+                <button
+                  onClick={() => {
+                    console.log('🔄 Retry mockup load:', mockupUrl);
+                    onMockupLoad();
+                  }}
+                  className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded"
+                >
+                  Réessayer
+                </button>
+              </div>
+            </div>
+          ) : !mockupUrl ? (
+            <div className="w-full h-full flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <p>⚠️ Aucun mockup disponible</p>
+                <p className="text-xs mt-1">URL mockup manquante</p>
               </div>
             </div>
           ) : (
-            <MockupImage
-              mockupUrl={mockupUrl}
-              onLoad={onMockupLoad}
-              onError={onMockupError}
-            />
-          )}
-          
-          {/* Zone d'impression sur le mockup */}
-          {mockupLoaded && designArea && (
-            <PrintAreaOverlay
-              designArea={designArea}
-              containerWidth={containerWidth}
-              containerHeight={containerHeight}
-            />
-          )}
-          
-          {/* Design positionné sur le mockup */}
-          {designUrl && autoPosition && (
-            designError ? (
-              <div
-                className="absolute bg-red-100 border-2 border-red-300 rounded flex items-center justify-center"
-                style={{
-                  left: `${(autoPosition.x / containerWidth) * 100}%`,
-                  top: `${(autoPosition.y / containerHeight) * 100}%`,
-                  width: `${(autoPosition.width / containerWidth) * 100}%`,
-                  height: `${(autoPosition.height / containerHeight) * 100}%`
-                }}
-              >
-                <span className="text-red-500 text-xs">❌ Erreur design</span>
-              </div>
-            ) : (
-              <DesignOverlay
-                designUrl={designUrl}
-                autoPosition={autoPosition}
-                containerWidth={containerWidth}
-                containerHeight={containerHeight}
-                onLoad={onDesignLoad}
-                onError={onDesignError}
+            <>
+              <MockupImage
+                mockupUrl={mockupUrl}
+                onLoad={onMockupLoad}
+                onError={onMockupError}
               />
-            )
+              
+              {/* Zone d'impression sur le mockup */}
+              {mockupLoaded && designArea && (
+                <PrintAreaOverlay
+                  designArea={designArea}
+                  containerWidth={containerWidth}
+                  containerHeight={containerHeight}
+                />
+              )}
+              
+              {/* Design positionné sur le mockup */}
+              {designUrl && autoPosition && (
+                designError ? (
+                  <div
+                    className="absolute bg-red-100 border-2 border-red-300 rounded flex items-center justify-center"
+                    style={{
+                      left: `${(autoPosition.x / containerWidth) * 100}%`,
+                      top: `${(autoPosition.y / containerHeight) * 100}%`,
+                      width: `${(autoPosition.width / containerWidth) * 100}%`,
+                      height: `${(autoPosition.height / containerHeight) * 100}%`
+                    }}
+                  >
+                    <span className="text-red-500 text-xs">❌ Erreur design</span>
+                  </div>
+                ) : (
+                  <DesignOverlay
+                    designUrl={designUrl}
+                    autoPosition={autoPosition}
+                    containerWidth={containerWidth}
+                    containerHeight={containerHeight}
+                    onLoad={onDesignLoad}
+                    onError={onDesignError}
+                  />
+                )
+              )}
+            </>
           )}
         </div>
       </div>

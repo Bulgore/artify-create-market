@@ -48,29 +48,19 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
     setError(null);
 
     try {
-      // Log de l'utilisateur actuel
       const { data: { user } } = await supabase.auth.getUser();
       console.log('👤 [EditCreatorProduct] Utilisateur actuel:', user?.id);
 
-      // Requête détaillée avec logs
+      // Requête simplifiée pour éviter les erreurs de relation
       console.log('📡 [EditCreatorProduct] Exécution de la requête SELECT...');
       const { data, error } = await supabase
         .from('creator_products')
         .select(`
           *,
-          print_products(
+          print_products!inner(
             *,
             product_templates(
-              *,
-              product_mockups(
-                id,
-                mockup_url,
-                mockup_url:url,
-                mockup_name,
-                print_area,
-                is_primary,
-                display_order
-              )
+              *
             )
           )
         `)
@@ -120,14 +110,24 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
 
       const mapped = mapPrintProductWithCompatibility(data.print_products);
       
-      // Traitement des mockups
-      if (mapped.product_templates?.product_mockups) {
-        console.log('🖼️ [EditCreatorProduct] Traitement des mockups:', mapped.product_templates.product_mockups.length);
-        mapped.product_templates.product_mockups = mapped.product_templates.product_mockups.map(m => ({
-          ...m,
-          mockup_url: buildImageUrl(m.mockup_url),
-          url: buildImageUrl(m.mockup_url)
-        }));
+      // Récupérer les mockups séparément pour éviter les erreurs de relation
+      if (mapped.template_id) {
+        const { data: mockupsData } = await supabase
+          .from('product_mockups')
+          .select('*')
+          .eq('product_template_id', mapped.template_id)
+          .order('display_order');
+
+        if (mockupsData && mockupsData.length > 0) {
+          mapped.product_templates = {
+            ...mapped.product_templates,
+            product_mockups: mockupsData.map(m => ({
+              ...m,
+              mockup_url: buildImageUrl(m.mockup_url),
+              url: buildImageUrl(m.mockup_url)
+            }))
+          };
+        }
       }
 
       setPrintProduct(mapped);
