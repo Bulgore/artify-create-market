@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,7 +13,7 @@ interface FAQData {
 }
 
 const FAQ = () => {
-  const { language } = useLanguage();
+  const { currentLanguage } = useLanguage();
   const [faqData, setFaqData] = useState<FAQData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +98,7 @@ const FAQ = () => {
 
   const getTitle = () => {
     if (!faqData) return 'FAQ';
-    switch (language) {
+    switch (currentLanguage) {
       case 'en': return faqData.title_en || faqData.title_fr || 'FAQ';
       case 'ty': return faqData.title_ty || faqData.title_fr || 'FAQ';
       default: return faqData.title_fr || 'FAQ';
@@ -108,7 +107,7 @@ const FAQ = () => {
 
   const getContent = () => {
     if (!faqData) return '';
-    switch (language) {
+    switch (currentLanguage) {
       case 'en': return faqData.content_en || faqData.content_fr || '';
       case 'ty': return faqData.content_ty || faqData.content_fr || '';
       default: return faqData.content_fr || '';
