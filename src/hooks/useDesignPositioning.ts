@@ -13,60 +13,118 @@ export const useDesignPositioning = () => {
     designUrl: string,
     selectedProduct: PrintProduct | null
   ) => {
-    if (!selectedProduct?.product_templates) return;
-
-    try {
-      let area = { x: 50, y: 50, width: 200, height: 200 };
-      if (selectedProduct.product_templates.primary_mockup_id) {
-        const { data } = await supabase
-          .from('product_mockups')
-          .select('print_area')
-          .eq('id', selectedProduct.product_templates.primary_mockup_id)
-          .single();
-        if (data?.print_area) {
-          area = parsePrintArea(data.print_area);
-        }
-      }
-      console.log('🎯 Zone d\'impression utilisée:', area);
-      setDesignArea(area);
+    if (!selectedProduct?.product_templates) {
+      console.log('⚠️ [useDesignPositioning] Pas de template, utilisation position par défaut');
       
-      const designDimensions = await getImageDimensions(designUrl);
-      console.log('📐 Dimensions RÉELLES du design uploadé:', designDimensions);
-      
-      const autoPosition = calculateAutoPosition(designDimensions, area);
-      
-      const finalPosition = {
-        x: autoPosition.x,
-        y: autoPosition.y,
-        width: autoPosition.width,
-        height: autoPosition.height,
-        rotation: 0,
-        scale: autoPosition.scale
-      };
-      
-      console.log('✅ Position automatique PROFESSIONNELLE avec coordonnées EXACTES:', {
-        zoneImpressionAdmin: designArea,
-        designOriginal: designDimensions,
-        positionFinaleExacte: finalPosition,
-        agrandissementMaximal: Math.round(autoPosition.scale * 100) + '%'
-      });
-      
-      setAutoDesignPosition(finalPosition);
-      
-    } catch (error) {
-      console.error('❌ Erreur calcul position automatique PROFESSIONNELLE:', error);
-      
-      // Fallback centré dans une zone par défaut
-      const fallbackArea = { x: 50, y: 50, width: 200, height: 200 };
-      const fallbackPosition = {
-        ...fallbackArea,
+      // Position par défaut sans template
+      const defaultArea = { x: 50, y: 50, width: 200, height: 200 };
+      const defaultPosition = {
+        x: defaultArea.x,
+        y: defaultArea.y,
+        width: defaultArea.width,
+        height: defaultArea.height,
         rotation: 0,
         scale: 1
       };
-      setDesignArea(fallbackArea);
       
-      console.log('⚠️ Utilisation position fallback CENTRÉE dans zone admin:', fallbackPosition);
+      setDesignArea(defaultArea);
+      setAutoDesignPosition(defaultPosition);
+      return;
+    }
+
+    try {
+      // Zone d'impression par défaut
+      let area = { x: 50, y: 50, width: 200, height: 200 };
+      
+      // Essayer de récupérer la zone d'impression du mockup principal
+      if (selectedProduct.product_templates.primary_mockup_id) {
+        try {
+          const { data } = await supabase
+            .from('product_mockups')
+            .select('print_area')
+            .eq('id', selectedProduct.product_templates.primary_mockup_id)
+            .single();
+          
+          if (data?.print_area) {
+            area = parsePrintArea(data.print_area);
+            console.log('✅ [useDesignPositioning] Zone d\'impression du mockup récupérée:', area);
+          }
+        } catch (mockupError) {
+          console.warn('⚠️ [useDesignPositioning] Erreur récupération zone mockup:', mockupError);
+        }
+      }
+      
+      setDesignArea(area);
+      
+      // Calculer la position automatique si on a une URL de design
+      if (designUrl && designUrl.trim() !== '') {
+        try {
+          const designDimensions = await getImageDimensions(designUrl);
+          console.log('📐 [useDesignPositioning] Dimensions du design:', designDimensions);
+          
+          const autoPosition = calculateAutoPosition(designDimensions, area);
+          
+          const finalPosition = {
+            x: autoPosition.x,
+            y: autoPosition.y,
+            width: autoPosition.width,
+            height: autoPosition.height,
+            rotation: 0,
+            scale: autoPosition.scale
+          };
+          
+          console.log('✅ [useDesignPositioning] Position automatique calculée:', finalPosition);
+          setAutoDesignPosition(finalPosition);
+          
+        } catch (imageError) {
+          console.warn('⚠️ [useDesignPositioning] Erreur chargement image design:', imageError);
+          
+          // Position centrée par défaut si l'image ne se charge pas
+          const fallbackPosition = {
+            x: area.x + (area.width * 0.1),
+            y: area.y + (area.height * 0.1),
+            width: area.width * 0.8,
+            height: area.height * 0.8,
+            rotation: 0,
+            scale: 0.8
+          };
+          
+          console.log('🔄 [useDesignPositioning] Position de fallback utilisée:', fallbackPosition);
+          setAutoDesignPosition(fallbackPosition);
+        }
+      } else {
+        // Pas de design, position par défaut dans la zone
+        const defaultPosition = {
+          x: area.x + (area.width * 0.1),
+          y: area.y + (area.height * 0.1),
+          width: area.width * 0.8,
+          height: area.height * 0.8,
+          rotation: 0,
+          scale: 0.8
+        };
+        
+        console.log('📍 [useDesignPositioning] Position par défaut (pas de design):', defaultPosition);
+        setAutoDesignPosition(defaultPosition);
+      }
+      
+    } catch (error) {
+      console.error('❌ [useDesignPositioning] Erreur générale:', error);
+      
+      // Fallback complet en cas d'erreur
+      const fallbackArea = { x: 50, y: 50, width: 200, height: 200 };
+      const fallbackPosition = {
+        x: fallbackArea.x + 20,
+        y: fallbackArea.y + 20,
+        width: fallbackArea.width - 40,
+        height: fallbackArea.height - 40,
+        rotation: 0,
+        scale: 1
+      };
+      
+      setDesignArea(fallbackArea);
       setAutoDesignPosition(fallbackPosition);
+      
+      console.log('🆘 [useDesignPositioning] Fallback complet utilisé');
     }
   }, []);
 

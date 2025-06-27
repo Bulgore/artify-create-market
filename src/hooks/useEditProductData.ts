@@ -100,7 +100,7 @@ export const useEditProductData = () => {
           };
           console.log('✅ [useEditProductData] Template récupéré:', mapped.product_templates.name);
 
-          // Récupérer les mockups du template
+          // Récupérer les mockups du template avec validation d'URL
           const { data: mockupsData } = await supabase
             .from('product_mockups')
             .select('*')
@@ -108,14 +108,61 @@ export const useEditProductData = () => {
             .order('display_order');
 
           if (mockupsData && mockupsData.length > 0) {
-            mapped.product_templates.product_mockups = mockupsData.map(m => ({
-              ...m,
-              mockup_url: buildImageUrl(m.mockup_url),
-              url: buildImageUrl(m.mockup_url)
-            }));
-            console.log('✅ [useEditProductData] Mockups récupérés:', mockupsData.length);
+            // Filtrer et valider les URLs des mockups
+            const validMockups = mockupsData
+              .filter(m => m.mockup_url && typeof m.mockup_url === 'string')
+              .map(m => {
+                let processedUrl = m.mockup_url;
+                
+                // Nettoyer l'URL si elle contient des caractères invalides
+                if (processedUrl.includes('.js')) {
+                  console.warn('⚠️ [useEditProductData] URL mockup invalide détectée:', processedUrl);
+                  // Essayer de récupérer une URL valide ou utiliser un placeholder
+                  processedUrl = '/placeholder.svg';
+                }
+                
+                return {
+                  ...m,
+                  mockup_url: buildImageUrl(processedUrl),
+                  url: buildImageUrl(processedUrl)
+                };
+              });
+
+            if (validMockups.length > 0) {
+              mapped.product_templates.product_mockups = validMockups;
+              console.log('✅ [useEditProductData] Mockups valides récupérés:', validMockups.length);
+            } else {
+              console.warn('⚠️ [useEditProductData] Aucun mockup valide trouvé, utilisation du placeholder');
+              mapped.product_templates.product_mockups = [{
+                id: 'placeholder',
+                mockup_url: '/placeholder.svg',
+                url: '/placeholder.svg',
+                mockup_name: 'Placeholder',
+                product_template_id: templateData.id,
+                display_order: 0,
+                is_primary: true,
+                print_area: null,
+                has_print_area: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }];
+            }
           } else {
             console.warn('⚠️ [useEditProductData] Aucun mockup trouvé pour ce template');
+            // Ajouter un mockup placeholder
+            mapped.product_templates.product_mockups = [{
+              id: 'placeholder',
+              mockup_url: '/placeholder.svg',
+              url: '/placeholder.svg',
+              mockup_name: 'Placeholder',
+              product_template_id: templateData.id,
+              display_order: 0,
+              is_primary: true,
+              print_area: null,
+              has_print_area: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }];
           }
         }
       }
