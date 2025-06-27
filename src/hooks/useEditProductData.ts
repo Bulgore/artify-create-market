@@ -110,23 +110,17 @@ export const useEditProductData = () => {
           if (mockupsData && mockupsData.length > 0) {
             // Filtrer et valider les URLs des mockups
             const validMockups = mockupsData
-              .filter(m => m.mockup_url && typeof m.mockup_url === 'string')
-              .map(m => {
-                let processedUrl = m.mockup_url;
-                
-                // Nettoyer l'URL si elle contient des caractères invalides
-                if (processedUrl.includes('.js')) {
-                  console.warn('⚠️ [useEditProductData] URL mockup invalide détectée:', processedUrl);
-                  // Essayer de récupérer une URL valide ou utiliser un placeholder
-                  processedUrl = '/placeholder.svg';
+              .filter(m => {
+                const isValid = m.mockup_url && typeof m.mockup_url === 'string' && !m.mockup_url.includes('.js');
+                if (!isValid) {
+                  console.warn('⚠️ [useEditProductData] URL mockup invalide filtrée:', m.mockup_url);
                 }
-                
-                return {
-                  ...m,
-                  mockup_url: buildImageUrl(processedUrl),
-                  url: buildImageUrl(processedUrl)
-                };
-              });
+                return isValid;
+              })
+              .map(m => ({
+                ...m,
+                mockup_url: buildImageUrl(m.mockup_url)
+              }));
 
             if (validMockups.length > 0) {
               mapped.product_templates.product_mockups = validMockups;
@@ -136,7 +130,6 @@ export const useEditProductData = () => {
               mapped.product_templates.product_mockups = [{
                 id: 'placeholder',
                 mockup_url: '/placeholder.svg',
-                url: '/placeholder.svg',
                 mockup_name: 'Placeholder',
                 product_template_id: templateData.id,
                 display_order: 0,
@@ -153,7 +146,6 @@ export const useEditProductData = () => {
             mapped.product_templates.product_mockups = [{
               id: 'placeholder',
               mockup_url: '/placeholder.svg',
-              url: '/placeholder.svg',
               mockup_name: 'Placeholder',
               product_template_id: templateData.id,
               display_order: 0,
