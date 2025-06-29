@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { buildDesignUrl } from '@/utils/imageUrl';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -30,13 +31,19 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
   const [isError, setIsError] = useState(false);
   const [isInView, setIsInView] = useState(!lazy);
   const [currentSrc, setCurrentSrc] = useState(src);
+  const [retryCount, setRetryCount] = useState(0);
   const imgRef = useRef<HTMLImageElement>(null);
+  const MAX_RETRIES = 2;
 
   // Reset states when src changes
   useEffect(() => {
     setIsLoaded(false);
     setIsError(false);
-    setCurrentSrc(src);
+    setRetryCount(0);
+    
+    // Process the URL to handle signed URLs
+    const processedSrc = buildDesignUrl(src);
+    setCurrentSrc(processedSrc);
   }, [src]);
 
   // Intersection Observer for lazy loading
@@ -66,19 +73,34 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
   }, [lazy, isInView]);
 
   const handleLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
-    console.log('✅ Image loaded successfully:', currentSrc);
+    console.log('✅ OptimizedImage loaded successfully:', currentSrc);
     setIsLoaded(true);
     setIsError(false);
+    setRetryCount(0);
     onLoad?.();
   };
 
   const handleError = (event: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('❌ Image failed to load:', currentSrc);
+    console.error('❌ OptimizedImage failed to load:', currentSrc);
+    
+    // Si c'est une URL signée qui a échoué, essayer de la convertir en publique
+    if (currentSrc.includes('/sign/') && retryCount < MAX_RETRIES) {
+      console.log('🔄 OptimizedImage retry with public URL, attempt:', retryCount + 1);
+      setRetryCount(prev => prev + 1);
+      
+      const publicUrl = buildDesignUrl(currentSrc);
+      if (publicUrl !== currentSrc) {
+        setCurrentSrc(publicUrl);
+        setIsError(false);
+        return;
+      }
+    }
     
     // Try fallback if not already using it
-    if (currentSrc !== fallbackSrc && !isError) {
-      console.log('🔄 Trying fallback image:', fallbackSrc);
+    if (currentSrc !== fallbackSrc && retryCount < MAX_RETRIES) {
+      console.log('🔄 OptimizedImage trying fallback image:', fallbackSrc);
       setCurrentSrc(fallbackSrc);
+      setRetryCount(prev => prev + 1);
       setIsError(false);
     } else {
       setIsError(true);
@@ -145,14 +167,21 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error state with specific message for expired tokens */}
       {isError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="text-center text-gray-400">
+          <div className="text-center text-gray-400 p-4">
             <div className="w-12 h-12 bg-gray-200 rounded mb-2 mx-auto flex items-center justify-center">
               <span className="text-gray-400">❌</span>
             </div>
-            <p className="text-xs">Image non disponible</p>
+            {currentSrc.includes('/sign/') ? (
+              <div>
+                <p className="text-xs font-medium text-red-500">Token expiré</p>
+                <p className="text-xs">Image inaccessible</p>
+              </div>
+            ) : (
+              <p className="text-xs">Image non disponible</p>
+            )}
           </div>
         </div>
       )}

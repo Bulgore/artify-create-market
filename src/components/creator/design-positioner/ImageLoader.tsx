@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { buildDesignUrl } from '@/utils/imageUrl';
 
 interface ImageLoaderProps {
   imageUrl: string;
@@ -9,6 +10,8 @@ interface ImageLoaderProps {
 
 export const ImageLoader: React.FC<ImageLoaderProps> = ({ imageUrl, onLoad, onError }) => {
   const [processedUrl, setProcessedUrl] = useState<string>('');
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 2;
 
   const getProcessedImageUrl = async (url: string): Promise<string> => {
     try {
@@ -19,34 +22,11 @@ export const ImageLoader: React.FC<ImageLoaderProps> = ({ imageUrl, onLoad, onEr
         return '';
       }
       
-      // Si c'est déjà une URL publique complète, on la retourne
-      if (url.includes('riumhqlxdmsxwsjstqgl.supabase.co') && url.includes('/storage/v1/object/public/')) {
-        console.log('✅ URL is already public, using as is');
-        return url;
-      }
-
-      // Si c'est une URL signée ou data URL, on la retourne
-      if (url.includes('sign') || url.startsWith('data:')) {
-        console.log('✅ URL is signed/data, using as is');
-        return url;
-      }
-
-      // Si c'est un chemin relatif qui commence par /storage/
-      if (url.startsWith('/storage/v1/object/public/')) {
-        const fullUrl = `https://riumhqlxdmsxwsjstqgl.supabase.co${url}`;
-        console.log('🔧 Converting relative path to full URL:', fullUrl);
-        return fullUrl;
-      }
-
-      // Si l'URL semble être un fichier direct sans domaine
-      if (url.includes('designs/') && !url.includes('http')) {
-        const fullUrl = `https://riumhqlxdmsxwsjstqgl.supabase.co/storage/v1/object/public/${url}`;
-        console.log('🔧 Building full public URL:', fullUrl);
-        return fullUrl;
-      }
-
-      console.log('🔄 Using original URL as fallback');
-      return url;
+      // Utiliser la nouvelle fonction buildDesignUrl qui gère les URLs signées
+      const processedUrl = buildDesignUrl(url);
+      console.log('🎯 Processed URL:', processedUrl);
+      
+      return processedUrl;
     } catch (error) {
       console.error('❌ Error in getProcessedImageUrl:', error);
       return url;
@@ -73,6 +53,7 @@ export const ImageLoader: React.FC<ImageLoaderProps> = ({ imageUrl, onLoad, onEr
     };
 
     processUrl();
+    setRetryCount(0); // Reset retry count when URL changes
   }, [imageUrl, onLoad, onError]);
 
   useEffect(() => {
@@ -90,10 +71,25 @@ export const ImageLoader: React.FC<ImageLoaderProps> = ({ imageUrl, onLoad, onEr
       });
       onLoad(true);
       onError(false);
+      setRetryCount(0);
     };
     
     img.onerror = (error) => {
       console.error('❌ Image failed to load:', error, processedUrl);
+      
+      // Si c'est une URL signée qui a échoué et qu'on n'a pas encore fait de retry
+      if (processedUrl.includes('/sign/') && retryCount < MAX_RETRIES) {
+        console.log('🔄 Retry with public URL conversion, attempt:', retryCount + 1);
+        setRetryCount(prev => prev + 1);
+        
+        // Force reconversion en URL publique
+        const publicUrl = buildDesignUrl(processedUrl);
+        if (publicUrl !== processedUrl) {
+          setProcessedUrl(publicUrl);
+          return;
+        }
+      }
+      
       onLoad(false);
       onError(true);
     };
@@ -105,7 +101,7 @@ export const ImageLoader: React.FC<ImageLoaderProps> = ({ imageUrl, onLoad, onEr
       img.onload = null;
       img.onerror = null;
     };
-  }, [processedUrl, onLoad, onError]);
+  }, [processedUrl, onLoad, onError, retryCount]);
 
   return null;
 };

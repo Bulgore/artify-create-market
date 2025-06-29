@@ -1,12 +1,12 @@
 
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Upload, Image } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { validateImageFile } from '@/utils/inputValidation';
+import { buildDesignUrl } from '@/utils/imageUrl';
 
 interface SimpleDesignUploaderProps {
   onDesignUpload: (imageUrl: string) => void;
@@ -23,36 +23,22 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
     fileInputRef.current?.click();
   };
 
-  const generateSecureSignedUrl = async (filePath: string): Promise<string | null> => {
-    try {
-      console.log('🔗 Generating secure signed URL for path:', filePath);
-      
-      const { data, error } = await supabase.storage
-        .from('designs')
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
-
-      if (error) {
-        console.error('❌ Error generating signed URL:', error);
-        return null;
-      }
-
-      console.log('✅ Secure signed URL generated:', data.signedUrl);
-      return data.signedUrl;
-    } catch (error) {
-      console.error('❌ Exception generating signed URL:', error);
-      return null;
-    }
+  const buildPublicDesignUrl = (filePath: string): string => {
+    // Toujours utiliser l'URL publique pour les designs
+    const publicUrl = `https://riumhqlxdmsxwsjstqgl.supabase.co/storage/v1/object/public/designs/${filePath}`;
+    console.log('✅ URL publique générée pour le design:', publicUrl);
+    return publicUrl;
   };
 
   const verifyImageAccess = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
-      console.log('🔍 Testing secure image access for URL:', url);
+      console.log('🔍 Test accès image publique:', url);
       
       const testImg = document.createElement('img');
       testImg.crossOrigin = 'anonymous';
       
       testImg.onload = () => {
-        console.log('✅ Secure image accessible:', {
+        console.log('✅ Image publique accessible:', {
           url,
           naturalWidth: testImg.naturalWidth,
           naturalHeight: testImg.naturalHeight
@@ -61,7 +47,7 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
       };
       
       testImg.onerror = (error) => {
-        console.error('❌ Secure image not accessible:', {
+        console.error('❌ Image publique non accessible:', {
           url,
           error: error
         });
@@ -70,7 +56,7 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
       
       setTimeout(() => {
         if (!testImg.complete) {
-          console.error('⏰ Secure image load timeout for:', url);
+          console.error('⏰ Timeout accès image publique:', url);
           resolve(false);
         }
       }, 5000);
@@ -83,7 +69,7 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // Enhanced security validation
+    // Validation de sécurité renforcée
     const validation = validateImageFile(file);
     if (!validation.isValid) {
       toast({
@@ -101,79 +87,75 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
       const filePath = `${user.id}/${fileName}`;
 
-      console.log('=== SECURE DESIGN UPLOAD DEBUG ===');
-      console.log('📤 Uploading to bucket: designs');
-      console.log('📂 Secure file path:', filePath);
-      console.log('📄 Validated file name:', fileName);
+      console.log('=== UPLOAD DESIGN PUBLIC DEBUG ===');
+      console.log('📤 Upload vers bucket public: designs');
+      console.log('📂 Chemin fichier:', filePath);
+      console.log('📄 Nom fichier validé:', fileName);
       console.log('👤 User ID:', user.id);
 
-      // Upload to the designs bucket with user-specific folder
+      // Upload vers le bucket designs (public)
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('designs')
         .upload(filePath, file);
 
       if (uploadError) {
-        console.error('❌ Secure upload error:', uploadError);
+        console.error('❌ Erreur upload public:', uploadError);
         throw uploadError;
       }
 
-      console.log('✅ Secure upload successful:', uploadData);
+      console.log('✅ Upload public réussi:', uploadData);
 
-      // Generate a secure signed URL
-      const signedUrl = await generateSecureSignedUrl(filePath);
-      
-      if (!signedUrl) {
-        throw new Error('Impossible de générer une URL sécurisée');
-      }
+      // Générer l'URL publique (pas de token nécessaire)
+      const publicUrl = buildPublicDesignUrl(filePath);
 
-      // Verify secure access
-      const isAccessible = await verifyImageAccess(signedUrl);
+      // Vérifier l'accessibilité publique
+      const isAccessible = await verifyImageAccess(publicUrl);
       
       if (!isAccessible) {
-        console.error('❌ Secure image uploaded but not accessible');
+        console.error('❌ Image uploadée mais non accessible publiquement');
         toast({
           variant: "destructive",
-          title: "Erreur d'accès sécurisé",
-          description: "Le fichier a été uploadé mais n'est pas accessible de manière sécurisée."
+          title: "Erreur d'accès public",
+          description: "Le fichier a été uploadé mais n'est pas accessible publiquement."
         });
         return;
       }
 
-      // Save to DB with secure URL
+      // Sauvegarder en DB avec l'URL publique
       const { error: dbError } = await supabase
         .from('media_files')
         .insert({
           user_id: user.id,
           filename: file.name,
-          file_url: signedUrl,
+          file_url: publicUrl,
           file_type: file.type,
           file_size: file.size
         });
 
       if (dbError) {
-        console.error('⚠️ Secure DB save error:', dbError);
+        console.error('⚠️ Erreur sauvegarde DB (non bloquante):', dbError);
       }
 
-      console.log('=== SECURE UPLOAD SUMMARY ===');
-      console.log('📦 Bucket name: designs');
-      console.log('📂 Complete secure file path:', filePath);
-      console.log('🔗 Generated secure signed URL:', signedUrl);
-      console.log('✅ Secure image accessibility: verified');
-      console.log('=== END SECURE DEBUG ===');
+      console.log('=== RÉSUMÉ UPLOAD PUBLIC ===');
+      console.log('📦 Bucket: designs (public)');
+      console.log('📂 Chemin complet:', filePath);
+      console.log('🔗 URL publique finale:', publicUrl);
+      console.log('✅ Accessibilité: vérifiée');
+      console.log('=== FIN DEBUG PUBLIC ===');
 
-      onDesignUpload(signedUrl);
+      onDesignUpload(publicUrl);
 
       toast({
-        title: "Design uploadé de manière sécurisée",
-        description: "Votre design a été ajouté avec succès."
+        title: "Design uploadé",
+        description: "Votre design est maintenant accessible publiquement."
       });
 
     } catch (error: any) {
-      console.error('❌ Secure upload error:', error);
+      console.error('❌ Erreur upload public:', error);
       toast({
         variant: "destructive",
-        title: "Erreur d'upload sécurisé",
-        description: error.message || "Impossible d'uploader le fichier de manière sécurisée."
+        title: "Erreur d'upload",
+        description: error.message || "Impossible d'uploader le fichier."
       });
     } finally {
       setIsUploading(false);
@@ -196,12 +178,12 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
           {isUploading ? (
             <>
               <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full" />
-              <span>Upload sécurisé en cours...</span>
+              <span>Upload public en cours...</span>
             </>
           ) : (
             <>
               <Upload className="h-6 w-6" />
-              <span>Cliquez pour uploader un design (sécurisé)</span>
+              <span>Cliquez pour uploader un design (accès public)</span>
             </>
           )}
         </div>
