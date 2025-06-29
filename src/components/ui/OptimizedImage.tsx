@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { buildDesignUrl } from '@/utils/imageUrl';
+import { buildDesignUrl, diagnoseImageUrl } from '@/utils/imageUrl';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -32,17 +32,21 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
   const [isInView, setIsInView] = useState(!lazy);
   const [currentSrc, setCurrentSrc] = useState(src);
   const [retryCount, setRetryCount] = useState(0);
+  const [diagnosticInfo, setDiagnosticInfo] = useState<any>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const MAX_RETRIES = 2;
+  const MAX_RETRIES = 3;
 
   // Reset states when src changes
   useEffect(() => {
+    console.log('🔄 [OptimizedImage] Source changed:', src);
     setIsLoaded(false);
     setIsError(false);
     setRetryCount(0);
+    setDiagnosticInfo(null);
     
     // Process the URL to handle signed URLs
     const processedSrc = buildDesignUrl(src);
+    console.log('🎯 [OptimizedImage] Processed source:', processedSrc);
     setCurrentSrc(processedSrc);
   }, [src]);
 
@@ -54,6 +58,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
+            console.log('👁️ [OptimizedImage] Image entered viewport:', currentSrc);
             setIsInView(true);
             observer.disconnect();
           }
@@ -70,22 +75,37 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
     }
 
     return () => observer.disconnect();
-  }, [lazy, isInView]);
+  }, [lazy, isInView, currentSrc]);
+
+  // Diagnostic automatique en cas d'erreur
+  const performDiagnostic = async (url: string) => {
+    console.log('🔬 [OptimizedImage] Diagnostic pour:', url);
+    const diagnostic = await diagnoseImageUrl(url);
+    setDiagnosticInfo(diagnostic);
+    
+    console.log('📊 [OptimizedImage] Diagnostic:', diagnostic);
+  };
 
   const handleLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
-    console.log('✅ OptimizedImage loaded successfully:', currentSrc);
+    console.log('✅ [OptimizedImage] Image loaded successfully:', currentSrc);
     setIsLoaded(true);
     setIsError(false);
     setRetryCount(0);
+    setDiagnosticInfo({ isAccessible: true, status: 200, suggestions: [] });
     onLoad?.();
   };
 
-  const handleError = (event: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('❌ OptimizedImage failed to load:', currentSrc);
+  const handleError = async (event: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('❌ [OptimizedImage] Image failed to load:', currentSrc);
+    
+    // Diagnostic au premier échec
+    if (retryCount === 0) {
+      await performDiagnostic(currentSrc);
+    }
     
     // Si c'est une URL signée qui a échoué, essayer de la convertir en publique
     if (currentSrc.includes('/sign/') && retryCount < MAX_RETRIES) {
-      console.log('🔄 OptimizedImage retry with public URL, attempt:', retryCount + 1);
+      console.log('🔄 [OptimizedImage] Retry with public URL, attempt:', retryCount + 1);
       setRetryCount(prev => prev + 1);
       
       const publicUrl = buildDesignUrl(currentSrc);
@@ -96,13 +116,27 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
       }
     }
     
+    // Essayer avec une URL publique explicite
+    if (retryCount < MAX_RETRIES && !currentSrc.includes('/public/')) {
+      console.log('🔄 [OptimizedImage] Retry with explicit public URL, attempt:', retryCount + 1);
+      setRetryCount(prev => prev + 1);
+      
+      const explicitPublicUrl = buildDesignUrl(src);
+      if (explicitPublicUrl !== currentSrc) {
+        setCurrentSrc(explicitPublicUrl);
+        setIsError(false);
+        return;
+      }
+    }
+    
     // Try fallback if not already using it
     if (currentSrc !== fallbackSrc && retryCount < MAX_RETRIES) {
-      console.log('🔄 OptimizedImage trying fallback image:', fallbackSrc);
+      console.log('🔄 [OptimizedImage] Trying fallback image:', fallbackSrc);
       setCurrentSrc(fallbackSrc);
       setRetryCount(prev => prev + 1);
       setIsError(false);
     } else {
+      console.log('💥 [OptimizedImage] All options exhausted for:', src);
       setIsError(true);
       setIsLoaded(true);
     }
@@ -167,20 +201,44 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
         </div>
       )}
 
-      {/* Error state with specific message for expired tokens */}
+      {/* Error state with diagnostic info */}
       {isError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="text-center text-gray-400 p-4">
+          <div className="text-center text-gray-400 p-4 max-w-xs">
             <div className="w-12 h-12 bg-gray-200 rounded mb-2 mx-auto flex items-center justify-center">
               <span className="text-gray-400">❌</span>
             </div>
-            {currentSrc.includes('/sign/') ? (
+            
+            {diagnosticInfo && diagnosticInfo.status === 404 ? (
+              <div>
+                <p className="text-xs font-medium text-red-500">Fichier introuvable</p>
+                <p className="text-xs">Le fichier n'existe pas dans le storage</p>
+              </div>
+            ) : diagnosticInfo && diagnosticInfo.status === 403 ? (
+              <div>
+                <p className="text-xs font-medium text-orange-500">Accès refusé</p>
+                <p className="text-xs">Problème de permissions</p>
+              </div>
+            ) : currentSrc.includes('/sign/') ? (
               <div>
                 <p className="text-xs font-medium text-red-500">Token expiré</p>
                 <p className="text-xs">Image inaccessible</p>
               </div>
             ) : (
-              <p className="text-xs">Image non disponible</p>
+              <div>
+                <p className="text-xs font-medium text-gray-500">Image non disponible</p>
+                {diagnosticInfo?.error && (
+                  <p className="text-xs text-red-400 mt-1">{diagnosticInfo.error}</p>
+                )}
+              </div>
+            )}
+            
+            {/* URL debug info en mode développement */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-2 p-2 bg-gray-200 rounded text-xs text-left">
+                <p className="font-mono text-xs break-all">{currentSrc}</p>
+                <p className="text-gray-600 mt-1">Tentatives: {retryCount}/{MAX_RETRIES}</p>
+              </div>
             )}
           </div>
         </div>

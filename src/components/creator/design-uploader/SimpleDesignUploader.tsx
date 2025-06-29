@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { validateImageFile } from '@/utils/inputValidation';
-import { buildDesignUrl } from '@/utils/imageUrl';
+import { buildDesignUrl, checkImageAccess, diagnoseImageUrl } from '@/utils/imageUrl';
 
 interface SimpleDesignUploaderProps {
   onDesignUpload: (imageUrl: string) => void;
@@ -23,46 +23,65 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
     fileInputRef.current?.click();
   };
 
+  const generateSafeFileName = (originalName: string, userId: string): string => {
+    // Nettoyer le nom de fichier original
+    const cleanName = originalName
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]/g, '_') // Remplacer caractères spéciaux par underscore
+      .replace(/_{2,}/g, '_') // Supprimer underscores multiples
+      .replace(/^_|_$/g, ''); // Supprimer underscores en début/fin
+    
+    // Extraire l'extension
+    const lastDotIndex = cleanName.lastIndexOf('.');
+    const name = lastDotIndex > 0 ? cleanName.substring(0, lastDotIndex) : cleanName;
+    const extension = lastDotIndex > 0 ? cleanName.substring(lastDotIndex) : '.png';
+    
+    // Générer un nom unique
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    
+    return `${name}_${timestamp}_${randomSuffix}${extension}`;
+  };
+
   const buildPublicDesignUrl = (filePath: string): string => {
     // Toujours utiliser l'URL publique pour les designs
     const publicUrl = `https://riumhqlxdmsxwsjstqgl.supabase.co/storage/v1/object/public/designs/${filePath}`;
-    console.log('✅ URL publique générée pour le design:', publicUrl);
+    console.log('✅ [SimpleDesignUploader] URL publique générée:', publicUrl);
     return publicUrl;
   };
 
-  const verifyImageAccess = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      console.log('🔍 Test accès image publique:', url);
+  const verifyFileUpload = async (filePath: string): Promise<{ exists: boolean; url: string }> => {
+    try {
+      console.log('🔍 [SimpleDesignUploader] Vérification de l\'upload:', filePath);
       
-      const testImg = document.createElement('img');
-      testImg.crossOrigin = 'anonymous';
-      
-      testImg.onload = () => {
-        console.log('✅ Image publique accessible:', {
-          url,
-          naturalWidth: testImg.naturalWidth,
-          naturalHeight: testImg.naturalHeight
+      // Vérifier que le fichier existe dans le storage
+      const { data, error } = await supabase.storage
+        .from('designs')
+        .list(filePath.substring(0, filePath.lastIndexOf('/')), {
+          search: filePath.substring(filePath.lastIndexOf('/') + 1)
         });
-        resolve(true);
-      };
+
+      if (error) {
+        console.error('❌ [SimpleDesignUploader] Erreur vérification storage:', error);
+        return { exists: false, url: '' };
+      }
+
+      const fileExists = data && data.length > 0;
+      const publicUrl = buildPublicDesignUrl(filePath);
       
-      testImg.onerror = (error) => {
-        console.error('❌ Image publique non accessible:', {
-          url,
-          error: error
-        });
-        resolve(false);
-      };
+      if (fileExists) {
+        // Vérifier l'accessibilité HTTP
+        const isAccessible = await checkImageAccess(publicUrl);
+        console.log(`${isAccessible ? '✅' : '❌'} [SimpleDesignUploader] Accessibilité HTTP:`, publicUrl);
+        
+        return { exists: isAccessible, url: publicUrl };
+      }
       
-      setTimeout(() => {
-        if (!testImg.complete) {
-          console.error('⏰ Timeout accès image publique:', url);
-          resolve(false);
-        }
-      }, 5000);
-      
-      testImg.src = url;
-    });
+      return { exists: false, url: publicUrl };
+    } catch (error) {
+      console.error('💥 [SimpleDesignUploader] Erreur lors de la vérification:', error);
+      return { exists: false, url: buildPublicDesignUrl(filePath) };
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,40 +102,71 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
     setIsUploading(true);
 
     try {
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
-      const filePath = `${user.id}/${fileName}`;
+      // Générer un nom de fichier sûr et unique
+      const safeFileName = generateSafeFileName(file.name, user.id);
+      const filePath = `${user.id}/${safeFileName}`;
 
-      console.log('=== UPLOAD DESIGN PUBLIC DEBUG ===');
-      console.log('📤 Upload vers bucket public: designs');
-      console.log('📂 Chemin fichier:', filePath);
-      console.log('📄 Nom fichier validé:', fileName);
+      console.log('=== UPLOAD DESIGN DÉTAILLÉ ===');
+      console.log('📤 Fichier original:', file.name);
+      console.log('📄 Nom sécurisé:', safeFileName);
+      console.log('📂 Chemin complet:', filePath);
       console.log('👤 User ID:', user.id);
+      console.log('📊 Taille fichier:', `${(file.size / 1024).toFixed(2)} KB`);
+      console.log('🎨 Type MIME:', file.type);
 
       // Upload vers le bucket designs (public)
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('designs')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false // Ne pas remplacer si existe déjà
+        });
 
       if (uploadError) {
-        console.error('❌ Erreur upload public:', uploadError);
-        throw uploadError;
+        console.error('❌ [SimpleDesignUploader] Erreur upload:', uploadError);
+        
+        // Si le fichier existe déjà, essayer avec un nom différent
+        if (uploadError.message?.includes('already exists')) {
+          const retryFileName = generateSafeFileName(file.name, user.id);
+          const retryFilePath = `${user.id}/${retryFileName}`;
+          
+          console.log('🔄 [SimpleDesignUploader] Retry avec nouveau nom:', retryFilePath);
+          
+          const { data: retryData, error: retryError } = await supabase.storage
+            .from('designs')
+            .upload(retryFilePath, file, {
+              cacheControl: '3600',
+              upsert: true
+            });
+          
+          if (retryError) {
+            throw retryError;
+          }
+          
+          console.log('✅ [SimpleDesignUploader] Upload retry réussi:', retryData);
+          filePath = retryFilePath; // Utiliser le nouveau chemin
+        } else {
+          throw uploadError;
+        }
+      } else {
+        console.log('✅ [SimpleDesignUploader] Upload initial réussi:', uploadData);
       }
 
-      console.log('✅ Upload public réussi:', uploadData);
-
-      // Générer l'URL publique (pas de token nécessaire)
-      const publicUrl = buildPublicDesignUrl(filePath);
-
-      // Vérifier l'accessibilité publique
-      const isAccessible = await verifyImageAccess(publicUrl);
+      // Vérifier que le fichier est bien uploadé et accessible
+      const verification = await verifyFileUpload(filePath);
       
-      if (!isAccessible) {
-        console.error('❌ Image uploadée mais non accessible publiquement');
+      if (!verification.exists) {
+        console.error('❌ [SimpleDesignUploader] Fichier uploadé mais non accessible');
+        
+        // Diagnostic détaillé
+        const diagnostic = await diagnoseImageUrl(verification.url);
+        console.log('🔬 [SimpleDesignUploader] Diagnostic:', diagnostic);
+        
         toast({
           variant: "destructive",
-          title: "Erreur d'accès public",
-          description: "Le fichier a été uploadé mais n'est pas accessible publiquement."
+          title: "Erreur d'accessibilité",
+          description: "Le fichier a été uploadé mais n'est pas accessible. " + 
+                      (diagnostic.suggestions[0] || "Vérifiez la configuration du bucket.")
         });
         return;
       }
@@ -127,35 +177,49 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
         .insert({
           user_id: user.id,
           filename: file.name,
-          file_url: publicUrl,
+          file_url: verification.url,
           file_type: file.type,
           file_size: file.size
         });
 
       if (dbError) {
-        console.error('⚠️ Erreur sauvegarde DB (non bloquante):', dbError);
+        console.error('⚠️ [SimpleDesignUploader] Erreur sauvegarde DB (non bloquante):', dbError);
+      } else {
+        console.log('✅ [SimpleDesignUploader] Sauvegarde DB réussie');
       }
 
-      console.log('=== RÉSUMÉ UPLOAD PUBLIC ===');
+      console.log('=== RÉSUMÉ UPLOAD RÉUSSI ===');
       console.log('📦 Bucket: designs (public)');
-      console.log('📂 Chemin complet:', filePath);
-      console.log('🔗 URL publique finale:', publicUrl);
+      console.log('📂 Chemin final:', filePath);
+      console.log('🔗 URL publique:', verification.url);
       console.log('✅ Accessibilité: vérifiée');
-      console.log('=== FIN DEBUG PUBLIC ===');
+      console.log('💾 Base de données: mise à jour');
+      console.log('=== FIN UPLOAD ===');
 
-      onDesignUpload(publicUrl);
+      onDesignUpload(verification.url);
 
       toast({
-        title: "Design uploadé",
-        description: "Votre design est maintenant accessible publiquement."
+        title: "Design uploadé avec succès",
+        description: "Votre design est maintenant accessible et prêt à être utilisé."
       });
 
     } catch (error: any) {
-      console.error('❌ Erreur upload public:', error);
+      console.error('💥 [SimpleDesignUploader] Erreur générale:', error);
+      
+      let errorMessage = "Impossible d'uploader le fichier.";
+      
+      if (error.message?.includes('exceeded')) {
+        errorMessage = "Fichier trop volumineux. Taille maximum: 5MB.";
+      } else if (error.message?.includes('Invalid file type')) {
+        errorMessage = "Format de fichier non supporté. Utilisez PNG, JPG ou SVG.";
+      } else if (error.message?.includes('storage')) {
+        errorMessage = "Erreur de stockage. Réessayez dans quelques instants.";
+      }
+      
       toast({
         variant: "destructive",
         title: "Erreur d'upload",
-        description: error.message || "Impossible d'uploader le fichier."
+        description: errorMessage
       });
     } finally {
       setIsUploading(false);
@@ -178,12 +242,13 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
           {isUploading ? (
             <>
               <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full" />
-              <span>Upload public en cours...</span>
+              <span>Upload et vérification en cours...</span>
             </>
           ) : (
             <>
               <Upload className="h-6 w-6" />
-              <span>Cliquez pour uploader un design (accès public)</span>
+              <span>Cliquez pour uploader un design</span>
+              <span className="text-xs text-gray-500">PNG, JPG, SVG - Max 5MB</span>
             </>
           )}
         </div>
