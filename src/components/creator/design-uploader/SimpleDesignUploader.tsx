@@ -104,7 +104,7 @@ export const SimpleDesignUploader: React.FC<SimpleDesignUploaderProps> = ({
     try {
       // Générer un nom de fichier sûr et unique
       const safeFileName = generateSafeFileName(file.name, user.id);
-      const filePath = `${user.id}/${safeFileName}`;
+      let filePath = `${user.id}/${safeFileName}`;
 
       console.log('=== UPLOAD DESIGN DÉTAILLÉ ===');
       console.log('📤 Fichier original:', file.name);
