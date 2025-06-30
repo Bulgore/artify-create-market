@@ -3,9 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye } from 'lucide-react';
 import type { PrintArea } from '@/types/printArea';
-import { calculateAutoPosition, getImageDimensions, AutoPositionResult } from '@/utils/designPositioning';
-import { MockupContainer } from './mockup/MockupContainer';
-import { MockupStatusInfo } from './mockup/MockupStatusInfo';
+import { getPrimaryMockupUrl } from '@/utils/mockupUtils';
 
 interface MockupPreviewProps {
   mockupUrl?: string;
@@ -21,86 +19,34 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
   designPosition
 }) => {
   const [mockupLoaded, setMockupLoaded] = useState(false);
-  const [designLoaded, setDesignLoaded] = useState(false);
   const [mockupError, setMockupError] = useState(false);
-  const [designError, setDesignError] = useState(false);
-  const [autoPosition, setAutoPosition] = useState<AutoPositionResult | null>(null);
 
-  // Debug logs détaillés
+  // Reset des états quand l'URL change
   useEffect(() => {
-    console.log('🖼️ [MockupPreview] Props reçues:', {
-      mockupUrl: mockupUrl ? mockupUrl.substring(0, 80) + '...' : 'AUCUNE',
-      designUrl: designUrl ? designUrl.substring(0, 80) + '...' : 'AUCUNE',
-      designArea,
-      designPosition,
-      hasDesignArea: !!designArea,
-      hasDesignPosition: !!designPosition
-    });
-  }, [mockupUrl, designUrl, designArea, designPosition]);
+    setMockupLoaded(false);
+    setMockupError(false);
+  }, [mockupUrl]);
 
-  // Reset states quand les props changent
-  useEffect(() => {
-    console.log('🔄 [MockupPreview] Reset des états pour nouveau design');
-    setDesignLoaded(false);
-    setDesignError(false);
-    setAutoPosition(null);
-  }, [designUrl]);
-
-  // Calculer la position automatique quand le design et la zone sont disponibles
-  useEffect(() => {
-    if (designUrl && designArea && mockupLoaded) {
-      console.log('🔄 [MockupPreview] Calcul de la position automatique...', {
-        designUrl: designUrl.substring(0, 50) + '...',
-        designArea,
-        mockupLoaded
-      });
-      
-      getImageDimensions(designUrl)
-        .then(dimensions => {
-          console.log('📐 [MockupPreview] Dimensions du design:', dimensions);
-          const position = calculateAutoPosition(dimensions, designArea);
-          setAutoPosition(position);
-          console.log('✅ [MockupPreview] Position automatique calculée:', position);
-        })
-        .catch(error => {
-          console.error('❌ [MockupPreview] Erreur calcul position:', error);
-          setDesignError(true);
-        });
-    } else {
-      console.log('⏳ [MockupPreview] Conditions non réunies pour calcul position:', {
-        hasDesignUrl: !!designUrl,
-        hasDesignArea: !!designArea,
-        mockupLoaded
-      });
-    }
-  }, [designUrl, designArea, mockupLoaded]);
+  console.log('🖼️ [MockupPreview] Rendu avec:', {
+    mockupUrl: mockupUrl?.substring(0, 50) + '...',
+    designUrl: designUrl?.substring(0, 50) + '...',
+    hasDesignArea: !!designArea,
+    hasDesignPosition: !!designPosition
+  });
 
   const handleMockupLoad = () => {
-    console.log('✅ [MockupPreview] Mockup chargé avec succès');
+    console.log('✅ [MockupPreview] Mockup chargé');
     setMockupLoaded(true);
     setMockupError(false);
   };
 
   const handleMockupError = () => {
-    console.error('❌ [MockupPreview] Erreur de chargement du mockup:', mockupUrl);
+    console.error('❌ [MockupPreview] Erreur mockup:', mockupUrl);
     setMockupError(true);
     setMockupLoaded(false);
   };
 
-  const handleDesignLoad = () => {
-    console.log('✅ [MockupPreview] Design overlay chargé avec succès');
-    setDesignLoaded(true);
-    setDesignError(false);
-  };
-
-  const handleDesignError = () => {
-    console.error('❌ [MockupPreview] Erreur de chargement du design overlay:', designUrl);
-    setDesignError(true);
-    setDesignLoaded(false);
-  };
-
   if (!mockupUrl) {
-    console.warn('⚠️ [MockupPreview] Aucune URL de mockup fournie');
     return (
       <Card>
         <CardHeader>
@@ -114,9 +60,6 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
             <Eye className="h-12 w-12 mx-auto mb-4 text-gray-300" />
             <p className="text-gray-500 font-medium">Aucun aperçu disponible</p>
             <p className="text-xs text-gray-400 mt-2">Le produit sélectionné n'a pas de mockup configuré</p>
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs">
-              <strong>🔍 Debug:</strong> mockupUrl = {mockupUrl || 'undefined'}
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -133,27 +76,61 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
       </CardHeader>
       <CardContent>
         <div className="relative">
-          <MockupContainer
-            mockupUrl={mockupUrl}
-            mockupLoaded={mockupLoaded}
-            mockupError={mockupError}
-            designUrl={designUrl}
-            designError={designError}
-            designArea={designArea}
-            autoPosition={autoPosition}
-            onMockupLoad={handleMockupLoad}
-            onMockupError={handleMockupError}
-            onDesignLoad={handleDesignLoad}
-            onDesignError={handleDesignError}
-          />
+          <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
+            <div className="bg-gray-100 px-3 py-2 border-b">
+              <h4 className="text-sm font-medium text-gray-700">👕 Mockup du produit</h4>
+            </div>
+            <div className="relative w-full h-80 bg-gray-100 overflow-hidden">
+              {mockupError ? (
+                <div className="w-full h-full flex items-center justify-center text-red-500">
+                  <div className="text-center">
+                    <p>❌ Erreur de chargement</p>
+                    <p className="text-xs mt-1">Mockup indisponible</p>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={mockupUrl}
+                  alt="Mockup du produit"
+                  className="w-full h-full object-contain"
+                  onLoad={handleMockupLoad}
+                  onError={handleMockupError}
+                />
+              )}
+              
+              {/* Overlay design si disponible */}
+              {designUrl && designPosition && mockupLoaded && (
+                <div
+                  className="absolute border-2 border-blue-400 bg-blue-100 bg-opacity-50 flex items-center justify-center"
+                  style={{
+                    left: `${Math.max(0, Math.min(80, designPosition.x || 20))}%`,
+                    top: `${Math.max(0, Math.min(80, designPosition.y || 20))}%`,
+                    width: `${Math.max(10, Math.min(50, (designPosition.width || 100) / 5))}%`,
+                    height: `${Math.max(10, Math.min(50, (designPosition.height || 100) / 5))}%`
+                  }}
+                >
+                  <span className="text-blue-600 text-xs font-bold">DESIGN</span>
+                </div>
+              )}
+            </div>
+          </div>
           
-          <MockupStatusInfo
-            mockupLoaded={mockupLoaded}
-            mockupError={mockupError}
-            designUrl={designUrl}
-            autoPosition={autoPosition}
-            designArea={designArea}
-          />
+          {/* Info de debug simplifiée */}
+          <div className="mt-4 text-xs bg-gray-100 p-3 rounded border">
+            <div className="font-bold text-gray-700 mb-1">État du mockup:</div>
+            <div className="text-gray-600">
+              {mockupLoaded ? '✅ Chargé' : mockupError ? '❌ Erreur' : '⏳ Chargement...'}
+            </div>
+            {designPosition && (
+              <div className="mt-2">
+                <div className="font-bold text-gray-700">Position du design:</div>
+                <div className="text-gray-600">
+                  📐 {Math.round(designPosition.width || 0)}×{Math.round(designPosition.height || 0)}px
+                  | 🔍 {Math.round((designPosition.scale || 1) * 100)}%
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

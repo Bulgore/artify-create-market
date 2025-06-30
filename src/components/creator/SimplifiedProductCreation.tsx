@@ -9,7 +9,7 @@ import { useDesignPositioning } from '@/hooks/useDesignPositioning';
 import { useProductData } from '@/hooks/useProductData';
 import { useProductSubmission } from '@/hooks/useProductSubmission';
 import { usePrintProducts } from '@/hooks/usePrintProducts';
-import { buildImageUrl } from '@/utils/imageUrl';
+import { getPrimaryMockupUrl } from '@/utils/mockupUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
@@ -34,28 +34,25 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   const { productData, setProductData, resetProductData } = useProductData();
   const { isLoading, handleSubmit } = useProductSubmission();
 
-  console.log('🎯 SimplifiedProductCreation render state:', {
+  console.log('🎯 [SimplifiedProductCreation] État actuel:', {
     selectedProduct: selectedProduct?.name,
-    selectedProductId: selectedProduct?.id,
-    designUrl: !!designUrl,
+    hasDesign: !!designUrl,
     productName: productData.name,
-    autoPositionExists: !!autoDesignPosition,
-    printProductsAvailable: printProducts.length,
-    productsError
+    hasAutoPosition: !!autoDesignPosition
   });
 
   const handleProductSelect = (product: PrintProduct | null) => {
-    console.log('🎯 Produit sélectionné dans SimplifiedProductCreation:', product?.name);
+    console.log('🎯 [SimplifiedProductCreation] Produit sélectionné:', product?.name);
     setSelectedProduct(product);
     
-    // Reset design quand on change de produit
+    // Reset complet lors du changement de produit
     setDesignUrl('');
     resetDesignPosition();
     resetProductData();
   };
 
   const handleDesignUpload = async (url: string) => {
-    console.log('📷 Design uploadé:', url);
+    console.log('📷 [SimplifiedProductCreation] Design uploadé:', url);
     setDesignUrl(url);
     resetDesignPosition();
     
@@ -65,20 +62,15 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
   };
 
   const handleDesignRemove = () => {
+    console.log('🗑️ [SimplifiedProductCreation] Suppression du design');
     setDesignUrl('');
     resetDesignPosition();
   };
 
   const handleProductSubmit = async () => {
-    console.log('🚀 SimplifiedProductCreation - handleProductSubmit');
-    console.log('📦 Validation des données:', {
-      selectedProduct: !!selectedProduct,
-      designUrl: !!designUrl,
-      productName: productData.name,
-      autoPosition: !!autoDesignPosition
-    });
+    console.log('🚀 [SimplifiedProductCreation] Soumission du produit');
     
-    // Validation SIMPLE et CLAIRE
+    // Validation stricte
     if (!selectedProduct) {
       console.log('❌ Aucun produit sélectionné');
       return;
@@ -94,10 +86,10 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       return;
     }
 
-    // Position automatique avec fallback
+    // Position automatique avec fallback robuste
     let finalPosition = autoDesignPosition;
     if (!finalPosition) {
-      console.log('⚠️ Position automatique manquante, utilisation fallback centré');
+      console.log('⚠️ [SimplifiedProductCreation] Position automatique manquante, utilisation fallback');
       finalPosition = {
         x: 50,
         y: 50,
@@ -108,7 +100,7 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       };
     }
 
-    console.log('✅ Validation réussie - soumission du produit');
+    console.log('✅ [SimplifiedProductCreation] Validation réussie, création en cours');
 
     const success = await handleSubmit(
       selectedProduct,
@@ -118,19 +110,18 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     );
 
     if (success) {
-      console.log('✅ Produit créé avec succès');
-      // Réinitialiser le formulaire
+      console.log('✅ [SimplifiedProductCreation] Produit créé avec succès');
+      
+      // Réinitialisation complète
       setSelectedProduct(null);
       setDesignUrl('');
       resetDesignPosition();  
       resetProductData();
       
-      // Appeler la callback parent
       onProductCreate(success);
     }
   };
 
-  // Afficher les erreurs de chargement des produits
   if (productsError) {
     return (
       <div className="space-y-6">
@@ -144,7 +135,6 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
     );
   }
 
-  // Afficher message si aucun produit disponible
   if (!loadingProducts && printProducts.length === 0) {
     return (
       <div className="text-center py-12">
@@ -153,40 +143,6 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       </div>
     );
   }
-
-  // Fonction pour obtenir l'URL du mockup principal
-  const getPrimaryMockupUrl = (product: PrintProduct) => {
-    console.log('🔍 Récupération mockup pour produit:', product.name);
-    console.log('📦 Template du produit:', product.product_templates);
-    console.log('🖼️ Mockups disponibles:', product.product_templates?.product_mockups);
-    
-    if (!product.product_templates?.product_mockups || !Array.isArray(product.product_templates.product_mockups)) {
-      console.warn('⚠️ Aucun mockup disponible pour ce produit');
-      return undefined;
-    }
-
-    // Chercher le mockup principal
-    const primaryMockup = product.product_templates.product_mockups.find(
-      m => m.id === product.product_templates?.primary_mockup_id
-    );
-
-    if (primaryMockup) {
-      const mockupUrl = buildImageUrl(primaryMockup.mockup_url);
-      console.log('✅ Mockup principal trouvé:', mockupUrl);
-      return mockupUrl;
-    }
-
-    // Fallback sur le premier mockup disponible
-    const firstMockup = product.product_templates.product_mockups[0];
-    if (firstMockup) {
-      const mockupUrl = buildImageUrl(firstMockup.mockup_url);
-      console.log('⚠️ Utilisation du premier mockup comme fallback:', mockupUrl);
-      return mockupUrl;
-    }
-
-    console.warn('❌ Aucun mockup utilisable trouvé');
-    return undefined;
-  };
 
   return (
     <div className="space-y-6">

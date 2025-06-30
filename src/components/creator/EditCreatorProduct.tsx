@@ -46,9 +46,17 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
   useEffect(() => {
     const loadProduct = async () => {
       try {
+        console.log('🔄 [EditCreatorProduct] Chargement du produit:', productId);
         const { product } = await fetchProduct(productId);
         
-        // Configuration des données du produit après chargement réussi
+        if (!product) {
+          console.error('❌ [EditCreatorProduct] Produit non trouvé');
+          return;
+        }
+
+        console.log('✅ [EditCreatorProduct] Produit chargé:', product.name_fr);
+        
+        // Configuration des données du produit
         setProductData({
           name: product.name_fr || '',
           description: product.description_fr || '',
@@ -57,25 +65,31 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
 
         // Calcul de la position du design si présent
         if (product.original_design_url && printProduct) {
+          console.log('🎯 [EditCreatorProduct] Calcul position design');
           await calculateDesignPosition(product.original_design_url, printProduct);
         }
       } catch (error) {
-        // L'erreur est déjà gérée dans useEditProductData
-        console.error('Erreur lors du chargement du produit:', error);
+        console.error('❌ [EditCreatorProduct] Erreur chargement:', error);
       }
     };
 
-    loadProduct();
+    if (productId) {
+      loadProduct();
+    }
   }, [productId, fetchProduct, setProductData, calculateDesignPosition, printProduct]);
 
   const handleDesignUpload = async (url: string) => {
     console.log('📤 [EditCreatorProduct] Upload du design:', url);
     setDesignUrl(url);
     resetDesignPosition();
-    await calculateDesignPosition(url, printProduct);
+    
+    if (printProduct) {
+      await calculateDesignPosition(url, printProduct);
+    }
   };
 
   const submit = async () => {
+    console.log('💾 [EditCreatorProduct] Soumission des modifications');
     const success = await handleUpdate(designUrl, autoDesignPosition, productData);
     if (success) {
       onUpdated();

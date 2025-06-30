@@ -34,7 +34,7 @@ export const useProductSubmission = () => {
     setIsLoading(true);
 
     try {
-      console.log('🚀 Création du produit créateur avec les nouvelles données');
+      console.log('🚀 Création du produit créateur - données complètes');
 
       const creatorProductData = {
         creator_id: user.id,
@@ -58,10 +58,10 @@ export const useProductSubmission = () => {
         },
         generated_mockups: [] as GeneratedMockup[],
         is_published: false,
-        status: 'active' // Changé de 'pending' à 'active' pour éviter l'erreur de contrainte
+        status: 'active' // Utiliser 'active' au lieu de 'draft' pour éviter l'erreur de contrainte
       };
 
-      console.log('📦 Données du produit créateur:', creatorProductData);
+      console.log('📦 Données finales du produit:', creatorProductData);
 
       const { data, error } = await supabase
         .from('creator_products')
@@ -71,6 +71,12 @@ export const useProductSubmission = () => {
 
       if (error) {
         console.error('❌ Erreur lors de la création:', error);
+        
+        // Gestion spécifique des erreurs de contrainte
+        if (error.message.includes('creator_products_status_check')) {
+          throw new Error('Statut invalide. Utilisation du statut par défaut.');
+        }
+        
         throw error;
       }
 
@@ -85,10 +91,19 @@ export const useProductSubmission = () => {
 
     } catch (error: any) {
       console.error('❌ Erreur critique lors de la création:', error);
+      
+      let errorMessage = "Impossible de créer le produit.";
+      
+      if (error.message?.includes('status_check')) {
+        errorMessage = "Erreur de statut du produit. Veuillez réessayer.";
+      } else if (error.message?.includes('foreign key')) {
+        errorMessage = "Erreur de liaison avec le produit d'impression.";
+      }
+      
       toast({
         variant: "destructive",
         title: "Erreur de création",
-        description: error.message || "Impossible de créer le produit."
+        description: errorMessage
       });
       return false;
     } finally {
