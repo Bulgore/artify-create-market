@@ -100,17 +100,17 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
               
               {/* Overlay design si disponible */}
               {designUrl && designPosition && mockupLoaded && (
-                <div
-                  className="absolute border-2 border-blue-400 bg-blue-100 bg-opacity-50 flex items-center justify-center"
+                <img
+                  src={designUrl}
+                  alt="Design du produit"
+                  className="absolute object-contain border-2 border-blue-400 shadow-lg"
                   style={{
                     left: `${Math.max(0, Math.min(80, designPosition.x || 20))}%`,
                     top: `${Math.max(0, Math.min(80, designPosition.y || 20))}%`,
                     width: `${Math.max(10, Math.min(50, (designPosition.width || 100) / 5))}%`,
                     height: `${Math.max(10, Math.min(50, (designPosition.height || 100) / 5))}%`
                   }}
-                >
-                  <span className="text-blue-600 text-xs font-bold">DESIGN</span>
-                </div>
+                />
               )}
             </div>
           </div>
