@@ -103,12 +103,14 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
                 <img
                   src={designUrl}
                   alt="Design du produit"
-                  className="absolute object-contain border-2 border-blue-400 shadow-lg"
+                  className="absolute object-contain border-2 border-green-400 shadow-md"
                   style={{
-                    left: `${Math.max(0, Math.min(80, designPosition.x || 20))}%`,
-                    top: `${Math.max(0, Math.min(80, designPosition.y || 20))}%`,
-                    width: `${Math.max(10, Math.min(50, (designPosition.width || 100) / 5))}%`,
-                    height: `${Math.max(10, Math.min(50, (designPosition.height || 100) / 5))}%`
+                    // Utilisation des coordonnées EXACTES de la zone d'impression admin
+                    left: `${(designPosition.x / 400) * 100}%`,
+                    top: `${(designPosition.y / 400) * 100}%`,
+                    width: `${(designPosition.width / 400) * 100}%`,
+                    height: `${(designPosition.height / 400) * 100}%`,
+                    transform: designPosition.rotation ? `rotate(${designPosition.rotation}deg)` : 'none'
                   }}
                 />
               )}

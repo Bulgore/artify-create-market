@@ -18,11 +18,13 @@ export const DesignPreview: React.FC<DesignPreviewProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const handleImageLoad = () => {
+    console.log('✅ [DesignPreview] Design chargé avec succès:', designUrl);
     setImageLoaded(true);
     setImageError(false);
   };
 
-  const handleImageError = () => {
+  const handleImageError = (error: any) => {
+    console.error('❌ [DesignPreview] Erreur chargement design:', designUrl, error);
     setImageError(true);
     setImageLoaded(false);
   };
