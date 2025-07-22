@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { DesignUploadHandler } from './simplified/DesignUploadHandler';
 import { MockupSection } from './simplified/MockupSection';
 import { ProductCreationForm } from './simplified/ProductCreationForm';
@@ -43,40 +43,50 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
   const { productData, setProductData } = useProductData();
   const { isLoading, handleUpdate } = useCreatorProductUpdate(productId);
 
-  useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        console.log('🔄 [EditCreatorProduct] Chargement du produit:', productId);
-        const { product } = await fetchProduct(productId);
-        
-        if (!product) {
-          console.error('❌ [EditCreatorProduct] Produit non trouvé');
-          return;
-        }
-
-        console.log('✅ [EditCreatorProduct] Produit chargé:', product.name_fr);
-        
-        // Configuration des données du produit
-        setProductData({
-          name: product.name_fr || '',
-          description: product.description_fr || '',
-          margin_percentage: product.creator_margin_percentage || 20
-        });
-
-        // Calcul de la position du design si présent
-        if (product.original_design_url && printProduct) {
-          console.log('🎯 [EditCreatorProduct] Calcul position design');
-          await calculateDesignPosition(product.original_design_url, printProduct);
-        }
-      } catch (error) {
-        console.error('❌ [EditCreatorProduct] Erreur chargement:', error);
+  // Fonction memoized pour éviter les re-rendus inutiles
+  const loadProduct = useCallback(async () => {
+    if (!productId) return;
+    
+    try {
+      console.log('🔄 [EditCreatorProduct] Chargement du produit:', productId);
+      const { product } = await fetchProduct(productId);
+      
+      if (!product) {
+        console.error('❌ [EditCreatorProduct] Produit non trouvé');
+        return;
       }
-    };
 
-    if (productId) {
-      loadProduct();
+      console.log('✅ [EditCreatorProduct] Produit chargé:', product.name_fr);
+      
+      // Configuration des données du produit
+      setProductData({
+        name: product.name_fr || '',
+        description: product.description_fr || '',
+        margin_percentage: product.creator_margin_percentage || 20
+      });
+
+    } catch (error) {
+      console.error('❌ [EditCreatorProduct] Erreur chargement:', error);
     }
-  }, [productId, fetchProduct, setProductData, calculateDesignPosition, printProduct]);
+  }, [productId, fetchProduct, setProductData]);
+
+  // Fonction pour calculer la position du design
+  const calculateDesignPos = useCallback(async () => {
+    if (!designUrl || !printProduct) return;
+    
+    console.log('🎯 [EditCreatorProduct] Calcul position design');
+    await calculateDesignPosition(designUrl, printProduct);
+  }, [designUrl, printProduct, calculateDesignPosition]);
+
+  // Chargement initial du produit (une seule fois)
+  useEffect(() => {
+    loadProduct();
+  }, [loadProduct]);
+
+  // Calcul de la position du design (séparé du chargement)
+  useEffect(() => {
+    calculateDesignPos();
+  }, [calculateDesignPos]);
 
   const handleDesignUpload = async (url: string) => {
     console.log('📤 [EditCreatorProduct] Upload du design:', url);
@@ -104,7 +114,7 @@ export const EditCreatorProduct: React.FC<EditCreatorProductProps> = ({
     return (
       <EditProductError
         error={error}
-        onRetry={() => fetchProduct(productId)}
+        onRetry={() => loadProduct()}
         onBack={onBack}
       />
     );
