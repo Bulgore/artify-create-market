@@ -37,6 +37,7 @@ export const useDesignPositioning = () => {
       let area = { x: 50, y: 50, width: 200, height: 200 };
       
       // Essayer de récupérer la zone d'impression du mockup principal
+      // Priorité 1: utiliser primary_mockup_id si défini
       if (selectedProduct.product_templates.primary_mockup_id) {
         try {
           const { data } = await supabase
@@ -47,10 +48,38 @@ export const useDesignPositioning = () => {
           
           if (data?.print_area) {
             area = parsePrintArea(data.print_area);
-            console.log('✅ [useDesignPositioning] Zone d\'impression du mockup récupérée:', area);
+            console.log('✅ [useDesignPositioning] Zone d\'impression du mockup (primary_id) récupérée:', area);
           }
         } catch (mockupError) {
-          console.warn('⚠️ [useDesignPositioning] Erreur récupération zone mockup:', mockupError);
+          console.warn('⚠️ [useDesignPositioning] Erreur récupération zone mockup (primary_id):', mockupError);
+        }
+      }
+      // Priorité 2: chercher le mockup marqué comme primary dans les product_mockups
+      else if (selectedProduct.product_templates?.product_mockups?.length > 0) {
+        const primaryMockup = selectedProduct.product_templates.product_mockups.find(m => m.is_primary);
+        const mockupToUse = primaryMockup || selectedProduct.product_templates.product_mockups[0];
+        
+        if (mockupToUse?.print_area) {
+          area = parsePrintArea(mockupToUse.print_area);
+          console.log('✅ [useDesignPositioning] Zone d\'impression du mockup (is_primary) récupérée:', area);
+        }
+      }
+      // Priorité 3: récupérer directement depuis la base de données pour le template
+      else {
+        try {
+          const { data } = await supabase
+            .from('product_mockups')
+            .select('print_area')
+            .eq('product_template_id', selectedProduct.product_templates?.id)
+            .eq('is_primary', true)
+            .single();
+          
+          if (data?.print_area) {
+            area = parsePrintArea(data.print_area);
+            console.log('✅ [useDesignPositioning] Zone d\'impression du mockup (DB query) récupérée:', area);
+          }
+        } catch (mockupError) {
+          console.warn('⚠️ [useDesignPositioning] Erreur récupération zone mockup (DB query):', mockupError);
         }
       }
       
