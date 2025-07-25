@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Database, FileArchive, FileImage } from 'lucide-react';
+import { Download, Database, FileArchive, FileImage, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { jsPDF } from 'jspdf';
 
@@ -734,6 +734,201 @@ npm run lint`);
     });
   };
 
+  const downloadNodeModules = () => {
+    // Création d'un fichier JSON contenant la liste des dépendances avec instructions
+    const nodeModulesInfo = {
+      project: "Podsleek",
+      version: "1.2.0",
+      description: "Liste des dépendances Node.js avec instructions de téléchargement",
+      generatedAt: new Date().toISOString(),
+      
+      // Liste complète des dépendances
+      dependencies: {
+        "@builder.io/react": "^8.2.1",
+        "@hookform/resolvers": "^3.9.0",
+        "@radix-ui/react-accordion": "^1.2.0",
+        "@radix-ui/react-alert-dialog": "^1.1.1",
+        "@radix-ui/react-aspect-ratio": "^1.1.0",
+        "@radix-ui/react-avatar": "^1.1.0",
+        "@radix-ui/react-checkbox": "^1.1.1",
+        "@radix-ui/react-collapsible": "^1.1.0",
+        "@radix-ui/react-context-menu": "^2.2.1",
+        "@radix-ui/react-dialog": "^1.1.2",
+        "@radix-ui/react-dropdown-menu": "^2.1.1",
+        "@radix-ui/react-hover-card": "^1.1.1",
+        "@radix-ui/react-label": "^2.1.0",
+        "@radix-ui/react-menubar": "^1.1.1",
+        "@radix-ui/react-navigation-menu": "^1.2.0",
+        "@radix-ui/react-popover": "^1.1.1",
+        "@radix-ui/react-progress": "^1.1.0",
+        "@radix-ui/react-radio-group": "^1.2.0",
+        "@radix-ui/react-scroll-area": "^1.1.0",
+        "@radix-ui/react-select": "^2.1.1",
+        "@radix-ui/react-separator": "^1.1.0",
+        "@radix-ui/react-slider": "^1.2.0",
+        "@radix-ui/react-slot": "^1.1.0",
+        "@radix-ui/react-switch": "^1.1.0",
+        "@radix-ui/react-tabs": "^1.1.0",
+        "@radix-ui/react-toast": "^1.2.1",
+        "@radix-ui/react-toggle": "^1.1.0",
+        "@radix-ui/react-toggle-group": "^1.1.0",
+        "@radix-ui/react-tooltip": "^1.1.4",
+        "@supabase/supabase-js": "^2.49.4",
+        "@tanstack/react-query": "^5.56.2",
+        "@types/dompurify": "^3.2.0",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "cmdk": "^1.0.0",
+        "date-fns": "^3.6.0",
+        "embla-carousel-react": "^8.3.0",
+        "framer-motion": "^12.12.1",
+        "input-otp": "^1.2.4",
+        "jspdf": "^3.0.1",
+        "lucide-react": "^0.462.0",
+        "next-themes": "^0.3.0",
+        "react": "^18.3.1",
+        "react-day-picker": "^8.10.1",
+        "react-dom": "^18.3.1",
+        "react-hook-form": "^7.53.0",
+        "react-resizable-panels": "^2.1.3",
+        "react-router-dom": "^6.26.2",
+        "recharts": "^2.12.7",
+        "sonner": "^1.5.0",
+        "tailwind-merge": "^2.5.2",
+        "tailwindcss-animate": "^1.0.7",
+        "vaul": "^0.9.3",
+        "zod": "^3.23.8"
+      },
+
+      // Instructions détaillées pour obtenir les node_modules
+      installationInstructions: `
+# TÉLÉCHARGEMENT DES DÉPENDANCES NODE.JS POUR PODSLEEK v1.2.0
+
+## 🎯 Options Recommandées (par ordre de préférence)
+
+### 1. 🚀 OPTION RAPIDE : GitHub Codespaces (RECOMMANDÉ)
+- Aller sur le dépôt GitHub de Podsleek
+- Cliquer sur "Code" > "Codespaces" > "Create codespace"
+- L'environnement sera configuré automatiquement avec toutes les dépendances
+- Aucune installation locale nécessaire
+
+### 2. ⚡ Installation via gestionnaire alternatif
+Si npm est bloqué, essayez :
+\`\`\`bash
+# Avec Yarn (si autorisé)
+yarn install
+
+# Avec pnpm (plus léger)
+npm install -g pnpm
+pnpm install
+
+# Avec Bun (très rapide)
+curl -fsSL https://bun.sh/install | bash
+bun install
+\`\`\`
+
+### 3. 🌐 Environnements en ligne
+- **StackBlitz** : stackblitz.com (ouvrir le projet directement)
+- **CodeSandbox** : codesandbox.io (import depuis GitHub)
+- **GitPod** : gitpod.io (préfixe l'URL GitHub avec gitpod.io/#)
+
+### 4. 🔧 Configuration proxy (si npm bloqué par firewall)
+\`\`\`bash
+npm config set proxy http://votre-proxy:port
+npm config set https-proxy http://votre-proxy:port
+npm config set registry http://registry.npmjs.org/
+npm install
+\`\`\`
+
+### 5. 🐳 Docker (si disponible)
+\`\`\`bash
+# Créer un container temporaire pour installer
+docker run -it --rm -v $(pwd):/app -w /app node:18
+npm install
+exit
+# Les node_modules seront dans votre dossier local
+\`\`\`
+
+## 📁 Structure attendue après installation
+
+Une fois les dépendances installées, vous devriez avoir :
+\`\`\`
+node_modules/
+├── @radix-ui/
+├── @supabase/
+├── @tanstack/
+├── react/
+├── react-dom/
+├── framer-motion/
+├── lucide-react/
+└── ... (plus de 1000 autres dossiers)
+\`\`\`
+
+## ⚠️ IMPORTANT : Alternatives si aucune solution ne fonctionne
+
+Si vous ne pouvez vraiment pas installer les dépendances :
+
+1. **Demander à un collègue** de vous envoyer son dossier node_modules (compressé)
+2. **Utiliser GitHub Codespaces** (gratuit avec compte GitHub)
+3. **Contacter l'administrateur système** pour débloquer npm/yarn
+4. **Utiliser un environnement de développement cloud** (CodeSpaces, GitPod)
+
+## 🔍 Vérification de l'installation
+
+Pour vérifier que tout fonctionne :
+\`\`\`bash
+# Démarrer le serveur de développement
+npm run dev
+# ou
+yarn dev
+# ou  
+pnpm dev
+# ou
+bun dev
+\`\`\`
+
+Le projet devrait démarrer sur http://localhost:8080
+
+## 📞 Support
+
+Si aucune de ces solutions ne fonctionne, documentez :
+- Votre système d'exploitation
+- Les messages d'erreur exacts
+- Votre environnement réseau (entreprise, proxy, etc.)
+- Les permissions disponibles
+
+Cette information aidera à trouver une solution adaptée à votre situation.
+      `,
+
+      // Scripts pour différents environnements
+      scripts: {
+        "dev": "vite",
+        "build": "tsc && vite build", 
+        "preview": "vite preview",
+        "lint": "eslint ."
+      },
+
+      // Taille approximative
+      estimatedSize: "~500MB une fois installé",
+      totalPackages: "~1000+ packages avec dépendances transitive"
+    };
+
+    const blob = new Blob([JSON.stringify(nodeModulesInfo, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'podsleek-node-modules-guide.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Guide Node.js téléchargé",
+      description: "Instructions complètes pour obtenir toutes les dépendances du projet, même sans npm install",
+    });
+  };
+
   const downloadDatabase = () => {
     // Génération du script SQL complet pour installation locale
     const sqlExport = `-- PODSLEEK v1.2.0 - EXPORT BASE DE DONNÉES COMPLÈTE
@@ -1178,6 +1373,10 @@ MIGRATION DEPUIS v1.1.x :
         <Button onClick={generateCompletePDF} className="flex items-center gap-2 bg-red-600 hover:bg-red-700">
           <FileImage className="h-4 w-4" />
           PDF Complet
+        </Button>
+        <Button onClick={downloadNodeModules} variant="outline" className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700">
+          <Package className="h-4 w-4" />
+          Node.js Dépendances
         </Button>
         <Button onClick={downloadSiteFiles} variant="outline" className="flex items-center gap-2">
           <FileArchive className="h-4 w-4" />
