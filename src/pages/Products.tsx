@@ -1,6 +1,8 @@
 
 import React from 'react';
 import ProductsGrid from '@/components/public/ProductsGrid';
+import CreatorsGrid from '@/components/public/CreatorsGrid';
+import { Separator } from '@/components/ui/separator';
 
 const Products = () => {
   return (
@@ -16,6 +18,19 @@ const Products = () => {
         </div>
 
         <ProductsGrid showFilters={true} />
+        
+        <Separator className="my-16" />
+        
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Nos Créateurs
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl">
+            Rencontrez les artistes et designers talentueux qui créent ces produits uniques.
+          </p>
+        </div>
+
+        <CreatorsGrid limit={8} />
       </div>
     </div>
   );
