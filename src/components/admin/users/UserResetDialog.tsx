@@ -1,15 +1,6 @@
 
 import React, { useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationDialog } from '../ConfirmationDialog';
 import { User } from "@/types/creator";
 
 interface UserResetDialogProps {
@@ -31,34 +22,17 @@ const UserResetDialog: React.FC<UserResetDialogProps> = ({ user, onConfirm, chil
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Réinitialiser le compte</AlertDialogTitle>
-          <AlertDialogDescription>
-            Êtes-vous sûr de vouloir réinitialiser le compte de <strong>{user.full_name || user.email}</strong> ?
-            <br /><br />
-            Cette action va :
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Normaliser les champs multilingues</li>
-              <li>Réinitialiser le statut créateur à "draft"</li>
-              <li>Remettre le niveau à "débutant"</li>
-              <li>Désactiver le profil public</li>
-              <li>Remettre à zéro les liens sociaux</li>
-            </ul>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>Annuler</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Réinitialiser
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmationDialog
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      title="Réinitialiser le compte"
+      description={`Êtes-vous sûr de vouloir réinitialiser le compte de ${user.full_name || user.email} ? Cette action va normaliser les champs multilingues, réinitialiser le statut créateur à "draft", remettre le niveau à "débutant", désactiver le profil public et remettre à zéro les liens sociaux.`}
+      confirmText="Réinitialiser"
+      cancelText="Annuler"
+      onConfirm={handleConfirm}
+      severity="high"
+      userEmail={user.email}
+    />
   );
 };
 

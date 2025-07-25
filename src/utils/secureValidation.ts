@@ -3,7 +3,7 @@
 import DOMPurify from 'dompurify';
 
 // Rate limiting en mémoire (pour le côté client)
-const rateLimitStore = new Map<string, { count: number; lastAttempt: number; blockedUntil?: number }>();
+const rateLimitStore = new Map<string, { count: number; lastAttempt: number; blockedUntil?: number; metadata?: any }>();
 
 // Validation email renforcée
 export const validateEmail = (email: string): boolean => {
@@ -115,11 +115,12 @@ export const validateUsername = (username: string): { isValid: boolean; message:
   return { isValid: true, message: 'Nom valide' };
 };
 
-// Rate limiting côté client
+// Rate limiting côté client avec métadonnées
 export const checkRateLimit = (
   key: string, 
   maxAttempts: number = 5, 
-  windowMs: number = 15 * 60 * 1000 // 15 minutes
+  windowMs: number = 15 * 60 * 1000, // 15 minutes
+  metadata?: any
 ): boolean => {
   const now = Date.now();
   const record = rateLimitStore.get(key);
@@ -136,7 +137,7 @@ export const checkRateLimit = (
   }
   
   if (!record) {
-    rateLimitStore.set(key, { count: 1, lastAttempt: now });
+    rateLimitStore.set(key, { count: 1, lastAttempt: now, metadata: metadata || {} });
     return true;
   }
   

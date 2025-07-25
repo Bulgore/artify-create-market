@@ -25,8 +25,10 @@ export const signUpUser = async (
       throw new Error('Le nom doit contenir au moins 2 caractères');
     }
     
-    // Rate limiting côté client
-    if (!checkRateLimit(`signup_${email}`, 3, 15 * 60 * 1000)) {
+    // Enhanced rate limiting côté client avec métadonnées
+    const userAgent = navigator.userAgent;
+    const ipInfo = { userAgent, timestamp: Date.now() };
+    if (!checkRateLimit(`signup_${email}`, 3, 15 * 60 * 1000, ipInfo)) {
       throw new Error('Trop de tentatives d\'inscription. Veuillez réessayer dans 15 minutes.');
     }
     
@@ -73,8 +75,10 @@ export const signInUser = async (email: string, password: string): Promise<void>
       throw new Error(getGenericAuthError('login'));
     }
     
-    // Rate limiting côté client
-    if (!checkRateLimit(`login_${email}`, 5, 15 * 60 * 1000)) {
+    // Enhanced rate limiting côté client avec métadonnées  
+    const userAgent = navigator.userAgent;
+    const ipInfo = { userAgent, timestamp: Date.now() };
+    if (!checkRateLimit(`login_${email}`, 5, 15 * 60 * 1000, ipInfo)) {
       throw new Error('Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.');
     }
     

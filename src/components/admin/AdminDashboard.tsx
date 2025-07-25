@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { SecurityAlerts } from "./SecurityAlerts";
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   LayoutDashboard, 
   File, 
@@ -30,6 +32,7 @@ interface DashboardStats {
 const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     templatesCount: 0,
     productsCount: 0,
@@ -196,6 +199,11 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-2">Tableau de Bord Admin</h1>
         <p className="text-gray-600">Vue d'ensemble de votre plateforme Podsleek V2</p>
       </div>
+
+      {/* Security Alerts for Super Admins */}
+      {isSuperAdmin() && (
+        <SecurityAlerts />
+      )}
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

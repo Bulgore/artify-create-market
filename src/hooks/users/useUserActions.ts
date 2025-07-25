@@ -27,6 +27,16 @@ export const useUserActions = () => {
         return { success: false };
       }
 
+      // Additional validation to prevent self-reset
+      if (user.id === (await supabase.auth.getUser()).data.user?.id) {
+        toast({
+          variant: "destructive",
+          title: "Opération interdite",
+          description: "Vous ne pouvez pas réinitialiser votre propre compte.",
+        });
+        return { success: false };
+      }
+
       setIsResetting(user.id);
       
       const { error } = await supabase.rpc('reset_user_account', { 
@@ -68,6 +78,16 @@ export const useUserActions = () => {
           variant: "destructive",
           title: "Accès refusé",
           description: "Action non autorisée.",
+        });
+        return { success: false };
+      }
+
+      // Additional validation to prevent self-deletion
+      if (user.id === (await supabase.auth.getUser()).data.user?.id) {
+        toast({
+          variant: "destructive",
+          title: "Opération interdite",
+          description: "Vous ne pouvez pas supprimer votre propre compte.",
         });
         return { success: false };
       }
