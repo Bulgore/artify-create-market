@@ -5,25 +5,34 @@ import type { PrintProduct } from '@/types/customProduct';
 export const getPrimaryMockupUrl = (product: PrintProduct): string | undefined => {
   console.log('🔍 [mockupUtils] Récupération mockup pour:', product.name_fr || product.name);
   
-  // D'abord essayer le mockup_image_url du template
-  if ((product.product_templates as any)?.mockup_image_url) {
-    console.log('📷 [mockupUtils] Mockup trouvé dans template:', (product.product_templates as any).mockup_image_url);
-    return (product.product_templates as any).mockup_image_url;
-  }
-  
-  // Puis chercher dans les product_mockups
+  // PRIORITÉ 1: Chercher dans les product_mockups pour avoir le bon mockup
   if (product.product_templates?.product_mockups?.length) {
     const mockups = product.product_templates.product_mockups;
     console.log('🖼️ [mockupUtils] Product mockups disponibles:', mockups.length);
 
-    // Chercher le mockup principal
-    const primaryMockup = mockups.find(
-      m => m.id === product.product_templates?.primary_mockup_id
-    );
-
+    // Chercher le mockup marqué comme principal
+    const primaryMockup = mockups.find(m => m.is_primary);
     if (primaryMockup?.mockup_url) {
       const mockupUrl = buildImageUrl(primaryMockup.mockup_url);
-      console.log('✅ [mockupUtils] Mockup principal trouvé:', mockupUrl);
+      console.log('✅ [mockupUtils] Mockup principal (is_primary) trouvé:', mockupUrl);
+      return mockupUrl;
+    }
+
+    // Chercher le mockup par primary_mockup_id
+    const primaryMockupById = mockups.find(
+      m => m.id === product.product_templates?.primary_mockup_id
+    );
+    if (primaryMockupById?.mockup_url) {
+      const mockupUrl = buildImageUrl(primaryMockupById.mockup_url);
+      console.log('✅ [mockupUtils] Mockup principal (primary_id) trouvé:', mockupUrl);
+      return mockupUrl;
+    }
+
+    // Fallback sur le premier mockup avec zone d'impression
+    const mockupWithPrintArea = mockups.find(m => m.has_print_area && m.mockup_url);
+    if (mockupWithPrintArea?.mockup_url) {
+      const mockupUrl = buildImageUrl(mockupWithPrintArea.mockup_url);
+      console.log('⚠️ [mockupUtils] Utilisation mockup avec zone d\'impression:', mockupUrl);
       return mockupUrl;
     }
 
@@ -36,9 +45,15 @@ export const getPrimaryMockupUrl = (product: PrintProduct): string | undefined =
     }
   }
   
-  // Fallback vers les images du produit
+  // PRIORITÉ 2 (FALLBACK OBSOLÈTE): mockup_image_url du template (pour compatibilité)
+  if ((product.product_templates as any)?.mockup_image_url) {
+    console.log('📷 [mockupUtils] Fallback: Mockup template (OBSOLÈTE):', (product.product_templates as any).mockup_image_url);
+    return (product.product_templates as any).mockup_image_url;
+  }
+  
+  // PRIORITÉ 3 (DERNIER RECOURS): Fallback vers les images du produit
   if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-    console.log('📸 [mockupUtils] Utilisation image produit:', product.images[0]);
+    console.log('📸 [mockupUtils] Dernier recours - image produit:', product.images[0]);
     return product.images[0];
   }
 

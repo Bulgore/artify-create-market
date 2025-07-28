@@ -101,21 +101,23 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
               {/* Overlay design si disponible */}
               {designUrl && designPosition && mockupLoaded && (
                 <div 
-                  className="absolute"
+                  className="absolute pointer-events-none"
                   style={{
-                    // Utilisation des coordonnées EXACTES de la zone d'impression admin
-                    // Position absolue basée sur les dimensions réelles du mockup (600x600 ou dimensions réelles)
-                    left: `${(designPosition.x / 600) * 100}%`,
-                    top: `${(designPosition.y / 600) * 100}%`,
-                    width: `${(designPosition.width / 600) * 100}%`,
-                    height: `${(designPosition.height / 600) * 100}%`,
-                    transform: designPosition.rotation ? `rotate(${designPosition.rotation}deg)` : 'none'
+                    // Position exacte basée sur les pourcentages réels du mockup
+                    // Pas de dimensions hardcodées - utilise les pourcentages directs
+                    left: `${(designPosition.x / 400) * 100}%`,
+                    top: `${(designPosition.y / 400) * 100}%`,
+                    width: `${(designPosition.width / 400) * 100}%`,
+                    height: `${(designPosition.height / 400) * 100}%`,
+                    transform: designPosition.rotation ? `rotate(${designPosition.rotation}deg)` : 'none',
+                    zIndex: 10
                   }}
                 >
                   <img
                     src={designUrl}
                     alt="Design du produit"
-                    className="w-full h-full object-contain border-2 border-green-400 shadow-md"
+                    className="w-full h-full object-contain border-2 border-green-400 shadow-md rounded"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
                   />
                 </div>
               )}

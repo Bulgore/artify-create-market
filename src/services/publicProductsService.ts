@@ -34,7 +34,21 @@ export interface PublicCreatorProduct {
     material: string;
     available_sizes: string[];
     available_colors: string[];
+    product_templates?: {
+      id: string;
+      primary_mockup_id?: string;
+      product_mockups?: Array<{
+        id: string;
+        mockup_url: string;
+        mockup_name: string;
+        is_primary: boolean;
+        has_print_area: boolean;
+        print_area: any;
+      }>;
+    };
   };
+  design_data?: any;
+  original_design_url?: string;
   final_price?: number;
 }
 
@@ -114,8 +128,22 @@ export const getPublishedProducts = async (options?: {
           images,
           material,
           available_sizes,
-          available_colors
-        )
+          available_colors,
+          product_templates:template_id (
+            id,
+            primary_mockup_id,
+            product_mockups (
+              id,
+              mockup_url,
+              mockup_name,
+              is_primary,
+              has_print_area,
+              print_area
+            )
+          )
+        ),
+        design_data,
+        original_design_url
       `)
       .eq('status', 'published')
       .order('created_at', { ascending: false });
@@ -158,7 +186,21 @@ export const getPublishedProducts = async (options?: {
       if (product.print_product) {
         mappedProduct.print_product = {
           ...product.print_product,
-          name: product.print_product.name_fr ?? ''
+          name: product.print_product.name_fr ?? '',
+          product_templates: product.print_product.product_templates ? {
+            id: product.print_product.product_templates.id,
+            primary_mockup_id: product.print_product.product_templates.primary_mockup_id,
+            product_mockups: Array.isArray(product.print_product.product_templates.product_mockups) 
+              ? product.print_product.product_templates.product_mockups.map((mockup: any) => ({
+                  id: mockup.id,
+                  mockup_url: mockup.mockup_url,
+                  mockup_name: mockup.mockup_name,
+                  is_primary: mockup.is_primary,
+                  has_print_area: mockup.has_print_area,
+                  print_area: mockup.print_area
+                }))
+              : []
+          } : undefined
         };
       }
       
@@ -213,8 +255,22 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
           images,
           material,
           available_sizes,
-          available_colors
-        )
+          available_colors,
+          product_templates:template_id (
+            id,
+            primary_mockup_id,
+            product_mockups (
+              id,
+              mockup_url,
+              mockup_name,
+              is_primary,
+              has_print_area,
+              print_area
+            )
+          )
+        ),
+        design_data,
+        original_design_url
       `)
       .eq('slug', slug)
       .eq('status', 'published')
@@ -241,7 +297,21 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
     if (data.print_product) {
       mappedProduct.print_product = {
         ...data.print_product,
-        name: data.print_product.name_fr ?? ''
+        name: data.print_product.name_fr ?? '',
+        product_templates: data.print_product.product_templates ? {
+          id: data.print_product.product_templates.id,
+          primary_mockup_id: data.print_product.product_templates.primary_mockup_id,
+          product_mockups: Array.isArray(data.print_product.product_templates.product_mockups) 
+            ? data.print_product.product_templates.product_mockups.map((mockup: any) => ({
+                id: mockup.id,
+                mockup_url: mockup.mockup_url,
+                mockup_name: mockup.mockup_name,
+                is_primary: mockup.is_primary,
+                has_print_area: mockup.has_print_area,
+                print_area: mockup.print_area
+              }))
+            : []
+        } : undefined
       };
     }
 
