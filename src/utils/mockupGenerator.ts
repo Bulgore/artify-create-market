@@ -21,8 +21,8 @@ export const generateProductPreviewUrl = (product: PublicCreatorProduct): string
       return mockupUrl;
     }
 
-    // 3. Pour l'instant, retourner le mockup de base
-    // TODO: Implémenter la génération de mockup avec design superposé
+    // 3. Retourner l'URL du mockup correct
+    // Le système d'overlay sera géré côté frontend
     console.log('✅ [mockupGenerator] Preview généré pour:', product.name, { mockupUrl, designUrl });
     return mockupUrl;
     

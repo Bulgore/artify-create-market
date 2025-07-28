@@ -145,7 +145,7 @@ export const getPublishedProducts = async (options?: {
         design_data,
         original_design_url
       `)
-      .eq('status', 'published')
+      .eq('is_published', true)
       .order('created_at', { ascending: false });
 
     if (options?.category && options.category !== 'all') {
@@ -273,7 +273,7 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
         original_design_url
       `)
       .eq('slug', slug)
-      .eq('status', 'published')
+      .eq('is_published', true)
       .maybeSingle();
 
     if (error || !data) {
@@ -364,7 +364,7 @@ export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> =>
           .from('creator_products')
           .select('*', { count: 'exact', head: true })
           .eq('creator_id', creator.id)
-          .eq('status', 'published');
+          .eq('is_published', true);
 
         const creatorData = mapCreatorWithCompatibility({
           ...creator,
@@ -424,7 +424,7 @@ export const getCreatorBySlug = async (creatorId: string): Promise<PublicCreator
       .from('creator_products')
       .select('*', { count: 'exact', head: true })
       .eq('creator_id', creator.id)
-      .eq('status', 'published');
+      .eq('is_published', true);
 
     return mapCreatorWithCompatibility({
       ...creator,
@@ -444,7 +444,7 @@ export const getProductCategories = async (): Promise<string[]> => {
     const { data, error } = await supabase
       .from('creator_products')
       .select('category')
-      .eq('status', 'published');
+      .eq('is_published', true);
 
     if (error) {
       console.error('Error fetching categories:', error);

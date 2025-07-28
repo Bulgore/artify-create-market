@@ -17,7 +17,7 @@ interface ProductsGridProps {
 
 const ProductCard: React.FC<{ product: PublicCreatorProduct }> = ({ product }) => {
   // Générer la preview avec le bon mockup et design
-  const previewUrl = generateProductPreviewUrl(product) || "/placeholder.svg";
+  const previewUrl = generateProductPreviewUrl(product) || product.preview_url || "/placeholder.svg";
   
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">

@@ -103,12 +103,12 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
                 <div 
                   className="absolute pointer-events-none"
                   style={{
-                    // Position exacte basée sur les pourcentages réels du mockup
-                    // Pas de dimensions hardcodées - utilise les pourcentages directs
-                    left: `${(designPosition.x / 400) * 100}%`,
-                    top: `${(designPosition.y / 400) * 100}%`,
-                    width: `${(designPosition.width / 400) * 100}%`,
-                    height: `${(designPosition.height / 400) * 100}%`,
+                    // Position basée sur les dimensions réelles de l'image mockup
+                    // Utilise les coordonnées exactes de la zone d'impression de l'admin
+                    left: `${designPosition.x}px`,
+                    top: `${designPosition.y}px`,
+                    width: `${designPosition.width}px`,
+                    height: `${designPosition.height}px`,
                     transform: designPosition.rotation ? `rotate(${designPosition.rotation}deg)` : 'none',
                     zIndex: 10
                   }}
