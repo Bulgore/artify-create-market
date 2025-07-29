@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getProductDisplayData } from '@/utils/mockupGenerator';
 import { calculateAutoPosition, getImageDimensions } from '@/utils/designPositioning';
 import type { PublicCreatorProduct } from '@/services/publicProductsService';
+import type { DesignPosition } from '@/types/design';
 
 interface ProductPreviewImageProps {
   product: PublicCreatorProduct;
@@ -14,10 +15,15 @@ export const ProductPreviewImage: React.FC<ProductPreviewImageProps> = ({
   className = "w-full h-full object-cover"
 }) => {
   const [mockupLoaded, setMockupLoaded] = useState(false);
-  const [designPosition, setDesignPosition] = useState<any>(null);
+  const [designPosition, setDesignPosition] = useState<DesignPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
 
   const { mockupUrl, designUrl, printArea } = getProductDisplayData(product);
+
+  const scaleX = naturalSize.width ? containerSize.width / naturalSize.width : 1;
+  const scaleY = naturalSize.height ? containerSize.height / naturalSize.height : 1;
 
   // Calculer la position du design quand tout est chargé
   useEffect(() => {
@@ -38,6 +44,20 @@ export const ProductPreviewImage: React.FC<ProductPreviewImageProps> = ({
     calculateDesignPosition();
   }, [designUrl, printArea, mockupLoaded]);
 
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight
+        });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
   if (!mockupUrl) {
     return (
       <div className={`${className} bg-gray-200 flex items-center justify-center`}>
@@ -47,14 +67,22 @@ export const ProductPreviewImage: React.FC<ProductPreviewImageProps> = ({
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-full">
+    <div ref={containerRef} className={`relative w-full h-full ${className}`}>
       {/* Mockup de base */}
       <img
         src={mockupUrl}
         alt={product.name}
-        className={className}
-        onLoad={() => {
+        className="w-full h-full object-cover"
+        onLoad={(e) => {
+          const img = e.currentTarget;
           setMockupLoaded(true);
+          setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+          if (containerRef.current) {
+            setContainerSize({
+              width: containerRef.current.clientWidth,
+              height: containerRef.current.clientHeight
+            });
+          }
           console.log('✅ [ProductPreviewImage] Mockup chargé:', product.name);
         }}
         onError={() => {
@@ -67,10 +95,10 @@ export const ProductPreviewImage: React.FC<ProductPreviewImageProps> = ({
         <div
           className="absolute pointer-events-none transition-transform duration-300"
           style={{
-            left: `${(designPosition.x / 400) * 100}%`,
-            top: `${(designPosition.y / 400) * 100}%`,
-            width: `${(designPosition.width / 400) * 100}%`,
-            height: `${(designPosition.height / 400) * 100}%`,
+            left: `${designPosition.x * scaleX}px`,
+            top: `${designPosition.y * scaleY}px`,
+            width: `${designPosition.width * scaleX}px`,
+            height: `${designPosition.height * scaleY}px`,
             zIndex: 10,
             transform: 'inherit'
           }}

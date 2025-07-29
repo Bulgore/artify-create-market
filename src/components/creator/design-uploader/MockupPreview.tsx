@@ -1,15 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye } from 'lucide-react';
 import type { PrintArea } from '@/types/printArea';
+import type { DesignPosition } from '@/types/design';
 import { getPrimaryMockupUrl } from '@/utils/mockupUtils';
 
 interface MockupPreviewProps {
   mockupUrl?: string;
   designUrl?: string;
   designArea?: PrintArea;
-  designPosition?: any;
+  designPosition?: DesignPosition;
 }
 
 export const MockupPreview: React.FC<MockupPreviewProps> = ({
@@ -20,6 +21,9 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
 }) => {
   const [mockupLoaded, setMockupLoaded] = useState(false);
   const [mockupError, setMockupError] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
 
   // Reset des états quand l'URL change
   useEffect(() => {
@@ -34,10 +38,18 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
     hasDesignPosition: !!designPosition
   });
 
-  const handleMockupLoad = () => {
+  const handleMockupLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     console.log('✅ [MockupPreview] Mockup chargé');
+    const img = e.currentTarget;
     setMockupLoaded(true);
     setMockupError(false);
+    setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+    if (containerRef.current) {
+      setContainerSize({
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight
+      });
+    }
   };
 
   const handleMockupError = () => {
@@ -45,6 +57,23 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
     setMockupError(true);
     setMockupLoaded(false);
   };
+
+  const scaleX = naturalSize.width ? containerSize.width / naturalSize.width : 1;
+  const scaleY = naturalSize.height ? containerSize.height / naturalSize.height : 1;
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight
+        });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   if (!mockupUrl) {
     return (
@@ -80,7 +109,7 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
             <div className="bg-gray-100 px-3 py-2 border-b">
               <h4 className="text-sm font-medium text-gray-700">👕 Mockup du produit</h4>
             </div>
-            <div className="relative w-full h-80 bg-gray-100 overflow-hidden">
+            <div ref={containerRef} className="relative w-full h-80 bg-gray-100 overflow-hidden">
               {mockupError ? (
                 <div className="w-full h-full flex items-center justify-center text-red-500">
                   <div className="text-center">
@@ -100,15 +129,13 @@ export const MockupPreview: React.FC<MockupPreviewProps> = ({
               
               {/* Overlay design si disponible */}
               {designUrl && designPosition && mockupLoaded && (
-                <div 
+                <div
                   className="absolute pointer-events-none"
                   style={{
-                    // Position basée sur les dimensions réelles de l'image mockup
-                    // Utilise les coordonnées exactes de la zone d'impression de l'admin
-                    left: `${designPosition.x}px`,
-                    top: `${designPosition.y}px`,
-                    width: `${designPosition.width}px`,
-                    height: `${designPosition.height}px`,
+                    left: `${designPosition.x * scaleX}px`,
+                    top: `${designPosition.y * scaleY}px`,
+                    width: `${designPosition.width * scaleX}px`,
+                    height: `${designPosition.height * scaleY}px`,
                     transform: designPosition.rotation ? `rotate(${designPosition.rotation}deg)` : 'none',
                     zIndex: 10
                   }}
