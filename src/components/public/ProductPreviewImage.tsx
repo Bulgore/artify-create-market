@@ -65,22 +65,24 @@ export const ProductPreviewImage: React.FC<ProductPreviewImageProps> = ({
       {/* Design superposé */}
       {designUrl && designPosition && mockupLoaded && (
         <div
-          className="absolute pointer-events-none"
+          className="absolute pointer-events-none transition-transform duration-300"
           style={{
             left: `${(designPosition.x / 400) * 100}%`,
             top: `${(designPosition.y / 400) * 100}%`,
             width: `${(designPosition.width / 400) * 100}%`,
             height: `${(designPosition.height / 400) * 100}%`,
-            zIndex: 10
+            zIndex: 10,
+            transform: 'inherit'
           }}
         >
           <img
             src={designUrl}
             alt="Design"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain transition-transform duration-300"
             style={{ 
               backgroundColor: 'rgba(255,255,255,0.1)',
-              borderRadius: '2px'
+              borderRadius: '2px',
+              transform: 'inherit'
             }}
             onLoad={() => {
               console.log('✅ [ProductPreviewImage] Design appliqué:', product.name);

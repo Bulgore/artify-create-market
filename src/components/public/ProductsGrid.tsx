@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Heart, ShoppingCart, User } from 'lucide-react';
 import { usePublicProducts, useProductCategories } from '@/hooks/usePublicProducts';
 import { PublicCreatorProduct } from '@/services/publicProductsService';
 import { ProductPreviewImage } from './ProductPreviewImage';
+import { toast } from '@/hooks/use-toast';
 
 interface ProductsGridProps {
   category?: string;
@@ -16,25 +18,44 @@ interface ProductsGridProps {
 }
 
 const ProductCard: React.FC<{ product: PublicCreatorProduct }> = ({ product }) => {
+  const productSlug = product.slug || `${product.name?.toLowerCase().replace(/ /g, '-')}-${product.id}`;
+  
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-      <div className="aspect-square overflow-hidden">
-        <ProductPreviewImage 
-          product={product}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      </div>
+    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer">
+      <Link to={`/product/${productSlug}`} className="block">
+        <div className="aspect-square overflow-hidden">
+          <ProductPreviewImage 
+            product={product}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+      </Link>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
           <Badge variant="outline" className="text-xs">
             {product.category}
           </Badge>
-          <Button variant="ghost" size="sm" className="p-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="p-1"
+            onClick={(e) => {
+              e.preventDefault();
+              toast({
+                title: "Ajouté aux favoris",
+                description: `${product.name} a été ajouté à votre wishlist.`
+              });
+            }}
+          >
             <Heart className="h-4 w-4" />
           </Button>
         </div>
         
-        <h3 className="font-semibold text-lg mb-1 line-clamp-2">{product.name}</h3>
+        <Link to={`/product/${productSlug}`}>
+          <h3 className="font-semibold text-lg mb-1 line-clamp-2 hover:text-[#33C3F0] transition-colors">
+            {product.name}
+          </h3>
+        </Link>
         
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center gap-1">
@@ -62,7 +83,28 @@ const ProductCard: React.FC<{ product: PublicCreatorProduct }> = ({ product }) =
               </span>
             )}
           </div>
-          <Button size="sm" className="bg-[#33C3F0] hover:bg-[#0FA0CE]">
+          <Button 
+            size="sm" 
+            className="bg-[#33C3F0] hover:bg-[#0FA0CE]"
+            onClick={(e) => {
+              e.preventDefault();
+              toast({
+                title: "Ajouté au panier",
+                description: `${product.name} a été ajouté à votre panier.`,
+                action: (
+                  <Button variant="outline" size="sm" onClick={() => {
+                    // Navigation vers le panier (à implémenter)
+                    toast({
+                      title: "Panier",
+                      description: "Fonctionnalité panier en cours de développement."
+                    });
+                  }}>
+                    Voir panier
+                  </Button>
+                )
+              });
+            }}
+          >
             <ShoppingCart className="h-4 w-4 mr-1" />
             Acheter
           </Button>
