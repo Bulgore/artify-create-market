@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Heart, ShoppingCart, User } from 'lucide-react';
 import { usePublicProducts, useProductCategories } from '@/hooks/usePublicProducts';
 import { PublicCreatorProduct } from '@/services/publicProductsService';
-import { generateProductPreviewUrl } from '@/utils/mockupGenerator';
+import { ProductPreviewImage } from './ProductPreviewImage';
 
 interface ProductsGridProps {
   category?: string;
@@ -16,15 +16,11 @@ interface ProductsGridProps {
 }
 
 const ProductCard: React.FC<{ product: PublicCreatorProduct }> = ({ product }) => {
-  // Générer la preview avec le bon mockup et design
-  const previewUrl = generateProductPreviewUrl(product) || product.preview_url || "/placeholder.svg";
-  
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
       <div className="aspect-square overflow-hidden">
-        <img 
-          src={previewUrl} 
-          alt={product.name}
+        <ProductPreviewImage 
+          product={product}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
       </div>

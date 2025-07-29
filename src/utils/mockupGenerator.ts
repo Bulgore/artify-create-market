@@ -1,5 +1,7 @@
+
 import { buildImageUrl } from './imageUrl';
 import { parsePrintArea } from '@/types/printArea';
+import { calculateAutoPosition } from './designPositioning';
 import type { PublicCreatorProduct } from '@/services/publicProductsService';
 
 /**
@@ -14,21 +16,42 @@ export const generateProductPreviewUrl = (product: PublicCreatorProduct): string
       return null;
     }
 
-    // 2. Récupérer l'URL du design
-    const designUrl = getDesignUrl(product);
-    if (!designUrl) {
-      console.log('⚠️ [mockupGenerator] Aucun design trouvé, utilisation du mockup seul:', product.name);
-      return mockupUrl;
-    }
-
-    // 3. Retourner l'URL du mockup correct
-    // Le système d'overlay sera géré côté frontend
-    console.log('✅ [mockupGenerator] Preview généré pour:', product.name, { mockupUrl, designUrl });
+    console.log('✅ [mockupGenerator] Mockup trouvé pour:', product.name, mockupUrl);
     return mockupUrl;
     
   } catch (error) {
     console.error('❌ [mockupGenerator] Erreur génération preview:', error);
     return null;
+  }
+};
+
+/**
+ * Récupère les données pour afficher le produit avec design
+ */
+export const getProductDisplayData = (product: PublicCreatorProduct) => {
+  try {
+    const mockupUrl = getCorrectMockupUrl(product);
+    const designUrl = getDesignUrl(product);
+    const printArea = getPrintAreaForProduct(product);
+
+    console.log('🔍 [mockupGenerator] Données produit:', {
+      mockup: mockupUrl?.substring(0, 50),
+      design: designUrl?.substring(0, 50),
+      hasPrintArea: !!printArea
+    });
+
+    return {
+      mockupUrl,
+      designUrl,
+      printArea
+    };
+  } catch (error) {
+    console.error('❌ [mockupGenerator] Erreur récupération données:', error);
+    return {
+      mockupUrl: null,
+      designUrl: null,
+      printArea: null
+    };
   }
 };
 
