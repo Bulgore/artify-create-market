@@ -1,9 +1,6 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { getProductDisplayData } from '@/utils/mockupGenerator';
-import { calculateAutoPosition, getImageDimensions } from '@/utils/designPositioning';
 import type { PublicCreatorProduct } from '@/services/publicProductsService';
-import type { DesignPosition } from '@/types/design';
 
 interface ProductPreviewImageProps {
   product: PublicCreatorProduct;
@@ -12,51 +9,51 @@ interface ProductPreviewImageProps {
 
 export const ProductPreviewImage: React.FC<ProductPreviewImageProps> = ({
   product,
-  className = "w-full h-full object-cover"
+  className = 'w-full h-full'
 }) => {
-  const [mockupLoaded, setMockupLoaded] = useState(false);
-  const [designPosition, setDesignPosition] = useState<DesignPosition | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const { mockupUrl, designUrl, printArea } = getProductDisplayData(product);
 
-  const scaleX = naturalSize.width ? containerSize.width / naturalSize.width : 1;
-  const scaleY = naturalSize.height ? containerSize.height / naturalSize.height : 1;
-
-  // Calculer la position du design quand tout est chargé
   useEffect(() => {
-    const calculateDesignPosition = async () => {
-      if (!designUrl || !printArea || !mockupLoaded) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !mockupUrl) return;
 
-      try {
-        const designDimensions = await getImageDimensions(designUrl);
-        const autoPosition = calculateAutoPosition(designDimensions, printArea);
-        
-        setDesignPosition(autoPosition);
-        console.log('✅ [ProductPreviewImage] Position calculée:', autoPosition);
-      } catch (error) {
-        console.error('❌ [ProductPreviewImage] Erreur calcul position:', error);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const mockup = new Image();
+    const design = new Image();
+    [mockup, design].forEach(img => (img.crossOrigin = 'anonymous'));
+
+    let cancelled = false;
+
+    const drawImages = () => {
+      if (cancelled || !mockup.complete || (designUrl && !design.complete)) return;
+
+      canvas.width = mockup.naturalWidth;
+      canvas.height = mockup.naturalHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(mockup, 0, 0);
+
+      if (designUrl && printArea) {
+        ctx.drawImage(design, printArea.x, printArea.y, printArea.width, printArea.height);
       }
     };
 
-    calculateDesignPosition();
-  }, [designUrl, printArea, mockupLoaded]);
+    mockup.onload = drawImages;
+    if (designUrl) {
+      design.onload = drawImages;
+    }
+    mockup.src = mockupUrl;
+    if (designUrl) {
+      design.src = designUrl;
+    }
 
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        setContainerSize({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight
-        });
-      }
+    return () => {
+      cancelled = true;
     };
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
+  }, [mockupUrl, designUrl, printArea]);
 
   if (!mockupUrl) {
     return (
@@ -67,60 +64,8 @@ export const ProductPreviewImage: React.FC<ProductPreviewImageProps> = ({
   }
 
   return (
-    <div ref={containerRef} className={`relative w-full h-full ${className}`}>
-      {/* Mockup de base */}
-      <img
-        src={mockupUrl}
-        alt={product.name}
-        className="w-full h-full object-cover"
-        onLoad={(e) => {
-          const img = e.currentTarget;
-          setMockupLoaded(true);
-          setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-          if (containerRef.current) {
-            setContainerSize({
-              width: containerRef.current.clientWidth,
-              height: containerRef.current.clientHeight
-            });
-          }
-          console.log('✅ [ProductPreviewImage] Mockup chargé:', product.name);
-        }}
-        onError={() => {
-          console.error('❌ [ProductPreviewImage] Erreur mockup:', mockupUrl);
-        }}
-      />
-      
-      {/* Design superposé */}
-      {designUrl && designPosition && mockupLoaded && (
-        <div
-          className="absolute pointer-events-none transition-transform duration-300"
-          style={{
-            left: `${designPosition.x * scaleX}px`,
-            top: `${designPosition.y * scaleY}px`,
-            width: `${designPosition.width * scaleX}px`,
-            height: `${designPosition.height * scaleY}px`,
-            zIndex: 10,
-            transform: 'inherit'
-          }}
-        >
-          <img
-            src={designUrl}
-            alt="Design"
-            className="w-full h-full object-contain transition-transform duration-300"
-            style={{ 
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              borderRadius: '2px',
-              transform: 'inherit'
-            }}
-            onLoad={() => {
-              console.log('✅ [ProductPreviewImage] Design appliqué:', product.name);
-            }}
-            onError={() => {
-              console.error('❌ [ProductPreviewImage] Erreur design:', designUrl);
-            }}
-          />
-        </div>
-      )}
+    <div className={`relative w-full h-full ${className}`}>
+      <canvas ref={canvasRef} className="w-full h-auto" />
     </div>
   );
 };
