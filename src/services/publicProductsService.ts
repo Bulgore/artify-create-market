@@ -132,7 +132,7 @@ export const getPublishedProducts = async (options?: {
           product_templates:template_id (
             id,
             primary_mockup_id,
-            product_mockups (
+            product_mockups!product_mockups_product_template_id_fkey (
               id,
               mockup_url,
               mockup_name,
@@ -259,7 +259,7 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
           product_templates:template_id (
             id,
             primary_mockup_id,
-            product_mockups (
+            product_mockups!product_mockups_product_template_id_fkey (
               id,
               mockup_url,
               mockup_name,
