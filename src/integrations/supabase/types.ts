@@ -993,6 +993,39 @@ export type Database = {
           },
         ]
       }
+      security_events: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           commission_rate: number
@@ -1388,6 +1421,16 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      enhanced_rate_limit_check: {
+        Args: {
+          identifier: string
+          attempt_type: string
+          max_attempts?: number
+          window_minutes?: number
+          block_duration_minutes?: number
+        }
+        Returns: boolean
+      }
       get_auth_users_for_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1411,12 +1454,27 @@ export type Database = {
         }
         Returns: string
       }
+      log_security_event: {
+        Args: {
+          event_type: string
+          user_id?: string
+          ip_address?: unknown
+          user_agent?: string
+          details?: Json
+          severity?: string
+        }
+        Returns: string
+      }
       promote_to_super_admin: {
         Args: { target_user_id: string }
         Returns: boolean
       }
       reset_user_account: {
         Args: { target_user_id: string }
+        Returns: boolean
+      }
+      secure_promote_to_super_admin: {
+        Args: { target_user_id: string; target_email: string }
         Returns: boolean
       }
       validate_admin_operation: {

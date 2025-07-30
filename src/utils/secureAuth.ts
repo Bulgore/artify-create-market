@@ -66,11 +66,13 @@ export const logAdminAction = async (
   }
 };
 
-// Fonction pour promouvoir un utilisateur (côté admin)
-export const promoteUserToSuperAdmin = async (userId: string): Promise<boolean> => {
+// Fonction sécurisée pour promouvoir un utilisateur (côté admin)
+export const promoteUserToSuperAdmin = async (userId: string, userEmail: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.rpc('promote_to_super_admin', {
-      target_user_id: userId
+    // Utiliser la nouvelle fonction sécurisée qui nécessite une vérification email
+    const { data, error } = await supabase.rpc('secure_promote_to_super_admin', {
+      target_user_id: userId,
+      target_email: userEmail
     });
 
     if (error) {

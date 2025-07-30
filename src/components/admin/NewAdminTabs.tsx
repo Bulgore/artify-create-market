@@ -13,6 +13,7 @@ import MediaManagement from './MediaManagement';
 import PagesManagement from './PagesManagement';
 import SiteSettings from './SiteSettings';
 import TechnicalDocumentation from './TechnicalDocumentation';
+import { SecurityMonitoring } from './SecurityMonitoring';
 
 const NewAdminTabs = () => {
   return (
@@ -20,6 +21,7 @@ const NewAdminTabs = () => {
       <Tabs defaultValue="stats" className="w-full">
         <TabsList className="grid w-full grid-cols-6 lg:grid-cols-12">
           <TabsTrigger value="stats">Stats</TabsTrigger>
+          <TabsTrigger value="security">Sécurité</TabsTrigger>
           <TabsTrigger value="templates">Gabarits</TabsTrigger>
           <TabsTrigger value="products">Produits</TabsTrigger>
           <TabsTrigger value="creator-products">Créateurs</TabsTrigger>
@@ -35,6 +37,10 @@ const NewAdminTabs = () => {
 
         <TabsContent value="stats" className="space-y-4">
           <StatisticsPanel />
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-4">
+          <SecurityMonitoring />
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">

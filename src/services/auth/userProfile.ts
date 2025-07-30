@@ -23,6 +23,8 @@ export const createUserProfile = async (
       role = 'créateur'; // Force to default role for security
     }
     
+    // Security: Use database constraint to prevent unauthorized super admin creation
+    // Only the system can create super admins through database triggers
     const { error } = await supabase
       .from('users')
       .upsert({
@@ -37,7 +39,7 @@ export const createUserProfile = async (
         bio_en: '',
         bio_ty: '',
         role: role,
-        is_super_admin: false, // Never allow self-elevation
+        is_super_admin: false, // Always false - database constraint prevents unauthorized escalation
         creator_status: 'draft',
         creator_level: 'debutant',
         onboarding_completed: false,

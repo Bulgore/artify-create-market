@@ -25,10 +25,11 @@ export const signUpUser = async (
       throw new Error('Le nom doit contenir au moins 2 caractères');
     }
     
-    // Enhanced rate limiting côté client avec métadonnées
-    const userAgent = navigator.userAgent;
-    const ipInfo = { userAgent, timestamp: Date.now() };
-    if (!checkRateLimit(`signup_${email}`, 3, 15 * 60 * 1000, ipInfo)) {
+    // Enhanced security: Rate limiting with user identification to prevent abuse
+    const userAgent = navigator.userAgent?.slice(0, 50) || 'unknown';
+    const clientInfo = `${email}_${userAgent}`;
+    const ipInfo = { userAgent, timestamp: Date.now(), email };
+    if (!checkRateLimit(`signup_${clientInfo}`, 3, 15 * 60 * 1000, ipInfo)) {
       throw new Error('Trop de tentatives d\'inscription. Veuillez réessayer dans 15 minutes.');
     }
     
@@ -75,10 +76,11 @@ export const signInUser = async (email: string, password: string): Promise<void>
       throw new Error(getGenericAuthError('login'));
     }
     
-    // Enhanced rate limiting côté client avec métadonnées  
-    const userAgent = navigator.userAgent;
-    const ipInfo = { userAgent, timestamp: Date.now() };
-    if (!checkRateLimit(`login_${email}`, 5, 15 * 60 * 1000, ipInfo)) {
+    // Enhanced security: Rate limiting with user identification to prevent abuse
+    const userAgent = navigator.userAgent?.slice(0, 50) || 'unknown';
+    const clientInfo = `${email}_${userAgent}`;
+    const ipInfo = { userAgent, timestamp: Date.now(), email };
+    if (!checkRateLimit(`login_${clientInfo}`, 5, 15 * 60 * 1000, ipInfo)) {
       throw new Error('Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.');
     }
     
