@@ -10,6 +10,7 @@ import { usePublicProducts, useProductCategories } from '@/hooks/usePublicProduc
 import { PublicCreatorProduct } from '@/services/publicProductsService';
 import { ProductPreviewImage } from './ProductPreviewImage';
 import { toast } from '@/hooks/use-toast';
+import { useCart } from '@/contexts/CartContext';
 
 interface ProductsGridProps {
   category?: string;
@@ -19,6 +20,7 @@ interface ProductsGridProps {
 
 const ProductCard: React.FC<{ product: PublicCreatorProduct }> = ({ product }) => {
   const productSlug = product.slug || `${product.name?.toLowerCase().replace(/ /g, '-')}-${product.id}`;
+  const { addItem } = useCart();
   
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer">
@@ -88,20 +90,24 @@ const ProductCard: React.FC<{ product: PublicCreatorProduct }> = ({ product }) =
             className="bg-[#33C3F0] hover:bg-[#0FA0CE]"
             onClick={(e) => {
               e.preventDefault();
+              
+              // Calculer le prix final
+              const finalPrice = product.final_price || 
+                ((product.print_product?.base_price || 0) * (1 + (product.creator_margin_percentage || 0) / 100));
+              
+              // Ajouter au panier
+              addItem({
+                id: product.id,
+                title: product.name || 'Produit',
+                price: finalPrice,
+                mockupUrl: product.print_product?.images?.[0] || '',
+                designUrl: product.original_design_url || product.design_data?.designUrl || '',
+                printArea: product.design_data?.position || {},
+              });
+
               toast({
                 title: "Ajouté au panier",
                 description: `${product.name} a été ajouté à votre panier.`,
-                action: (
-                  <Button variant="outline" size="sm" onClick={() => {
-                    // Navigation vers le panier (à implémenter)
-                    toast({
-                      title: "Panier",
-                      description: "Fonctionnalité panier en cours de développement."
-                    });
-                  }}>
-                    Voir panier
-                  </Button>
-                )
               });
             }}
           >
