@@ -25,6 +25,8 @@ import Terms from '@/pages/Terms';
 import Legal from '@/pages/Legal';
 import FAQ from '@/pages/FAQ';
 import NotFound from '@/pages/NotFound';
+import Checkout from '@/pages/Checkout';
+import ThankYou from '@/pages/ThankYou';
 import Layout from '@/components/Layout';
 
 const queryClient = new QueryClient({
@@ -56,6 +58,8 @@ function App() {
                 <Route path="creator/:creatorId" element={<CreatorProfile />} />
                 <Route path="artists" element={<Artists />} />
                 <Route path="page/:slug" element={<CustomPage />} />
+                <Route path="checkout" element={<Checkout />} />
+                <Route path="thank-you" element={<ThankYou />} />
                 <Route path="faq" element={<FAQ />} />
                 <Route path="privacy" element={<Privacy />} />
                 <Route path="terms" element={<Terms />} />

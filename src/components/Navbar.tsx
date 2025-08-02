@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, LogOut, Settings, Palette, Shield } from 'lucide-react';
+import { CartSidebar } from '@/components/cart/CartSidebar';
 
 const Navbar = () => {
   const { user, signOut, isAdmin, isSuperAdmin, isCreateur, isImprimeur } = useAuth();
@@ -78,6 +79,9 @@ const Navbar = () => {
 
           <div className="flex items-center space-x-4">
             <LanguageSelector />
+            
+            {/* Cart Button */}
+            <CartSidebar onCheckout={() => navigate('/checkout')} />
             
             {user ? (
               <div className="flex items-center space-x-2">
