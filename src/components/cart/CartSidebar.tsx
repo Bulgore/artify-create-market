@@ -53,11 +53,26 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ onCheckout }) => {
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {state.items.map((item) => (
                   <div key={item.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                    <img
-                      src={item.mockupUrl}
-                      alt={item.title}
-                      className="w-16 h-16 object-cover rounded"
-                    />
+                    <div className="relative w-16 h-16">
+                      <img
+                        src={item.mockupUrl}
+                        alt={item.title}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                      {item.designUrl && item.printArea && (
+                        <img
+                          src={item.designUrl}
+                          alt="Design"
+                          className="absolute object-contain"
+                          style={{
+                            left: `${(item.printArea.x / 500) * 100}%`,
+                            top: `${(item.printArea.y / 500) * 100}%`,
+                            width: `${(item.printArea.width / 500) * 100}%`,
+                            height: `${(item.printArea.height / 500) * 100}%`,
+                          }}
+                        />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium truncate">{item.title}</h4>
                       <p className="text-sm text-muted-foreground">{item.price.toFixed(2)}€</p>

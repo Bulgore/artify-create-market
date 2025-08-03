@@ -8,11 +8,12 @@ interface CartButtonProps {
   onClick: () => void;
 }
 
-export const CartButton: React.FC<CartButtonProps> = ({ onClick }) => {
+export const CartButton = React.forwardRef<HTMLButtonElement, CartButtonProps>(({ onClick }, ref) => {
   const { state } = useCart();
 
   return (
     <Button
+      ref={ref}
       variant="outline"
       size="sm"
       className="relative"
@@ -32,4 +33,4 @@ export const CartButton: React.FC<CartButtonProps> = ({ onClick }) => {
       </span>
     </Button>
   );
-};
+});

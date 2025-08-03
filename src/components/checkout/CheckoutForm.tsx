@@ -177,11 +177,26 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess }) => {
             {state.items.map((item) => (
               <div key={item.id} className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
-                  <img
-                    src={item.mockupUrl}
-                    alt={item.title}
-                    className="w-12 h-12 object-cover rounded"
-                  />
+                  <div className="relative w-12 h-12">
+                    <img
+                      src={item.mockupUrl}
+                      alt={item.title}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                    {item.designUrl && item.printArea && (
+                      <img
+                        src={item.designUrl}
+                        alt="Design"
+                        className="absolute object-contain"
+                        style={{
+                          left: `${(item.printArea.x / 500) * 100}%`,
+                          top: `${(item.printArea.y / 500) * 100}%`,
+                          width: `${(item.printArea.width / 500) * 100}%`,
+                          height: `${(item.printArea.height / 500) * 100}%`,
+                        }}
+                      />
+                    )}
+                  </div>
                   <div>
                     <p className="text-sm font-medium">{item.title}</p>
                     <p className="text-xs text-muted-foreground">Qté: {item.quantity}</p>
