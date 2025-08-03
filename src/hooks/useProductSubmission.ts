@@ -58,7 +58,7 @@ export const useProductSubmission = () => {
         },
         generated_mockups: [] as GeneratedMockup[],
         is_published: false,
-        status: 'active' // Utiliser 'active' au lieu de 'draft' pour éviter l'erreur de contrainte
+        status: 'draft' // Utiliser 'draft' comme statut valide selon la contrainte DB
       };
 
       console.log('📦 Données finales du produit:', creatorProductData);
