@@ -118,7 +118,8 @@ export const SimplifiedProductCreation: React.FC<SimplifiedProductCreationProps>
       resetDesignPosition();  
       resetProductData();
       
-      onProductCreate(success);
+      // Ne pas appeler onProductCreate car le produit est déjà créé
+      // onProductCreate était responsable du double appel et de l'erreur
     }
   };
 
