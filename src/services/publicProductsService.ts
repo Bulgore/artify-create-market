@@ -327,6 +327,116 @@ export const getProductBySlug = async (slug: string): Promise<PublicCreatorProdu
   }
 };
 
+export const getProductById = async (productId: string): Promise<PublicCreatorProduct | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('creator_products')
+      .select(`
+        id,
+        name_fr,
+        name_en,
+        name_ty,
+        description_fr,
+        description_en,
+        description_ty,
+        preview_url,
+        creator_margin_percentage,
+        category,
+        tags,
+        slug,
+        created_at,
+        creator:creator_id (
+          id,
+          full_name_fr,
+          full_name_en,
+          full_name_ty,
+          bio_fr,
+          bio_en,
+          bio_ty,
+          avatar_url,
+          is_public_profile
+        ),
+        print_product:print_product_id (
+          id,
+          name_fr,
+          name_en,
+          name_ty,
+          base_price,
+          images,
+          material,
+          available_sizes,
+          available_colors,
+          product_templates:template_id (
+            id,
+            primary_mockup_id,
+            product_mockups!product_mockups_product_template_id_fkey (
+              id,
+              mockup_url,
+              mockup_name,
+              is_primary,
+              has_print_area,
+              print_area
+            )
+          )
+        ),
+        design_data,
+        original_design_url
+      `)
+      .eq('id', productId)
+      .eq('is_published', true)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const mappedProduct = mapProductWithCompatibility(data);
+    
+    // Mapper le créateur avec compatibilité
+    if (data.creator) {
+      mappedProduct.creator = {
+        id: data.creator.id,
+        avatar_url: data.creator.avatar_url,
+        is_public_profile: data.creator.is_public_profile,
+        full_name: data.creator.full_name_fr ?? '',
+        bio: data.creator.bio_fr ?? ''
+      };
+    }
+    
+    // Mapper le produit d'impression avec compatibilité
+    if (data.print_product) {
+      mappedProduct.print_product = {
+        ...data.print_product,
+        name: data.print_product.name_fr ?? '',
+        product_templates: data.print_product.product_templates ? {
+          id: data.print_product.product_templates.id,
+          primary_mockup_id: data.print_product.product_templates.primary_mockup_id,
+          product_mockups: Array.isArray(data.print_product.product_templates.product_mockups) 
+            ? data.print_product.product_templates.product_mockups.map((mockup: any) => ({
+                id: mockup.id,
+                mockup_url: mockup.mockup_url,
+                mockup_name: mockup.mockup_name,
+                is_primary: mockup.is_primary,
+                has_print_area: mockup.has_print_area,
+                print_area: mockup.print_area
+              }))
+            : []
+        } : undefined
+      };
+    }
+
+    return {
+      ...mappedProduct,
+      final_price: data.print_product ? 
+        data.print_product.base_price * (1 + data.creator_margin_percentage / 100) : 
+        undefined
+    };
+  } catch (error) {
+    console.error('Error in getProductById:', error);
+    return null;
+  }
+};
+
 export const getPublicCreators = async (limit = 12): Promise<PublicCreator[]> => {
   try {
     console.log('Fetching public creators from database...');
