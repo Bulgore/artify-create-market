@@ -433,6 +433,7 @@ export type Database = {
           shipping_address: Json
           size: string
           status: string
+          stripe_session_id: string | null
           template_id: string | null
           total_price: number
           updated_at: string | null
@@ -447,6 +448,7 @@ export type Database = {
           shipping_address: Json
           size: string
           status?: string
+          stripe_session_id?: string | null
           template_id?: string | null
           total_price: number
           updated_at?: string | null
@@ -461,6 +463,7 @@ export type Database = {
           shipping_address?: Json
           size?: string
           status?: string
+          stripe_session_id?: string | null
           template_id?: string | null
           total_price?: number
           updated_at?: string | null
